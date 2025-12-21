@@ -18,7 +18,7 @@ export default function Dashboard() {
     }, [user, isLoading, router]);
 
     const handleSaludar = () => {
-        setGreeting(`¡Hola, ${user?.username}! 👋`);
+        setGreeting(`¡Hola, ${user?.firstName}! 👋`);
         setTimeout(() => setGreeting(null), 3000);
     };
 
