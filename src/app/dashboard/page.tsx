@@ -17,9 +17,45 @@ export default function Dashboard() {
         }
     }, [user, isLoading, router]);
 
-    const handleSaludar = () => {
+    const handleSaludar = async () => {
+        console.log('handleSaludar clicked - starting...');
+        console.log('Current user:', user);
+        
         setGreeting(`¡Hola, ${user?.firstName}! 👋`);
-        setTimeout(() => setGreeting(null), 3000);
+        
+        try {
+            console.log('Making request to /api/send-push...');
+            
+            // Enviar notificación push al usuario test@gmail.com
+            const response = await fetch('/api/send-push', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: 'test@gmail.com',
+                    title: '¡Saludo desde el Dashboard!',
+                    body: `${user?.firstName} te ha enviado un saludo desde la aplicación web 👋`
+                })
+            });
+
+            console.log('Response received:', response.status, response.statusText);
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Push notification sent:', result);
+                setGreeting(`¡Hola, ${user?.firstName}! 👋 (Notificación enviada a móvil)`);
+            } else {
+                const error = await response.json();
+                console.error('Error sending push:', error);
+                setGreeting(`¡Hola, ${user?.firstName}! 👋 (Error enviando notificación)`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            setGreeting(`¡Hola, ${user?.firstName}! 👋 (Error de conexión)`);
+        }
+
+        setTimeout(() => setGreeting(null), 5000);
     };
 
     if (isLoading) {
