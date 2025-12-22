@@ -31,7 +31,7 @@ async function getAccessToken() {
     throw new Error('Failed to get access token');
   }
 
-  const { access_token } = await tokenResponse.json();
+  const { access_token } = await tokenResponse.json() as { access_token: string };
   return access_token;
 }
 
@@ -71,7 +71,11 @@ async function validateFCMToken(token: string): Promise<boolean> {
     }
 
     if (response.status === 400) {
-      const errorData = await response.json();
+      const errorData = await response.json() as {
+        error?: {
+          details?: Array<{ errorCode?: string }>
+        }
+      };
       const errorCode = errorData?.error?.details?.[0]?.errorCode;
       
       if (errorCode === 'UNREGISTERED' || errorCode === 'INVALID_ARGUMENT') {
@@ -108,7 +112,7 @@ async function validateFCMToken(token: string): Promise<boolean> {
     throw new Error(`OAuth2 error: ${response.status} ${response.statusText}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as { access_token: string };
   return data.access_token;
 }
 
