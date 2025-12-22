@@ -19,6 +19,76 @@ async function getAccessToken() {
     iat: now
   };
 
+  const token = jwt.sign(payload, serviceAccount.private_key, { algorithm: 'RS256' });
+
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${token}`
+  });
+
+  if (!tokenResponse.ok) {
+    throw new Error('Failed to get access token');
+  }
+
+  const { access_token } = await tokenResponse.json();
+  return access_token;
+}
+
+// Validar token FCM enviando mensaje dry-run
+async function validateFCMToken(token: string): Promise<boolean> {
+  try {
+    const accessToken = await getAccessToken();
+    const projectId = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!).project_id;
+
+    const message = {
+      message: {
+        token: token,
+        notification: {
+          title: 'Validation Test',
+          body: 'Token validation'
+        },
+        data: {
+          test: 'true'
+        }
+      },
+      validate_only: true  // dry-run mode
+    };
+
+    const response = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(message)
+    });
+
+    // Si es 200, el token es válido
+    // Si es 400 con error específico, el token es inválido
+    if (response.ok) {
+      return true;
+    }
+
+    if (response.status === 400) {
+      const errorData = await response.json();
+      const errorCode = errorData?.error?.details?.[0]?.errorCode;
+      
+      if (errorCode === 'UNREGISTERED' || errorCode === 'INVALID_ARGUMENT') {
+        return false;  // Token inválido
+      }
+    }
+
+    // Para otros errores, asumir válido para no eliminar tokens por errores temporales
+    console.warn(`Unexpected validation response for token ${token.substring(0, 20)}...: ${response.status}`);
+    return true;
+
+  } catch (error) {
+    console.error('Error validating token:', error);
+    return true;  // En caso de error, asumir válido
+  }
+}
+
   // Crear JWT firmado
   const jwtToken = jwt.sign(payload, serviceAccount.private_key, { algorithm: 'RS256' });
 
@@ -84,4 +154,4 @@ async function sendPushNotification(token: string, title: string, body: string) 
   }
 }
 
-export { sendPushNotification };
+export { sendPushNotification, validateFCMToken };

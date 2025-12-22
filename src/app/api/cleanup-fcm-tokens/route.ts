@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import admin from '../../../lib/firebase-admin';
+import { validateFCMToken } from '../../../lib/firebase-admin';
 
 // Auto-limpieza de tokens FCM inválidos
 // Se ejecuta automáticamente cada domingo a las 3 AM (UTC) via Vercel Cron
@@ -40,36 +40,23 @@ export async function GET() {
         // Validar cada token con Firebase
         for (const row of tokens.rows) {
             try {
-                // Intentar enviar mensaje de prueba en modo dry-run
-                await admin.messaging().send({
-                    token: row.token,
-                    notification: {
-                        title: 'Test',
-                        body: 'Validation test'
-                    },
-                    data: {
-                        test: 'true'
-                    }
-                }, true); // dry-run = true
+                const isValid = await validateFCMToken(row.token);
 
-                results.validatedTokens++;
-                console.log(`✅ Token válido para user_id: ${row.user_id}`);
-
-            } catch (error) {
-                if (error.code === 'messaging/registration-token-not-registered' ||
-                    error.code === 'messaging/invalid-registration-token') {
-                    
+                if (isValid) {
+                    results.validatedTokens++;
+                    console.log(`✅ Token válido para user_id: ${row.user_id}`);
+                } else {
                     tokensToRemove.push(row.user_id);
                     results.invalidTokens++;
-                    console.log(`❌ Token inválido para user_id: ${row.user_id} - ${error.code}`);
-                    
-                } else {
-                    console.warn(`⚠️ Error validando token user_id: ${row.user_id}`, error.code);
-                    results.errors.push({
-                        user_id: row.user_id,
-                        error: error.code
-                    });
+                    console.log(`❌ Token inválido para user_id: ${row.user_id}`);
                 }
+
+            } catch (error: any) {
+                console.warn(`⚠️ Error validando token user_id: ${row.user_id}`, error.message);
+                results.errors.push({
+                    user_id: row.user_id,
+                    error: error.message
+                });
             }
         }
 
