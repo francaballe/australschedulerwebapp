@@ -15,8 +15,7 @@ export async function GET(request: NextRequest) {
             SELECT 
                 u.email,
                 upt.token,
-                upt.created_at,
-                upt.updated_at
+                upt.created_at
             FROM app.user_push_tokens upt
             JOIN app.users u ON upt.user_id = u.id
             ORDER BY upt.created_at DESC
