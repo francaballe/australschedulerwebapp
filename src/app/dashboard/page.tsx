@@ -26,8 +26,8 @@ export default function Dashboard() {
         try {
             console.log(`Making request to /api/send-push for user ${userId}...`);
             
-            // Determinar email basado en userId
-            const targetEmail = userId === 0 ? 'test@gmail.com' : 'user1@gmail.com';
+            // Determinar email basado en userId - DATOS REALES DE LA BD
+            const targetEmail = userId === 0 ? 'francaballe@gmail.com' : 'test@gmail.com';
             
             // Enviar notificación push al usuario específico
             const response = await fetch('/api/send-push', {
@@ -90,7 +90,7 @@ export default function Dashboard() {
                                     <path d="M5 11h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z" />
                                     <circle cx="12" cy="16" r="1" />
                                 </svg>
-                                Saludar 1 (ID: 0)
+                                Saludar a francaballe@gmail.com
                             </button>
 
                             <button className={styles.saludarBtn} onClick={() => handleSaludar(1)} style={{marginTop: '10px'}}>
@@ -99,7 +99,7 @@ export default function Dashboard() {
                                     <path d="M5 11h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z" />
                                     <circle cx="12" cy="16" r="1" />
                                 </svg>
-                                Saludar 2 (ID: 1)
+                                Saludar a test@gmail.com
                             </button>
 
                             {greeting && (
