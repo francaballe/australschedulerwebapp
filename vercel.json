@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cleanup-fcm-tokens",
+      "schedule": "0 3 * * 0"
+    }
+  ]
+}
