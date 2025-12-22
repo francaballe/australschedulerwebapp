@@ -93,29 +93,6 @@ async function validateFCMToken(token: string): Promise<boolean> {
   }
 }
 
-  // Crear JWT firmado
-  const jwtToken = jwt.sign(payload, serviceAccount.private_key, { algorithm: 'RS256' });
-
-  // Intercambiar JWT por access token
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwtToken,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`OAuth2 error: ${response.status} ${response.statusText}`);
-  }
-
-  const data = await response.json() as { access_token: string };
-  return data.access_token;
-}
-
 async function sendPushNotification(token: string, title: string, body: string) {
   try {
     const PROJECT_ID = 'fcm-test-e7456';

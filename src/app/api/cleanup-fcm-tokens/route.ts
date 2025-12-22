@@ -2,11 +2,22 @@ import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { validateFCMToken } from '../../../lib/firebase-admin';
 
+interface CleanupResults {
+    totalTokens: number;
+    validatedTokens: number;
+    invalidTokens: number;
+    removedTokens: number;
+    errors: Array<{
+        user_id: any;
+        error: string;
+    }>;
+}
+
 // Auto-limpieza de tokens FCM inválidos
 // Se ejecuta automáticamente cada domingo a las 3 AM (UTC) via Vercel Cron
 export async function GET() {
     const startTime = Date.now();
-    const results = {
+    const results: CleanupResults = {
         totalTokens: 0,
         validatedTokens: 0,
         invalidTokens: 0,
@@ -68,11 +79,12 @@ export async function GET() {
             const batchSize = 10;
             for (let i = 0; i < tokensToRemove.length; i += batchSize) {
                 const batch = tokensToRemove.slice(i, i + batchSize);
+                const placeholders = batch.map((_, index) => `$${index + 1}`).join(', ');
                 
-                await sql`
-                    DELETE FROM app.user_push_tokens 
-                    WHERE user_id = ANY(${batch})
-                `;
+                await sql.query(
+                    `DELETE FROM app.user_push_tokens WHERE user_id IN (${placeholders})`,
+                    batch
+                );
                 
                 results.removedTokens += batch.length;
                 console.log(`✅ Eliminado lote ${i + 1}-${i + batch.length}`);
@@ -94,13 +106,13 @@ export async function GET() {
             executionTime
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('❌ Error durante limpieza de tokens:', error);
         
         return NextResponse.json({
             success: false,
             error: 'Error durante limpieza de tokens',
-            details: error.message,
+            details: error?.message || 'Unknown error',
             results,
             executionTime: Date.now() - startTime
         }, { status: 500 });

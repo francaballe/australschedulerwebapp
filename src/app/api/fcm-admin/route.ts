@@ -19,11 +19,11 @@ export async function POST() {
             cleanup: result
         });
         
-    } catch (error) {
+    } catch (error: any) {
         return NextResponse.json({
             success: false,
             error: 'Error iniciando limpieza manual',
-            details: error.message
+            details: error?.message || 'Unknown error'
         }, { status: 500 });
     }
 }
@@ -58,11 +58,11 @@ export async function GET() {
             nextScheduledCleanup: 'Every Sunday 3 AM UTC'
         });
 
-    } catch (error) {
+    } catch (error: any) {
         return NextResponse.json({
             success: false,
             error: 'Error getting token statistics',
-            details: error.message
+            details: error?.message || 'Unknown error'
         }, { status: 500 });
     }
 }
