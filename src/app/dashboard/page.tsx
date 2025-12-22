@@ -17,25 +17,28 @@ export default function Dashboard() {
         }
     }, [user, isLoading, router]);
 
-    const handleSaludar = async () => {
-        console.log('handleSaludar clicked - starting...');
+    const handleSaludar = async (userId: number) => {
+        console.log(`handleSaludar clicked for user ${userId} - starting...`);
         console.log('Current user:', user);
         
-        setGreeting(`¡Hola, ${user?.firstName}! 👋`);
+        setGreeting(`¡Hola, ${user?.firstName}! 👋 Enviando a usuario ${userId}...`);
         
         try {
-            console.log('Making request to /api/send-push...');
+            console.log(`Making request to /api/send-push for user ${userId}...`);
             
-            // Enviar notificación push al usuario test@gmail.com
+            // Determinar email basado en userId
+            const targetEmail = userId === 0 ? 'test@gmail.com' : 'user1@gmail.com';
+            
+            // Enviar notificación push al usuario específico
             const response = await fetch('/api/send-push', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    email: 'test@gmail.com',
-                    title: '¡Saludo desde el Dashboard!',
-                    body: `${user?.firstName} te ha enviado un saludo desde la aplicación web 👋`
+                    email: targetEmail,
+                    title: `¡Saludo desde el Dashboard!`,
+                    body: `${user?.firstName} te ha enviado un saludo desde la aplicación web 👋 (Usuario ${userId})`
                 })
             });
 
@@ -44,11 +47,11 @@ export default function Dashboard() {
             if (response.ok) {
                 const result = await response.json();
                 console.log('Push notification sent:', result);
-                setGreeting(`¡Hola, ${user?.firstName}! 👋 (Notificación enviada a móvil)`);
+                setGreeting(`¡Hola, ${user?.firstName}! 👋 (Notificación enviada a usuario ${userId})`);
             } else {
                 const error = await response.json();
                 console.error('Error sending push:', error);
-                setGreeting(`¡Hola, ${user?.firstName}! 👋 (Error enviando notificación)`);
+                setGreeting(`¡Hola, ${user?.firstName}! 👋 (Error enviando a usuario ${userId})`);
             }
         } catch (error) {
             console.error('Error:', error);
@@ -81,13 +84,22 @@ export default function Dashboard() {
 
                     <div className={styles.cardContainer}>
                         <div className={styles.card}>
-                            <button className={styles.saludarBtn} onClick={handleSaludar}>
+                            <button className={styles.saludarBtn} onClick={() => handleSaludar(0)}>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M7 11v-1a5 5 0 0 1 10 0v1" />
                                     <path d="M5 11h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z" />
                                     <circle cx="12" cy="16" r="1" />
                                 </svg>
-                                Saludar
+                                Saludar 1 (ID: 0)
+                            </button>
+
+                            <button className={styles.saludarBtn} onClick={() => handleSaludar(1)} style={{marginTop: '10px'}}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M7 11v-1a5 5 0 0 1 10 0v1" />
+                                    <path d="M5 11h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z" />
+                                    <circle cx="12" cy="16" r="1" />
+                                </svg>
+                                Saludar 2 (ID: 1)
                             </button>
 
                             {greeting && (
