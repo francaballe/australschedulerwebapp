@@ -10,6 +10,9 @@ export default function Dashboard() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
     const [greeting, setGreeting] = useState<string | null>(null);
+    const [customEmail, setCustomEmail] = useState("");
+    const [customTitle, setCustomTitle] = useState("");
+    const [customBody, setCustomBody] = useState("");
 
     useEffect(() => {
         if (!isLoading && !user) {
@@ -17,18 +20,74 @@ export default function Dashboard() {
         }
     }, [user, isLoading, router]);
 
+    const handleSendMessage = async () => {
+        if (!customEmail || !customTitle || !customBody) {
+            setGreeting('⚠️ Por favor completa todos los campos');
+            setTimeout(() => setGreeting(null), 3000);
+            return;
+        }
+
+        setGreeting(`📤 Enviando mensaje a ${customEmail}...`);
+
+        try {
+            const response = await fetch('/api/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: customEmail,
+                    title: customTitle,
+                    body: customBody
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Message sent:', result);
+
+                if (result.pushSent) {
+                    setGreeting(`✅ Mensaje enviado y notificación push entregada`);
+                } else {
+                    setGreeting(`✅ Mensaje guardado (push no enviado: ${result.pushError || 'sin token FCM'})`);
+                }
+
+                // Limpiar campos después de enviar
+                setCustomTitle("");
+                setCustomBody("");
+            } else {
+                const error = await response.json();
+                console.error('Error sending message:', error);
+                setGreeting(`❌ Error enviando mensaje: ${error.error}`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            setGreeting(`❌ Error de conexión`);
+        }
+
+        setTimeout(() => setGreeting(null), 5000);
+    };
+
     const handleSaludar = async (userId: number) => {
         console.log(`handleSaludar clicked for user ${userId} - starting...`);
         console.log('Current user:', user);
-        
-        setGreeting(`¡Hola, ${user?.firstName}! 👋 Enviando a usuario ${userId}...`);
-        
+
+        let targetEmail = '';
+        if (userId === 0) targetEmail = 'francaballe@gmail.com';
+        else if (userId === 1) targetEmail = 'test@gmail.com';
+        else if (userId === -1) targetEmail = customEmail;
+
+        if (!targetEmail) {
+            setGreeting('⚠️ Por favor ingresa un email válido');
+            setTimeout(() => setGreeting(null), 3000);
+            return;
+        }
+
+        setGreeting(`¡Hola, ${user?.firstName}! 👋 Enviando a ${targetEmail}...`);
+
         try {
-            console.log(`Making request to /api/send-push for user ${userId}...`);
-            
-            // Determinar email basado en userId - DATOS REALES DE LA BD
-            const targetEmail = userId === 0 ? 'francaballe@gmail.com' : 'test@gmail.com';
-            
+            console.log(`Making request to /api/send-push for ${targetEmail}...`);
+
             // Enviar notificación push al usuario específico
             const response = await fetch('/api/send-push', {
                 method: 'POST',
@@ -84,23 +143,87 @@ export default function Dashboard() {
 
                     <div className={styles.cardContainer}>
                         <div className={styles.card}>
-                            <button className={styles.saludarBtn} onClick={() => handleSaludar(0)}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M7 11v-1a5 5 0 0 1 10 0v1" />
-                                    <path d="M5 11h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z" />
-                                    <circle cx="12" cy="16" r="1" />
-                                </svg>
-                                Saludar a francaballe@gmail.com
-                            </button>
+                            <h3>Enviar Mensaje</h3>
 
-                            <button className={styles.saludarBtn} onClick={() => handleSaludar(1)} style={{marginTop: '10px'}}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M7 11v-1a5 5 0 0 1 10 0v1" />
-                                    <path d="M5 11h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z" />
-                                    <circle cx="12" cy="16" r="1" />
-                                </svg>
-                                Saludar a test@gmail.com
-                            </button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '8px', color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
+                                        Email destino
+                                    </label>
+                                    <input
+                                        type="email"
+                                        placeholder="test@gmail.com"
+                                        value={customEmail}
+                                        onChange={(e) => setCustomEmail(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            color: 'white',
+                                            fontSize: '14px'
+                                        }}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '8px', color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
+                                        Título
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Título del mensaje"
+                                        value={customTitle}
+                                        onChange={(e) => setCustomTitle(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            color: 'white',
+                                            fontSize: '14px'
+                                        }}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '8px', color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
+                                        Mensaje
+                                    </label>
+                                    <textarea
+                                        placeholder="Escribe tu mensaje aquí..."
+                                        value={customBody}
+                                        onChange={(e) => setCustomBody(e.target.value)}
+                                        rows={4}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            color: 'white',
+                                            fontSize: '14px',
+                                            resize: 'vertical',
+                                            fontFamily: 'inherit'
+                                        }}
+                                    />
+                                </div>
+
+                                <button
+                                    className={styles.saludarBtn}
+                                    onClick={handleSendMessage}
+                                    disabled={!customEmail || !customTitle || !customBody}
+                                    style={{ marginTop: '10px' }}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                    Enviar Mensaje
+                                </button>
+                            </div>
 
                             {greeting && (
                                 <div className={styles.greeting}>

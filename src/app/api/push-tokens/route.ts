@@ -117,6 +117,62 @@ export async function GET(request: NextRequest) {
         );
     }
 }
+
+export async function DELETE(request: NextRequest) {
+    // Headers CORS
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+
+    try {
+        const { email } = await request.json();
+
+        if (!email) {
+            return NextResponse.json(
+                { error: 'Email is required' },
+                { status: 400, headers }
+            );
+        }
+
+        // Eliminar token usando el email para buscar el usuario
+        // Usamos una trasacción o un join DELETE si es posible, 
+        // pero con @vercel/postgres/neon a veces es mejor ser explícito
+        
+        // 1. Obtener ID de usuario
+        const user = await sql`
+            SELECT id FROM app.users WHERE email = ${email}
+        `;
+
+        if (user.length === 0) {
+            // Si el usuairo no existe, técnicamente ya no tiene token, así que OK
+            return NextResponse.json(
+                { message: 'User not found, nothing to delete' },
+                { status: 200, headers }
+            );
+        }
+
+        const userId = user[0].id;
+
+        // 2. Eliminar token
+        await sql`
+            DELETE FROM app.user_push_tokens 
+            WHERE user_id = ${userId}
+        `;
+
+        return NextResponse.json({
+            message: 'Push token deleted successfully'
+        }, { headers });
+
+    } catch (error) {
+        console.error('Error deleting push token:', error);
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500, headers }
+        );
+    }
+}
 // Handle preflight requests
 export async function OPTIONS(request: NextRequest) {
     return new Response(null, {
