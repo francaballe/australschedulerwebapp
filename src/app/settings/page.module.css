@@ -41,6 +41,44 @@
   gap: 24px;
 }
 
+/* Tabs Styles */
+.tabsContainer {
+  margin-bottom: 24px;
+}
+
+.tabs {
+  display: flex;
+  background: white;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  gap: 4px;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  color: #64748b;
+}
+
+.tab:hover {
+  background: rgba(100, 116, 139, 0.1);
+  color: #475569;
+}
+
+.tab.active {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
 .section {
   background: white;
   border-radius: 8px;

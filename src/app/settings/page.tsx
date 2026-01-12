@@ -9,6 +9,7 @@ import styles from "./page.module.css";
 export default function SettingsPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
+    const [activeTab, setActiveTab] = useState('general'); // 'general' o 'messaging'
     const [greeting, setGreeting] = useState<string | null>(null);
     const [customEmail, setCustomEmail] = useState("");
     const [customTitle, setCustomTitle] = useState("");
@@ -150,113 +151,156 @@ export default function SettingsPage() {
         <div className={styles.container}>
             <Navbar />
             <main className={styles.main}>
-                <div className={styles.header}>
-                    <h1>Configuración y Pruebas</h1>
-                    <p>Herramientas de administración y testing</p>
+                {/* Tabs Navigation */}
+                <div className={styles.tabsContainer}>
+                    <div className={styles.tabs}>
+                        <button 
+                            className={`${styles.tab} ${activeTab === 'general' ? styles.active : ''}`}
+                            onClick={() => setActiveTab('general')}
+                        >
+                            ⚙️ Configuración General
+                        </button>
+                        <button 
+                            className={`${styles.tab} ${activeTab === 'users' ? styles.active : ''}`}
+                            onClick={() => setActiveTab('users')}
+                        >
+                            👥 Administración de Usuarios
+                        </button>
+                        <button 
+                            className={`${styles.tab} ${activeTab === 'messaging' ? styles.active : ''}`}
+                            onClick={() => setActiveTab('messaging')}
+                        >
+                            🧪 Tests de Mensajería
+                        </button>
+                    </div>
                 </div>
 
                 <div className={styles.content}>
-                    {/* Sección de Tests de Mensajería */}
-                    <div className={styles.section}>
-                        <h2>🧪 Tests de Mensajería</h2>
-                        <p className={styles.sectionDescription}>
-                            Herramientas para probar el sistema de mensajes y notificaciones push
-                        </p>
-
-                        {greeting && (
-                            <div className={styles.greeting}>
-                                {greeting}
-                            </div>
-                        )}
-
-                        {/* Botones de saludo rápido */}
-                        <div className={styles.quickTests}>
-                            <h3>Pruebas Rápidas</h3>
-                            <div className={styles.buttonGrid}>
-                                <button 
-                                    className={styles.testButton}
-                                    onClick={() => handleSaludar(0)}
-                                >
-                                    👋 Saludar a Francisco
-                                </button>
-                                <button 
-                                    className={styles.testButton}
-                                    onClick={() => handleSaludar(1)}
-                                >
-                                    👋 Saludar a Usuario Test
-                                </button>
+                    {/* Configuración General Tab */}
+                    {activeTab === 'general' && (
+                        <div className={styles.section}>
+                            <h2>⚙️ Configuración General</h2>
+                            <p className={styles.sectionDescription}>
+                                Configuración de la aplicación
+                            </p>
+                            <div className={styles.placeholder}>
+                                <p>Esta sección contendrá configuraciones generales de la aplicación:</p>
+                                <ul>
+                                    <li>Preferencias de usuario</li>
+                                    <li>Configuración de notificaciones</li>
+                                    <li>Configuración de horarios</li>
+                                    <li>Gestión de permisos</li>
+                                </ul>
                             </div>
                         </div>
+                    )}
 
-                        {/* Formulario personalizado */}
-                        <div className={styles.customMessage}>
-                            <h3>Mensaje Personalizado</h3>
-                            <div className={styles.formGroup}>
-                                <label>Email destinatario:</label>
-                                <input
-                                    type="email"
-                                    value={customEmail}
-                                    onChange={(e) => setCustomEmail(e.target.value)}
-                                    placeholder="ejemplo@gmail.com"
-                                    className={styles.input}
-                                />
-                            </div>
-
-                            <div className={styles.formGroup}>
-                                <label>Título del mensaje:</label>
-                                <input
-                                    type="text"
-                                    value={customTitle}
-                                    onChange={(e) => setCustomTitle(e.target.value)}
-                                    placeholder="Título del mensaje"
-                                    className={styles.input}
-                                />
-                            </div>
-
-                            <div className={styles.formGroup}>
-                                <label>Contenido:</label>
-                                <textarea
-                                    value={customBody}
-                                    onChange={(e) => setCustomBody(e.target.value)}
-                                    placeholder="Escribe tu mensaje aquí..."
-                                    className={styles.textarea}
-                                    rows={4}
-                                />
-                            </div>
-
-                            <div className={styles.actionButtons}>
-                                <button 
-                                    className={styles.sendButton}
-                                    onClick={handleSendMessage}
-                                >
-                                    📤 Enviar Mensaje
-                                </button>
-                                <button 
-                                    className={styles.testButton}
-                                    onClick={() => handleSaludar(-1)}
-                                >
-                                    👋 Enviar Saludo
-                                </button>
+                    {/* Administración de Usuarios Tab */}
+                    {activeTab === 'users' && (
+                        <div className={styles.section}>
+                            <h2>👥 Administración de Usuarios</h2>
+                            <p className={styles.sectionDescription}>
+                                Gestión de usuarios del sistema
+                            </p>
+                            <div className={styles.placeholder}>
+                                <p>Esta sección contendrá herramientas para administrar usuarios:</p>
+                                <ul>
+                                    <li>Lista de usuarios registrados</li>
+                                    <li>Crear nuevos usuarios</li>
+                                    <li>Editar perfiles de usuario</li>
+                                    <li>Gestión de roles y permisos</li>
+                                    <li>Activar/desactivar cuentas</li>
+                                </ul>
                             </div>
                         </div>
-                    </div>
+                    )}
 
-                    {/* Futura sección de configuración general */}
-                    <div className={styles.section}>
-                        <h2>⚙️ Configuración General</h2>
-                        <p className={styles.sectionDescription}>
-                            Configuración de la aplicación (próximamente)
-                        </p>
-                        <div className={styles.placeholder}>
-                            <p>Esta sección contendrá configuraciones generales de la aplicación:</p>
-                            <ul>
-                                <li>Preferencias de usuario</li>
-                                <li>Configuración de notificaciones</li>
-                                <li>Configuración de horarios</li>
-                                <li>Gestión de permisos</li>
-                            </ul>
+                    {/* Tests de Mensajería Tab */}
+                    {activeTab === 'messaging' && (
+                        <div className={styles.section}>
+                            <h2>🧪 Tests de Mensajería</h2>
+                            <p className={styles.sectionDescription}>
+                                Herramientas para probar el sistema de mensajes y notificaciones push
+                            </p>
+
+                            {greeting && (
+                                <div className={styles.greeting}>
+                                    {greeting}
+                                </div>
+                            )}
+
+                            {/* Botones de saludo rápido */}
+                            <div className={styles.quickTests}>
+                                <h3>Pruebas Rápidas</h3>
+                                <div className={styles.buttonGrid}>
+                                    <button 
+                                        className={styles.testButton}
+                                        onClick={() => handleSaludar(0)}
+                                    >
+                                        👋 Saludar a Francisco
+                                    </button>
+                                    <button 
+                                        className={styles.testButton}
+                                        onClick={() => handleSaludar(1)}
+                                    >
+                                        👋 Saludar a Usuario Test
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Formulario personalizado */}
+                            <div className={styles.customMessage}>
+                                <h3>Mensaje Personalizado</h3>
+                                <div className={styles.formGroup}>
+                                    <label>Email destinatario:</label>
+                                    <input
+                                        type="email"
+                                        value={customEmail}
+                                        onChange={(e) => setCustomEmail(e.target.value)}
+                                        placeholder="ejemplo@gmail.com"
+                                        className={styles.input}
+                                    />
+                                </div>
+
+                                <div className={styles.formGroup}>
+                                    <label>Título del mensaje:</label>
+                                    <input
+                                        type="text"
+                                        value={customTitle}
+                                        onChange={(e) => setCustomTitle(e.target.value)}
+                                        placeholder="Título del mensaje"
+                                        className={styles.input}
+                                    />
+                                </div>
+
+                                <div className={styles.formGroup}>
+                                    <label>Contenido:</label>
+                                    <textarea
+                                        value={customBody}
+                                        onChange={(e) => setCustomBody(e.target.value)}
+                                        placeholder="Escribe tu mensaje aquí..."
+                                        className={styles.textarea}
+                                        rows={4}
+                                    />
+                                </div>
+
+                                <div className={styles.actionButtons}>
+                                    <button 
+                                        className={styles.sendButton}
+                                        onClick={handleSendMessage}
+                                    >
+                                        📤 Enviar Mensaje
+                                    </button>
+                                    <button 
+                                        className={styles.testButton}
+                                        onClick={() => handleSaludar(-1)}
+                                    >
+                                        👋 Enviar Saludo
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </main>
         </div>

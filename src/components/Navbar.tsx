@@ -21,7 +21,7 @@ export default function Navbar() {
 
     return (
         <nav className={styles.navbar}>
-            <div className={styles.logo}>
+            <div className={styles.logo} onClick={navigateToCalendar}>
                 <span className={styles.logoText}>Austral Scheduler</span>
             </div>
 
