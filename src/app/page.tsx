@@ -15,7 +15,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && user) {
-      router.push("/dashboard");
+      router.push("/calendar");
     }
   }, [user, isLoading, router]);
 
@@ -33,7 +33,7 @@ export default function LoginPage() {
     const result = await login(email, password);
 
     if (result.success) {
-      router.push("/dashboard");
+      router.push("/calendar");
     } else {
       setError(result.error || "Credenciales inválidas");
       setIsSubmitting(false);

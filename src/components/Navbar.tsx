@@ -1,15 +1,54 @@
 "use client";
 
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import styles from "./Navbar.module.css";
 
 export default function Navbar() {
     const { user, logout } = useAuth();
+    const router = useRouter();
+    const pathname = usePathname();
+
+    const navigateToCalendar = () => {
+        router.push("/calendar");
+    };
+
+    const navigateToSettings = () => {
+        router.push("/settings");
+    };
+
+    const isActive = (path: string) => pathname === path;
 
     return (
         <nav className={styles.navbar}>
             <div className={styles.logo}>
                 <span className={styles.logoText}>Austral Scheduler</span>
+            </div>
+
+            <div className={styles.navigation}>
+                <button 
+                    className={`${styles.navBtn} ${isActive("/calendar") ? styles.active : ""}`}
+                    onClick={navigateToCalendar}
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    Calendario
+                </button>
+
+                <button 
+                    className={`${styles.navBtn} ${isActive("/settings") ? styles.active : ""}`}
+                    onClick={navigateToSettings}
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+                    </svg>
+                    Configuración
+                </button>
             </div>
 
             <div className={styles.userSection}>
@@ -20,13 +59,6 @@ export default function Navbar() {
                     </svg>
                     {user?.firstName} {user?.lastName}
                 </span>
-
-                <button className={styles.settingsBtn} title="Settings">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
-                    </svg>
-                </button>
 
                 <button className={styles.logoutBtn} onClick={logout}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

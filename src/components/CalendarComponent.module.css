@@ -1,0 +1,239 @@
+.calendarContainer {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 200px); /* Ajustar para navbar y header */
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.calendarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.navigationControls {
+  display: flex;
+  gap: 8px;
+}
+
+.navButton {
+  padding: 8px 16px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.navButton:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.todayButton {
+  padding: 8px 16px;
+  border: 1px solid #3b82f6;
+  background: #3b82f6;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.todayButton:hover {
+  background: #2563eb;
+}
+
+.monthTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+  text-transform: capitalize;
+}
+
+.viewToggle {
+  display: flex;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.toggleButton {
+  padding: 8px 16px;
+  border: none;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.toggleButton:hover {
+  background: #f1f5f9;
+}
+
+.toggleButton.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.daysHeader {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.timeColumn {
+  width: 80px;
+  min-width: 80px;
+  border-right: 1px solid #e2e8f0;
+}
+
+.dayHeader {
+  flex: 1;
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 14px;
+  color: #374151;
+  border-right: 1px solid #e2e8f0;
+  text-transform: capitalize;
+}
+
+.dayHeader.today {
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.dayHeader.singleDay {
+  flex: none;
+  width: calc(100% - 240px); /* Espacio para sidebar */
+}
+
+.timeGrid {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.timeRow {
+  display: flex;
+  height: 60px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.timeLabel {
+  width: 80px;
+  min-width: 80px;
+  padding: 8px;
+  font-size: 12px;
+  color: #64748b;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  align-items: flex-start;
+  background: #fafafa;
+}
+
+.timeSlot {
+  flex: 1;
+  border-right: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.timeSlot:hover {
+  background: #f8fafc;
+}
+
+.timeSlot.todaySlot {
+  background: #fef3c7;
+}
+
+.timeSlot.todaySlot:hover {
+  background: #fde68a;
+}
+
+.timeSlot.singleDaySlot {
+  flex: none;
+  width: calc(100% - 240px); /* Espacio para sidebar */
+}
+
+.usersSidebar {
+  position: absolute;
+  right: 20px;
+  top: 100px;
+  width: 200px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.usersSidebar h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.usersList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.userItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.userColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.userItem span {
+  font-size: 14px;
+  color: #374151;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .calendarHeader {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .navigationControls {
+    justify-content: center;
+  }
+  
+  .usersSidebar {
+    position: relative;
+    right: auto;
+    top: auto;
+    width: 100%;
+    margin-top: 16px;
+  }
+  
+  .dayHeader.singleDay,
+  .timeSlot.singleDaySlot {
+    width: 100%;
+  }
+}
