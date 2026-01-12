@@ -1,7 +1,7 @@
 .calendarContainer {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 200px); /* Ajustar para navbar y header */
+  height: calc(100vh - 200px);
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -86,130 +86,166 @@
   color: white;
 }
 
-.daysHeader {
+/* Tabla de calendario */
+.calendarTable {
+  flex: 1;
   display: flex;
-  border-bottom: 1px solid #e2e8f0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tableHeader {
+  display: flex;
   background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+  min-height: 60px;
 }
 
-.timeColumn {
-  width: 80px;
-  min-width: 80px;
+.userColumn {
+  width: 200px;
+  min-width: 200px;
+  padding: 16px 12px;
+  font-weight: 600;
+  font-size: 16px;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
   border-right: 1px solid #e2e8f0;
+  background: #f1f5f9;
 }
 
-.dayHeader {
+.dayColumn {
   flex: 1;
   padding: 12px 8px;
   text-align: center;
-  font-weight: 500;
-  font-size: 14px;
-  color: #374151;
   border-right: 1px solid #e2e8f0;
-  text-transform: capitalize;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: white;
+  color: #374151;
 }
 
-.dayHeader.today {
+.dayColumn.today {
   background: #dbeafe;
   color: #1d4ed8;
   font-weight: 600;
 }
 
-.dayHeader.singleDay {
-  flex: none;
-  width: calc(100% - 240px); /* Espacio para sidebar */
+.dayName {
+  font-weight: 500;
+  font-size: 14px;
+  text-transform: capitalize;
+  color: #374151;
 }
 
-.timeGrid {
+.dayColumn.singleDay {
+  flex: none;
+  min-width: 300px;
+}
+
+/* Cuerpo de la tabla */
+.tableBody {
   flex: 1;
   overflow-y: auto;
 }
 
-.timeRow {
+.userRow {
   display: flex;
-  height: 60px;
   border-bottom: 1px solid #f1f5f9;
+  min-height: 80px;
 }
 
-.timeLabel {
-  width: 80px;
-  min-width: 80px;
-  padding: 8px;
-  font-size: 12px;
-  color: #64748b;
+.userCell {
+  width: 200px;
+  min-width: 200px;
+  padding: 12px;
   border-right: 1px solid #e2e8f0;
   display: flex;
-  align-items: flex-start;
-  background: #fafafa;
+  flex-direction: column;
+  justify-content: center;
+  background: #f9fafb;
 }
 
-.timeSlot {
+.userName {
+  font-weight: 600;
+  font-size: 14px;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.userHours {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.dayCell {
   flex: 1;
   border-right: 1px solid #e2e8f0;
   cursor: pointer;
   transition: background-color 0.2s;
-  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 8px;
 }
 
-.timeSlot:hover {
+.dayCell:hover {
   background: #f8fafc;
 }
 
-.timeSlot.todaySlot {
+.dayCell.todayCell {
   background: #fef3c7;
 }
 
-.timeSlot.todaySlot:hover {
+.dayCell.todayCell:hover {
   background: #fde68a;
 }
 
-.timeSlot.singleDaySlot {
+.dayCell.singleDayCell {
   flex: none;
-  width: calc(100% - 240px); /* Espacio para sidebar */
+  min-width: 300px;
 }
 
-.usersSidebar {
-  position: absolute;
-  right: 20px;
-  top: 100px;
-  width: 200px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.usersSidebar h3 {
-  margin: 0 0 12px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.usersList {
+.shiftContent {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  min-height: 50px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  justify-content: center;
 }
 
-.userItem {
+.shiftTime {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.shiftPosition {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.emptyCell {
+  width: 100%;
+  height: 50px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
+  justify-content: center;
+  color: #cbd5e1;
+  font-size: 12px;
+  opacity: 0.5;
 }
 
-.userColor {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.userItem span {
-  font-size: 14px;
-  color: #374151;
+.emptyCell:hover {
+  opacity: 1;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 4px;
 }
 
 /* Responsive */
@@ -224,16 +260,52 @@
     justify-content: center;
   }
   
-  .usersSidebar {
-    position: relative;
-    right: auto;
-    top: auto;
-    width: 100%;
-    margin-top: 16px;
+  .userColumn {
+    width: 150px;
+    min-width: 150px;
   }
   
-  .dayHeader.singleDay,
-  .timeSlot.singleDaySlot {
-    width: 100%;
+  .userCell {
+    width: 150px;
+    min-width: 150px;
+  }
+  
+  .dayColumn.singleDay,
+  .dayCell.singleDayCell {
+    min-width: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .userColumn {
+    width: 120px;
+    min-width: 120px;
+    font-size: 14px;
+  }
+  
+  .userCell {
+    width: 120px;
+    min-width: 120px;
+  }
+  
+  .userName {
+    font-size: 12px;
+  }
+  
+  .userHours {
+    font-size: 10px;
+  }
+  
+  .shiftContent {
+    padding: 6px 8px;
+    min-height: 40px;
+  }
+  
+  .shiftTime {
+    font-size: 12px;
+  }
+  
+  .shiftPosition {
+    font-size: 10px;
   }
 }
