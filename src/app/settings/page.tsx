@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import Navbar from "@/components/Navbar";
 import styles from "./page.module.css";
 
 export default function SettingsPage() {
     const { user, isLoading } = useAuth();
+    const { theme, setTheme, language, setLanguage } = useTheme();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('general'); // 'general' o 'messaging'
     const [greeting, setGreeting] = useState<string | null>(null);
@@ -111,7 +113,7 @@ export default function SettingsPage() {
                 try {
                     const errorData = await response.json();
                     errorMessage = errorData.error || errorData.details || `HTTP ${response.status}`;
-                    
+
                     // Solo loggear como error si no es un problema esperado
                     if (response.status === 404 && errorMessage.includes('No push token found')) {
                         console.log(`Info: ${errorMessage} para ${targetEmail}`);
@@ -154,19 +156,19 @@ export default function SettingsPage() {
                 {/* Tabs Navigation */}
                 <div className={styles.tabsContainer}>
                     <div className={styles.tabs}>
-                        <button 
+                        <button
                             className={`${styles.tab} ${activeTab === 'general' ? styles.active : ''}`}
                             onClick={() => setActiveTab('general')}
                         >
                             ⚙️ Configuración General
                         </button>
-                        <button 
+                        <button
                             className={`${styles.tab} ${activeTab === 'users' ? styles.active : ''}`}
                             onClick={() => setActiveTab('users')}
                         >
                             👥 Administración de Usuarios
                         </button>
-                        <button 
+                        <button
                             className={`${styles.tab} ${activeTab === 'messaging' ? styles.active : ''}`}
                             onClick={() => setActiveTab('messaging')}
                         >
@@ -181,16 +183,61 @@ export default function SettingsPage() {
                         <div className={styles.section}>
                             <h2>⚙️ Configuración General</h2>
                             <p className={styles.sectionDescription}>
-                                Configuración de la aplicación
+                                Personaliza la apariencia y preferencias de la aplicación
                             </p>
-                            <div className={styles.placeholder}>
-                                <p>Esta sección contendrá configuraciones generales de la aplicación:</p>
-                                <ul>
-                                    <li>Preferencias de usuario</li>
-                                    <li>Configuración de notificaciones</li>
-                                    <li>Configuración de horarios</li>
-                                    <li>Gestión de permisos</li>
-                                </ul>
+
+                            <div className={styles.settingsList}>
+                                {/* Modo Oscuro/Claro */}
+                                <div className={styles.settingItem}>
+                                    <div className={styles.settingInfo}>
+                                        <span className={styles.settingLabel}>🌓 Modo de Apariencia</span>
+                                        <span className={styles.settingDescription}>
+                                            Elige entre modo claro u oscuro
+                                        </span>
+                                    </div>
+                                    <div className={styles.settingControl}>
+                                        <div className={styles.toggleGroup}>
+                                            <button
+                                                className={`${styles.toggleOption} ${theme === 'light' ? styles.toggleActive : ''}`}
+                                                onClick={() => setTheme('light')}
+                                            >
+                                                ☀️ Claro
+                                            </button>
+                                            <button
+                                                className={`${styles.toggleOption} ${theme === 'dark' ? styles.toggleActive : ''}`}
+                                                onClick={() => setTheme('dark')}
+                                            >
+                                                🌙 Oscuro
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Selector de Idioma */}
+                                <div className={styles.settingItem}>
+                                    <div className={styles.settingInfo}>
+                                        <span className={styles.settingLabel}>🌐 Idioma</span>
+                                        <span className={styles.settingDescription}>
+                                            Selecciona el idioma de la aplicación
+                                        </span>
+                                    </div>
+                                    <div className={styles.settingControl}>
+                                        <div className={styles.toggleGroup}>
+                                            <button
+                                                className={`${styles.toggleOption} ${language === 'es' ? styles.toggleActive : ''}`}
+                                                onClick={() => setLanguage('es')}
+                                            >
+                                                🇪🇸 Español
+                                            </button>
+                                            <button
+                                                className={`${styles.toggleOption} ${language === 'en' ? styles.toggleActive : ''}`}
+                                                onClick={() => setLanguage('en')}
+                                            >
+                                                🇺🇸 English
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -233,13 +280,13 @@ export default function SettingsPage() {
                             <div className={styles.quickTests}>
                                 <h3>Pruebas Rápidas</h3>
                                 <div className={styles.buttonGrid}>
-                                    <button 
+                                    <button
                                         className={styles.testButton}
                                         onClick={() => handleSaludar(0)}
                                     >
                                         👋 Saludar a Francisco
                                     </button>
-                                    <button 
+                                    <button
                                         className={styles.testButton}
                                         onClick={() => handleSaludar(1)}
                                     >
@@ -285,13 +332,13 @@ export default function SettingsPage() {
                                 </div>
 
                                 <div className={styles.actionButtons}>
-                                    <button 
+                                    <button
                                         className={styles.sendButton}
                                         onClick={handleSendMessage}
                                     >
                                         📤 Enviar Mensaje
                                     </button>
-                                    <button 
+                                    <button
                                         className={styles.testButton}
                                         onClick={() => handleSaludar(-1)}
                                     >

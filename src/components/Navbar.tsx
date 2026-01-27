@@ -22,7 +22,7 @@ export default function Navbar() {
     return (
         <nav className={styles.navbar}>
             <div className={styles.logo} onClick={navigateToCalendar}>
-                <span className={styles.logoText}>Austral Scheduler</span>
+                <span className={styles.logoText}>Roster Loop</span>
             </div>
 
             <div className={styles.userSection}>
@@ -34,7 +34,7 @@ export default function Navbar() {
                     {user?.firstName} {user?.lastName}
                 </span>
 
-                <button 
+                <button
                     className={`${styles.navBtn} ${isActive("/settings") ? styles.active : ""}`}
                     onClick={navigateToSettings}
                 >
