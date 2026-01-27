@@ -1,0 +1,246 @@
+.sidebar {
+    width: 280px;
+    background: var(--background-secondary);
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 64px);
+    position: sticky;
+    top: 64px;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    overflow-y: auto;
+    z-index: 10;
+}
+
+.section {
+    margin-bottom: 32px;
+}
+
+.sectionTitle {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--foreground-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.primaryBtn {
+    padding: 10px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.primaryBtn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.secondaryBtn {
+    padding: 10px;
+    background: var(--hover-bg);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.secondaryBtn:hover {
+    border-color: var(--primary);
+}
+
+.searchWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 12px;
+    width: 16px;
+    height: 16px;
+    color: var(--muted);
+}
+
+.searchInput {
+    width: 100%;
+    padding: 10px 10px 10px 36px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    color: var(--foreground);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.headerWithAction {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.headerWithAction .sectionTitle {
+    margin-bottom: 0;
+}
+
+.iconBtn {
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.iconBtn:hover {
+    background: var(--hover-bg);
+}
+
+.iconBtn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.positionList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.positionItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.checkboxWrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    flex: 1;
+}
+
+.checkboxWrapper input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkbox {
+    height: 18px;
+    width: 18px;
+    background-color: var(--input-bg);
+    border: 2px solid var(--input-border);
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.checkboxWrapper:hover input~.checkbox {
+    border-color: var(--primary);
+}
+
+.checkboxWrapper input:checked~.checkbox {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.checkbox:after {
+    content: "";
+    display: none;
+    margin-left: 5px;
+    margin-top: 1px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.checkboxWrapper input:checked~.checkbox:after {
+    display: block;
+}
+
+.positionName {
+    font-size: 0.95rem;
+    color: var(--foreground);
+}
+
+.positionActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.colorIndicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.smallIconBtn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.smallIconBtn:hover {
+    color: var(--foreground);
+    background: var(--hover-bg);
+}
+
+.smallIconBtn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 240px;
+        padding: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+        /* In a real app, we'd add a toggle for mobile */
+    }
+}

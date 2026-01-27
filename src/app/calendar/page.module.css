@@ -1,14 +1,21 @@
-.container {
+.wrapper {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding-top: 64px; /* Espacio para el navbar fijo */
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  padding-top: 64px;
+  /* Espacio para el navbar fijo */
 }
 
 .main {
   flex: 1;
-  padding: 20px;
-  background-color: #f8fafc;
+  padding: 24px;
+  background-color: var(--background);
+  overflow-x: auto;
 }
 
 .header {
@@ -38,12 +45,14 @@
   align-items: center;
   height: 100vh;
   background-color: #f8fafc;
-  padding-top: 64px; /* Espacio para el navbar fijo */
+  padding-top: 64px;
+  /* Espacio para el navbar fijo */
 }
 
 .loadingOverlay {
   position: fixed;
-  top: 64px; /* Debajo del navbar */
+  top: 64px;
+  /* Debajo del navbar */
   left: 0;
   right: 0;
   bottom: 0;
@@ -64,6 +73,11 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }

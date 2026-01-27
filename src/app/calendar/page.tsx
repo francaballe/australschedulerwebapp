@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
 import CalendarComponent from "@/components/CalendarComponent";
 import styles from "./page.module.css";
 
@@ -29,22 +30,25 @@ export default function CalendarPage() {
   if (!user) return null;
 
   return (
-    <div className={styles.container}>
+    <div className={styles.wrapper}>
       <Navbar />
-      <main className={styles.main}>
-        <div className={styles.header}>
-          <h1>Planificación de Turnos</h1>
-          <p>Gestiona los horarios y asignaciones del equipo</p>
-        </div>
-        
-        {loading && (
-          <div className={styles.loadingOverlay}>
-            <div className={styles.spinner}></div>
+      <div className={styles.content}>
+        <Sidebar />
+        <main className={styles.main}>
+          <div className={styles.header}>
+            <h1>Planificación de Turnos</h1>
+            <p>Gestiona los horarios y asignaciones del equipo</p>
           </div>
-        )}
-        
-        <CalendarComponent />
-      </main>
+
+          {loading && (
+            <div className={styles.loadingOverlay}>
+              <div className={styles.spinner}></div>
+            </div>
+          )}
+
+          <CalendarComponent />
+        </main>
+      </div>
     </div>
   );
 }
