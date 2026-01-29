@@ -64,27 +64,24 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     { id: 14, userId: 5, date: '2026-01-18', startTime: '12:00', endTime: '20:00', position: 'Gerencia' },
   ];
 
-  // Obtener exactamente 7 días de la semana (lunes a domingo)
+  // Obtener días de la semana (domingo a sábado)
   const getWeekDates = (date: Date) => {
     const currentDate = new Date(date);
-    const dayOfWeek = currentDate.getDay(); // 0=domingo, 1=lunes, 2=martes...
+    const dayOfWeek = currentDate.getDay(); // 0=domingo, 1=lunes...
 
-    // Calcular cuántos días restar para llegar al lunes
-    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    // Crear el domingo de esta semana
+    const sunday = new Date(currentDate);
+    sunday.setDate(currentDate.getDate() - dayOfWeek);
 
-    // Crear el lunes de esta semana
-    const monday = new Date(currentDate);
-    monday.setDate(currentDate.getDate() - daysFromMonday);
-
-    // Crear array con los 7 días
+    // Crear array con los días según la vista
+    const numDays = view === 'twoWeeks' ? 14 : 7;
     const weekDates = [];
-    for (let i = 0; i < 7; i++) {
-      const dayDate = new Date(monday);
-      dayDate.setDate(monday.getDate() + i);
+    for (let i = 0; i < numDays; i++) {
+      const dayDate = new Date(sunday);
+      dayDate.setDate(sunday.getDate() + i);
       weekDates.push(dayDate);
     }
 
-    console.log('Week dates:', weekDates.map(d => d.toDateString())); // Debug
     return weekDates;
   };
 
@@ -97,6 +94,23 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
       day: 'numeric',
       month: 'short'
     });
+  };
+
+  const formatDisplayRange = () => {
+    if (view === 'day') {
+      return currentDate.toLocaleDateString('es-AR', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    }
+
+    const start = weekDates[0];
+    const end = weekDates[weekDates.length - 1];
+
+    const options: Intl.DateTimeFormatOptions = {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    };
+
+    return `${start.toLocaleDateString('es-AR', options)} - ${end.toLocaleDateString('es-AR', options)}`;
   };
 
   const formatMonth = (date: Date) => {
@@ -170,23 +184,24 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
               2 Semanas
             </button>
           </div>
-
-          <div className={styles.navigationControls}>
-            <button onClick={goToPrevWeek} className={styles.navButton}>
-              ← Anterior
-            </button>
-            <button onClick={goToToday} className={styles.todayButton}>
-              Actual
-            </button>
-            <button onClick={goToNextWeek} className={styles.navButton}>
-              Siguiente →
-            </button>
-          </div>
         </div>
 
-        <h2 className={styles.monthTitle}>
-          {formatMonth(currentDate)}
-        </h2>
+        <div className={styles.navigationControls}>
+          <button onClick={goToPrevWeek} className={styles.iconNavBtn} title="Anterior">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <span className={styles.dateRangeDisplay}>{formatDisplayRange()}</span>
+          <button onClick={goToNextWeek} className={styles.iconNavBtn} title="Siguiente">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+          <button onClick={goToToday} className={styles.todaySmallBtn}>
+            Hoy
+          </button>
+        </div>
 
         <div className={styles.headerActions}>
           <button className={styles.actionButton} title="Actualizar">

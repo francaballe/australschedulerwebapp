@@ -36,6 +36,17 @@
   background-clip: text;
 }
 
+.backArrow {
+  width: 20px;
+  height: 20px;
+  color: #60a5fa;
+  transition: transform 0.2s ease;
+}
+
+.logo:hover .backArrow {
+  transform: translateX(-3px);
+}
+
 .navigation {
   display: flex;
   gap: 8px;
