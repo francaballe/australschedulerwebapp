@@ -69,10 +69,12 @@
   border-radius: 6px;
   overflow: hidden;
   background: var(--background-secondary);
+  width: 100%;
 }
 
 .toggleButton {
-  padding: 8px 16px;
+  flex: 1 1 auto;
+  padding: 8px 12px;
   border: none;
   border-right: 1px solid var(--border);
   background: transparent;
@@ -80,6 +82,8 @@
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .toggleButton:last-child {
@@ -242,6 +246,7 @@
   border-right: 1px solid var(--border);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 .shiftTime {
@@ -398,4 +403,43 @@
   .footerCell {
     font-size: 12px;
   }
+}
+
+/* Header Redesign */
+.leftHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionButton {
+  background: var(--background-secondary);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  height: 36px;
+  width: 36px;
+}
+
+.actionButton:hover {
+  background: var(--hover-bg);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.actionButton svg {
+  width: 18px;
+  height: 18px;
 }
