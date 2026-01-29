@@ -1,7 +1,7 @@
 .calendarContainer {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 200px);
+  height: calc(100vh - 88px);
   background: var(--background-secondary);
   border-radius: 12px;
   box-shadow: var(--card-shadow);
@@ -333,5 +333,69 @@
 
   .shiftPosition {
     font-size: 10px;
+  }
+}
+
+/* Footer de totales */
+.tableFooter {
+  display: flex;
+  background: #0f172a;
+  border-top: 2px solid var(--border);
+  min-height: 50px;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+}
+
+.footerLabel {
+  width: 200px;
+  min-width: 200px;
+  padding: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--border);
+}
+
+.footerCell {
+  flex: 1;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  font-weight: 600;
+  color: white;
+  font-size: 14px;
+}
+
+.footerCell.singleDayFooter {
+  flex: none;
+  min-width: 300px;
+}
+
+/* Update responsive styles for footer */
+@media (max-width: 768px) {
+  .footerLabel {
+    width: 150px;
+    min-width: 150px;
+  }
+
+  .footerCell.singleDayFooter {
+    min-width: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .footerLabel {
+    width: 120px;
+    min-width: 120px;
+    font-size: 13px;
+  }
+
+  .footerCell {
+    font-size: 12px;
   }
 }

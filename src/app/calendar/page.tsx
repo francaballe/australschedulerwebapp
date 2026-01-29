@@ -35,10 +35,7 @@ export default function CalendarPage() {
       <div className={styles.content}>
         <Sidebar />
         <main className={styles.main}>
-          <div className={styles.header}>
-            <h1>Planificación de Turnos</h1>
-            <p>Gestiona los horarios y asignaciones del equipo</p>
-          </div>
+
 
           {loading && (
             <div className={styles.loadingOverlay}>

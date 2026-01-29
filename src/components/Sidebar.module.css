@@ -23,6 +23,30 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.titleActions {
+    display: flex;
+    gap: 8px;
+}
+
+.textBtn {
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.textBtn:hover {
+    background: var(--hover-bg);
 }
 
 .actions {
@@ -33,64 +57,132 @@
 
 .primaryBtn {
     padding: 10px;
-    background: var(--primary);
+    background: #0f172a;
+    /* Darker blue/black from screenshot */
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 4px;
+    /* More squared off from screenshot */
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
 }
 
 .primaryBtn:hover {
-    background: var(--primary-hover);
+    background: #1e293b;
     transform: translateY(-1px);
 }
 
 .secondaryBtn {
     padding: 10px;
-    background: var(--hover-bg);
-    color: var(--foreground);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    background: #60a5fa;
+    /* Light blue from screenshot */
+    color: white;
+    border: none;
+    /* Removed border */
+    border-radius: 4px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
 }
 
 .secondaryBtn:hover {
-    border-color: var(--primary);
+    background: #3b82f6;
 }
 
 .searchWrapper {
     position: relative;
     display: flex;
     align-items: center;
+    margin-bottom: 16px;
 }
 
 .searchIcon {
     position: absolute;
-    left: 12px;
+    right: 12px;
+    /* Screenshot has icon on right sometimes, but standard is left. Let's keep right if it's a search action, or left for input icon. Screenshot shows icon on right? Standard is usually left or right action. Keeping simple left for now, or right for "Go". Let's stick to standard search input style. */
     width: 16px;
     height: 16px;
     color: var(--muted);
+    right: 10px;
 }
 
 .searchInput {
     width: 100%;
-    padding: 10px 10px 10px 36px;
+    padding: 10px 36px 10px 12px;
+    /* Icon on right */
     background: var(--input-bg);
-    border: 1px solid var(--input-border);
-    border-radius: 8px;
+    /* Use slight dark/gray background */
+    border: 1px solid transparent;
+    border-radius: 4px;
     color: var(--foreground);
     font-size: 0.9rem;
     transition: all 0.2s ease;
+    background-color: #333333;
+    /* Dark background from screenshot area */
+    color: #fff;
+}
+
+.searchInput::placeholder {
+    color: #888;
 }
 
 .searchInput:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    background-color: #404040;
+}
+
+/* Toggle Switch */
+.toggleWrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    cursor: pointer;
+}
+
+.toggleSwitch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background-color: #4b5563;
+    border-radius: 20px;
+    transition: background-color 0.2s;
+}
+
+.toggleWrapper input {
+    display: none;
+}
+
+.toggleWrapper input:checked+.toggleSwitch {
+    background-color: var(--primary);
+}
+
+.toggleSlider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.toggleWrapper input:checked+.toggleSwitch .toggleSlider {
+    transform: translateX(16px);
+}
+
+.toggleLabel {
+    font-size: 0.85rem;
+    color: var(--foreground-secondary);
 }
 
 .headerWithAction {
@@ -105,9 +197,10 @@
 }
 
 .iconBtn {
-    background: none;
+    background: #0f172a;
+    /* Dark button from screenshot */
     border: none;
-    color: var(--primary);
+    color: white;
     cursor: pointer;
     padding: 4px;
     border-radius: 4px;
@@ -115,15 +208,17 @@
     align-items: center;
     justify-content: center;
     transition: background 0.2s;
+    width: 24px;
+    height: 24px;
 }
 
 .iconBtn:hover {
-    background: var(--hover-bg);
+    background: var(--primary);
 }
 
 .iconBtn svg {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
 }
 
 .positionList {
@@ -136,7 +231,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
+    padding: 8px;
+    background-color: var(--card-bg);
+    /* Or transparent */
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    border: 1px solid transparent;
+}
+
+.positionItem:hover {
+    background-color: var(--hover-bg);
+    border-color: var(--border);
 }
 
 .checkboxWrapper {
@@ -156,34 +261,38 @@
     width: 0;
 }
 
+/* Custom Checkbox based on screenshot (green checkmark) */
 .checkbox {
     height: 18px;
     width: 18px;
-    background-color: var(--input-bg);
-    border: 2px solid var(--input-border);
-    border-radius: 4px;
+    background-color: transparent;
+    border: 2px solid #555;
+    border-radius: 3px;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .checkboxWrapper:hover input~.checkbox {
-    border-color: var(--primary);
+    border-color: #777;
 }
 
 .checkboxWrapper input:checked~.checkbox {
-    background-color: var(--primary);
-    border-color: var(--primary);
+    background-color: #22c55e;
+    /* Green color */
+    border-color: #22c55e;
 }
 
 .checkbox:after {
     content: "";
     display: none;
-    margin-left: 5px;
-    margin-top: 1px;
-    width: 4px;
-    height: 8px;
+    width: 5px;
+    height: 10px;
     border: solid white;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
+    margin-bottom: 2px;
 }
 
 .checkboxWrapper input:checked~.checkbox:after {
@@ -191,28 +300,31 @@
 }
 
 .positionName {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--foreground);
+    font-weight: 500;
 }
 
 .positionActions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .colorIndicator {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
+    margin-right: 4px;
 }
 
-.smallIconBtn {
+.actionIconBtn {
     background: none;
     border: none;
-    color: var(--muted);
+    color: #64748b;
+    /* Muted color */
     cursor: pointer;
-    padding: 2px;
+    padding: 4px;
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -220,12 +332,17 @@
     transition: all 0.2s;
 }
 
-.smallIconBtn:hover {
+.actionIconBtn:hover {
     color: var(--foreground);
     background: var(--hover-bg);
 }
 
-.smallIconBtn svg {
+.actionIconBtn.delete:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.actionIconBtn svg {
     width: 16px;
     height: 16px;
 }

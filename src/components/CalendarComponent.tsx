@@ -154,7 +154,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
             ← Anterior
           </button>
           <button onClick={goToToday} className={styles.todayButton}>
-            Hoy
+            Actual
           </button>
           <button onClick={goToNextWeek} className={styles.navButton}>
             Siguiente →
@@ -173,16 +173,16 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
             Día
           </button>
           <button
-            className={`${styles.toggleButton} ${view === 'twoWeeks' ? styles.active : ''}`}
-            onClick={() => setView('twoWeeks')}
-          >
-            2 Semanas
-          </button>
-          <button
             className={`${styles.toggleButton} ${view === 'week' ? styles.active : ''}`}
             onClick={() => setView('week')}
           >
             Semana
+          </button>
+          <button
+            className={`${styles.toggleButton} ${view === 'twoWeeks' ? styles.active : ''}`}
+            onClick={() => setView('twoWeeks')}
+          >
+            2 Semanas
           </button>
         </div>
       </div>
@@ -248,6 +248,28 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Footer de totales */}
+      <div className={styles.tableFooter}>
+        <div className={styles.footerLabel}>Totales Diarios:</div>
+        {weekDates.map((date, index) => {
+          const dailyShifts = shifts.filter(s => s.date === date.toISOString().split('T')[0]);
+          const totalHours = dailyShifts.reduce((acc, shift) => {
+            const start = parseInt(shift.startTime.substring(0, 2));
+            const end = parseInt(shift.endTime.substring(0, 2));
+            return acc + (end - start);
+          }, 0);
+
+          return (
+            <div
+              key={`footer-${index}`}
+              className={`${styles.footerCell} ${view === 'day' ? styles.singleDayFooter : ''}`}
+            >
+              {totalHours > 0 ? `${totalHours.toFixed(1)}h` : '-'}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
