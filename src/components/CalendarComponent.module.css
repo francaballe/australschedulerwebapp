@@ -157,10 +157,7 @@
   color: var(--foreground);
 }
 
-.dayColumn.singleDay {
-  flex: none;
-  min-width: 300px;
-}
+
 
 /* Cuerpo de la tabla */
 .tableBody {
@@ -227,10 +224,7 @@
   background: rgba(59, 130, 246, 0.15);
 }
 
-.dayCell.singleDayCell {
-  flex: none;
-  min-width: 300px;
-}
+
 
 .shiftContent {
   width: 100%;
@@ -376,10 +370,7 @@
   font-size: 14px;
 }
 
-.footerCell.singleDayFooter {
-  flex: none;
-  min-width: 300px;
-}
+
 
 /* Update responsive styles for footer */
 @media (max-width: 768px) {
@@ -388,9 +379,6 @@
     min-width: 150px;
   }
 
-  .footerCell.singleDayFooter {
-    min-width: 250px;
-  }
 }
 
 @media (max-width: 480px) {

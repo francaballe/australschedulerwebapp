@@ -296,7 +296,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
           return (
             <div
               key={`footer-${index}`}
-              className={`${styles.footerCell} ${view === 'day' ? styles.singleDayFooter : ''}`}
+              className={styles.footerCell}
             >
               {totalHours > 0 ? `${totalHours.toFixed(1)}h` : '-'}
             </div>
