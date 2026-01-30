@@ -62,7 +62,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
       try {
         const v = window.localStorage.getItem('selectedSiteId');
         if (v) setSelectedSiteId(Number(v));
-      } catch {}
+      } catch { }
     };
 
     const handler = (e: any) => {
@@ -338,11 +338,11 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
       </div>
 
       {/* Vista de calendario tipo tabla */}
-      <div className={styles.calendarTable}>
-        {/* Header de la tabla */}
+      {/* Cuerpo de la tabla que contiene Header, Body y Footer */}
+      <div className={styles.tableBody}>
+        {/* Header de la tabla (Sticky) */}
         <div className={styles.tableHeader}>
           <div className={styles.userColumn}>Usuarios</div>
-          {/* Siempre mostrar los 7 días en vista semanal */}
           {weekDates.map((date: Date, index: number) => (
             <div
               key={index}
@@ -353,19 +353,18 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
           ))}
         </div>
 
-        {/* Filas de usuarios */}
-        <div className={styles.tableBody}>
-          {loading ? (
-            <div className={styles.loadingContainer}>Cargando usuarios...</div>
-          ) : error ? (
-            <div className={styles.errorContainer}>{error}</div>
-          ) : users.length === 0 ? (
-            <div className={styles.emptyContainer}>No se encontraron usuarios</div>
-          ) : (
-            // filter users by selected site if available
-            users
-              .filter((u: User) => selectedSiteId == null ? true : u.siteId === selectedSiteId)
-              .map((user: User) => (
+        {/* Contenido de usuarios */}
+        {loading ? (
+          <div className={styles.loadingContainer}>Cargando usuarios...</div>
+        ) : error ? (
+          <div className={styles.errorContainer}>{error}</div>
+        ) : users.length === 0 ? (
+          <div className={styles.emptyContainer}>No se encontraron usuarios</div>
+        ) : (
+          // filter users by selected site if available
+          users
+            .filter((u: User) => selectedSiteId == null ? true : u.siteId === selectedSiteId)
+            .map((user: User) => (
               <div key={user.id} className={styles.userRow}>
                 {/* Columna de usuario */}
                 <div className={styles.userCell}>
@@ -413,28 +412,27 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                 })}
               </div>
             ))
-          )}
+        )}
+
+        {/* Footer de totales (Sticky) */}
+        <div className={styles.tableFooter}>
+          <div className={styles.footerLabel}>Totales:</div>
+          {weekDates.map((date, index) => {
+            const dailyShifts = shifts.filter(s => s.date === date.toISOString().split('T')[0]);
+            const totalHours = dailyShifts.reduce((acc, shift) => {
+              return acc + calculateHours(shift.startTime, shift.endTime);
+            }, 0);
+
+            return (
+              <div
+                key={`footer-${index}`}
+                className={styles.footerCell}
+              >
+                {totalHours > 0 ? `${totalHours.toFixed(1)}h` : '-'}
+              </div>
+            );
+          })}
         </div>
-      </div>
-
-      {/* Footer de totales */}
-      <div className={styles.tableFooter}>
-        <div className={styles.footerLabel}>Totales:</div>
-        {weekDates.map((date, index) => {
-          const dailyShifts = shifts.filter(s => s.date === date.toISOString().split('T')[0]);
-          const totalHours = dailyShifts.reduce((acc, shift) => {
-            return acc + calculateHours(shift.startTime, shift.endTime);
-          }, 0);
-
-          return (
-            <div
-              key={`footer-${index}`}
-              className={styles.footerCell}
-            >
-              {totalHours > 0 ? `${totalHours.toFixed(1)}h` : '-'}
-            </div>
-          );
-        })}
       </div>
     </div>
   );

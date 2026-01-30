@@ -94,7 +94,7 @@ input {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--border);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {

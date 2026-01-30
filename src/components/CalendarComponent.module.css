@@ -137,6 +137,10 @@
   background: var(--background);
   border-bottom: 2px solid var(--border);
   min-height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
 }
 
 .userColumn {
@@ -187,12 +191,17 @@
 .tableBody {
   flex: 1;
   overflow-y: auto;
+  overflow-y: overlay;
+  display: flex;
+  flex-direction: column;
 }
 
 .userRow {
   display: flex;
   border-bottom: 1px solid var(--border);
   min-height: 80px;
+  flex-shrink: 0;
+  height: auto;
 }
 
 .userRow:nth-child(even) {
@@ -394,6 +403,7 @@
   position: sticky;
   bottom: 0;
   z-index: 5;
+  flex-shrink: 0;
 }
 
 .footerLabel {
