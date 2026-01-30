@@ -19,6 +19,7 @@ interface Shift {
   endTime: string;
   position?: string;
   positionColor?: string;
+  published: boolean;
 }
 
 const CalendarComponent: React.FC<CalendarProps> = () => {
@@ -321,9 +322,9 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                     >
                       {shift ? (
                         <div
-                          className={styles.shiftContent}
+                          className={`${styles.shiftContent} ${!shift.published ? styles.unpublishedShift : ''}`}
                           style={shift.positionColor ? {
-                            backgroundColor: `${shift.positionColor}20`,
+                            backgroundColor: `${shift.positionColor}${!shift.published ? '40' : '20'}`,
                             borderLeftColor: shift.positionColor
                           } : {}}
                         >

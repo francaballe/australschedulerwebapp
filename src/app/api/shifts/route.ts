@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
                 s.user_id as "userId", 
                 s.starttime::text as "startTime", 
                 s.endtime::text as "endTime", 
+                s.published,
                 p.name as position,
                 p.color as "positionColor"
             FROM app.shifts s
