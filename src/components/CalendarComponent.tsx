@@ -24,14 +24,31 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'week' | 'day' | 'twoWeeks'>('week');
 
-  // Usuarios de ejemplo
-  const users: User[] = [
-    { id: 1, firstName: 'Juan', lastName: 'Pérez' },
-    { id: 2, firstName: 'María', lastName: 'García' },
-    { id: 3, firstName: 'Carlos', lastName: 'López' },
-    { id: 4, firstName: 'Ana', lastName: 'Martín' },
-    { id: 5, firstName: 'Francisco', lastName: 'González' },
-  ];
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/users');
+        if (!response.ok) {
+          throw new Error('Error al cargar usuarios');
+        }
+        const data = await response.json();
+        setUsers(data);
+        setError(null);
+      } catch (err: any) {
+        console.error('Failed to fetch users:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   // Shifts de ejemplo - solo 1 por persona por día, incluyendo turnos para hoy (12 ene 2026)
   const shifts: Shift[] = [
@@ -262,48 +279,56 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
 
         {/* Filas de usuarios */}
         <div className={styles.tableBody}>
-          {users.map(user => (
-            <div key={user.id} className={styles.userRow}>
-              {/* Columna de usuario */}
-              <div className={styles.userCell}>
-                <div className={styles.userName}>
-                  {user.firstName} {user.lastName}
-                </div>
-                <div className={styles.userHours}>
-                  40h {/* Aquí irían las horas calculadas */}
-                </div>
-              </div>
-
-              {/* Una celda para cada día de la semana */}
-              {weekDates.map((date, dayIndex) => {
-                const shift = getShiftForUserAndDay(user.id, date);
-                return (
-                  <div
-                    key={`${user.id}-${dayIndex}`}
-                    className={`${styles.dayCell} ${isToday(date) ? styles.todayCell : ''}`}
-                    onClick={() => handleCellClick(user.id, date)}
-                  >
-                    {shift ? (
-                      <div className={styles.shiftContent}>
-                        <div className={styles.shiftTime}>
-                          {formatShiftTime(shift.startTime, shift.endTime)}
-                        </div>
-                        {shift.position && (
-                          <div className={styles.shiftPosition}>
-                            {shift.position}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className={styles.emptyCell}>
-                        {/* Celda vacía pero clickeable */}
-                      </div>
-                    )}
+          {loading ? (
+            <div className={styles.loadingContainer}>Cargando usuarios...</div>
+          ) : error ? (
+            <div className={styles.errorContainer}>{error}</div>
+          ) : users.length === 0 ? (
+            <div className={styles.emptyContainer}>No se encontraron usuarios</div>
+          ) : (
+            users.map(user => (
+              <div key={user.id} className={styles.userRow}>
+                {/* Columna de usuario */}
+                <div className={styles.userCell}>
+                  <div className={styles.userName}>
+                    {user.firstName} {user.lastName}
                   </div>
-                );
-              })}
-            </div>
-          ))}
+                  <div className={styles.userHours}>
+                    40h {/* Aquí irían las horas calculadas */}
+                  </div>
+                </div>
+
+                {/* Una celda para cada día de la semana */}
+                {weekDates.map((date, dayIndex) => {
+                  const shift = getShiftForUserAndDay(user.id, date);
+                  return (
+                    <div
+                      key={`${user.id}-${dayIndex}`}
+                      className={`${styles.dayCell} ${isToday(date) ? styles.todayCell : ''}`}
+                      onClick={() => handleCellClick(user.id, date)}
+                    >
+                      {shift ? (
+                        <div className={styles.shiftContent}>
+                          <div className={styles.shiftTime}>
+                            {formatShiftTime(shift.startTime, shift.endTime)}
+                          </div>
+                          {shift.position && (
+                            <div className={styles.shiftPosition}>
+                              {shift.position}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className={styles.emptyCell}>
+                          {/* Celda vacía pero clickeable */}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))
+          )}
         </div>
       </div>
 

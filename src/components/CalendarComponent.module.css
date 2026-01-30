@@ -203,6 +203,21 @@
   background: var(--background-secondary);
 }
 
+.loadingContainer,
+.errorContainer,
+.emptyContainer {
+  padding: 40px;
+  text-align: center;
+  color: var(--foreground-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--background);
+}
+
+.errorContainer {
+  color: #ef4444;
+}
+
 .userCell {
   width: 200px;
   min-width: 200px;
