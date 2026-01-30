@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
         const users = await sql`
             SELECT id, email, firstname, lastname, userroleid 
             FROM app.users 
-            WHERE isblocked = false
+            WHERE isblocked = false AND userroleid = 2
             ORDER BY lastname, firstname
         `;
 

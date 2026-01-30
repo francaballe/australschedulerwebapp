@@ -18,6 +18,7 @@ interface Shift {
   startTime: string;
   endTime: string;
   position?: string;
+  positionColor?: string;
 }
 
 const CalendarComponent: React.FC<CalendarProps> = () => {
@@ -25,7 +26,9 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   const [view, setView] = useState<'week' | 'day' | 'twoWeeks'>('week');
 
   const [users, setUsers] = useState<User[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shiftsLoading, setShiftsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,7 +41,6 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
         }
         const data = await response.json();
         setUsers(data);
-        setError(null);
       } catch (err: any) {
         console.error('Failed to fetch users:', err);
         setError(err.message);
@@ -50,36 +52,26 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     fetchUsers();
   }, []);
 
-  // Shifts de ejemplo - solo 1 por persona por día, incluyendo turnos para hoy (12 ene 2026)
-  const shifts: Shift[] = [
-    // Lunes 12 enero 2026 (HOY)
-    { id: 1, userId: 1, date: '2026-01-12', startTime: '09:00', endTime: '18:00', position: 'Recepción' },
-    { id: 2, userId: 3, date: '2026-01-12', startTime: '08:00', endTime: '17:00', position: 'Técnico' },
-    { id: 3, userId: 4, date: '2026-01-12', startTime: '14:00', endTime: '22:00', position: 'Supervisión' },
+  const fetchShifts = async (dates: Date[]) => {
+    if (dates.length === 0) return;
 
-    // Martes 13 enero 2026
-    { id: 4, userId: 1, date: '2026-01-13', startTime: '08:00', endTime: '17:00', position: 'Administración' },
-    { id: 5, userId: 2, date: '2026-01-13', startTime: '14:00', endTime: '22:00', position: 'Supervisión' },
-    { id: 6, userId: 5, date: '2026-01-13', startTime: '09:00', endTime: '18:00', position: 'Gerencia' },
+    try {
+      setShiftsLoading(true);
+      const startDate = dates[0].toISOString().split('T')[0];
+      const endDate = dates[dates.length - 1].toISOString().split('T')[0];
 
-    // Miércoles 14 enero 2026
-    { id: 7, userId: 2, date: '2026-01-14', startTime: '09:00', endTime: '18:00', position: 'Ventas' },
-    { id: 8, userId: 4, date: '2026-01-14', startTime: '12:00', endTime: '21:00', position: 'Marketing' },
-
-    // Jueves 15 enero 2026
-    { id: 9, userId: 1, date: '2026-01-15', startTime: '08:00', endTime: '17:00', position: 'Recepción' },
-    { id: 10, userId: 5, date: '2026-01-15', startTime: '10:00', endTime: '19:00', position: 'Administración' },
-
-    // Viernes 16 enero 2026
-    { id: 11, userId: 3, date: '2026-01-16', startTime: '10:00', endTime: '19:00', position: 'Soporte' },
-    { id: 12, userId: 4, date: '2026-01-16', startTime: '09:00', endTime: '18:00', position: 'Técnico' },
-
-    // Sábado 17 enero 2026
-    { id: 13, userId: 2, date: '2026-01-17', startTime: '08:00', endTime: '16:00', position: 'Supervisión' },
-
-    // Domingo 18 enero 2026
-    { id: 14, userId: 5, date: '2026-01-18', startTime: '12:00', endTime: '20:00', position: 'Gerencia' },
-  ];
+      const response = await fetch(`/api/shifts?startDate=${startDate}&endDate=${endDate}`);
+      if (!response.ok) {
+        throw new Error('Error al cargar turnos');
+      }
+      const data = await response.json();
+      setShifts(data);
+    } catch (err: any) {
+      console.error('Failed to fetch shifts:', err);
+    } finally {
+      setShiftsLoading(false);
+    }
+  };
 
   // Obtener días de la semana (domingo a sábado)
   const getWeekDates = (date: Date) => {
@@ -103,6 +95,11 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   };
 
   const weekDates = getWeekDates(currentDate);
+
+  useEffect(() => {
+    fetchShifts(weekDates);
+  }, [currentDate, view]);
+
   const today = new Date();
 
   const formatDate = (date: Date) => {
@@ -168,6 +165,21 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     const start = startTime.substring(0, 5); // "09:00" de "09:00:00"
     const end = endTime.substring(0, 5);
     return `${start} a ${end}hs`;
+  };
+
+  // Calcular horas entre dos strings "HH:mm:ss"
+  const calculateHours = (startTime: string, endTime: string): number => {
+    const [h1, m1] = startTime.split(':').map(Number);
+    const [h2, m2] = endTime.split(':').map(Number);
+    const totalMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+    return Math.max(0, totalMinutes / 60);
+  };
+
+  // Calcular total de horas para un usuario en el rango visible
+  const getUserTotalHours = (userId: number): number => {
+    return shifts
+      .filter(s => s.userId === userId)
+      .reduce((acc, s) => acc + calculateHours(s.startTime, s.endTime), 0);
   };
 
   // Manejar click en celda
@@ -267,7 +279,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
         <div className={styles.tableHeader}>
           <div className={styles.userColumn}>Usuarios</div>
           {/* Siempre mostrar los 7 días en vista semanal */}
-          {weekDates.map((date, index) => (
+          {weekDates.map((date: Date, index: number) => (
             <div
               key={index}
               className={`${styles.dayColumn} ${isToday(date) ? styles.today : ''}`}
@@ -286,7 +298,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
           ) : users.length === 0 ? (
             <div className={styles.emptyContainer}>No se encontraron usuarios</div>
           ) : (
-            users.map(user => (
+            users.map((user: User) => (
               <div key={user.id} className={styles.userRow}>
                 {/* Columna de usuario */}
                 <div className={styles.userCell}>
@@ -294,12 +306,12 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                     {user.firstName} {user.lastName}
                   </div>
                   <div className={styles.userHours}>
-                    40h {/* Aquí irían las horas calculadas */}
+                    {getUserTotalHours(user.id).toFixed(1)}h
                   </div>
                 </div>
 
                 {/* Una celda para cada día de la semana */}
-                {weekDates.map((date, dayIndex) => {
+                {weekDates.map((date: Date, dayIndex: number) => {
                   const shift = getShiftForUserAndDay(user.id, date);
                   return (
                     <div
@@ -308,7 +320,13 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                       onClick={() => handleCellClick(user.id, date)}
                     >
                       {shift ? (
-                        <div className={styles.shiftContent}>
+                        <div
+                          className={styles.shiftContent}
+                          style={shift.positionColor ? {
+                            backgroundColor: `${shift.positionColor}20`,
+                            borderLeftColor: shift.positionColor
+                          } : {}}
+                        >
                           <div className={styles.shiftTime}>
                             {formatShiftTime(shift.startTime, shift.endTime)}
                           </div>
@@ -338,9 +356,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
         {weekDates.map((date, index) => {
           const dailyShifts = shifts.filter(s => s.date === date.toISOString().split('T')[0]);
           const totalHours = dailyShifts.reduce((acc, shift) => {
-            const start = parseInt(shift.startTime.substring(0, 2));
-            const end = parseInt(shift.endTime.substring(0, 2));
-            return acc + (end - start);
+            return acc + calculateHours(shift.startTime, shift.endTime);
           }, 0);
 
           return (
