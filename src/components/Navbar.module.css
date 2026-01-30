@@ -36,6 +36,26 @@
   background-clip: text;
 }
 
+.centerSection {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.siteSelect {
+  min-width: 220px;
+  max-width: 420px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 0.95rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  margin-left: 32px; /* nudge a bit to the right */
+}
+
 .backArrow {
   width: 20px;
   height: 20px;

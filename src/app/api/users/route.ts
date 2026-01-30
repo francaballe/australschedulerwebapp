@@ -9,11 +9,13 @@ export async function GET(request: NextRequest) {
     };
 
     try {
-        // Fetch users from the app.users table
+        // Fetch users from the app.users table (allow optional siteId filter)
+        const siteIdParam = request.nextUrl.searchParams.get('siteId');
         const users = await sql`
-            SELECT id, email, firstname, lastname, userroleid 
+            SELECT id, email, firstname, lastname, userroleid, siteid
             FROM app.users 
             WHERE isblocked = false AND userroleid = 2
+            ${siteIdParam ? sql`AND siteid = ${Number(siteIdParam)}` : sql``}
             ORDER BY lastname, firstname
         `;
 
@@ -23,7 +25,8 @@ export async function GET(request: NextRequest) {
             email: user.email,
             firstName: user.firstname,
             lastName: user.lastname,
-            roleId: user.userroleid
+            roleId: user.userroleid,
+            siteId: user.siteid
         }));
 
         return NextResponse.json(formattedUsers, { headers: corsHeaders });

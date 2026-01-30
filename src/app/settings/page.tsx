@@ -169,6 +169,12 @@ export default function SettingsPage() {
                             👥 Administración de Usuarios
                         </button>
                         <button
+                            className={`${styles.tab} ${activeTab === 'sites' ? styles.active : ''}`}
+                            onClick={() => setActiveTab('sites')}
+                        >
+                            🏢 Admin. de Sitios
+                        </button>
+                        <button
                             className={`${styles.tab} ${activeTab === 'messaging' ? styles.active : ''}`}
                             onClick={() => setActiveTab('messaging')}
                         >
@@ -345,6 +351,19 @@ export default function SettingsPage() {
                                         👋 Enviar Saludo
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Administración de Sitios Tab */}
+                    {activeTab === 'sites' && (
+                        <div className={styles.section}>
+                            <h2>🏢 Administración de Sitios</h2>
+                            <p className={styles.sectionDescription}>
+                                Gestión de los sitios / locations del sistema
+                            </p>
+                            <div className={styles.placeholder}>
+                                <p>Herramientas para crear o editar sitios, asignar usuarios a sitios y configurar detalles específicos por ubicación.</p>
                             </div>
                         </div>
                     )}

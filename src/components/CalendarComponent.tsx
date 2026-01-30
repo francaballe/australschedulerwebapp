@@ -9,6 +9,7 @@ interface User {
   id: number;
   firstName: string;
   lastName: string;
+  siteId?: number | null;
 }
 
 interface Shift {
@@ -32,32 +33,52 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   const [shiftsLoading, setShiftsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/users');
-        if (!response.ok) {
-          throw new Error('Error al cargar usuarios');
-        }
-        const data = await response.json();
-        setUsers(data);
-      } catch (err: any) {
-        console.error('Failed to fetch users:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  // Load users (optionally filtered by siteId)
+  const loadUsers = async (siteId?: number | null) => {
+    try {
+      setLoading(true);
+      const url = siteId ? `/api/users?siteId=${siteId}` : '/api/users';
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Error al cargar usuarios');
       }
+      const data = await response.json();
+      setUsers(data);
+      return data as User[];
+    } catch (err: any) {
+      console.error('Failed to fetch users:', err);
+      setError(err.message);
+      return [] as User[];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Selected site filtering: read initial value from localStorage and listen to site changes
+  const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const init = () => {
+      try {
+        const v = window.localStorage.getItem('selectedSiteId');
+        if (v) setSelectedSiteId(Number(v));
+      } catch {}
     };
 
-    fetchUsers();
+    const handler = (e: any) => {
+      const id = e?.detail ?? null;
+      setSelectedSiteId(id);
+    };
+
+    init();
+    window.addEventListener('siteChanged', handler as EventListener);
+    return () => window.removeEventListener('siteChanged', handler as EventListener);
   }, []);
 
   const fetchShifts = async (dates: Date[]) => {
-    if (dates.length === 0) return;
+    if (dates.length === 0) return [] as Shift[];
 
     try {
-      setShiftsLoading(true);
       const startDate = dates[0].toISOString().split('T')[0];
       const endDate = dates[dates.length - 1].toISOString().split('T')[0];
 
@@ -66,11 +87,10 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
         throw new Error('Error al cargar turnos');
       }
       const data = await response.json();
-      setShifts(data);
+      return data as Shift[];
     } catch (err: any) {
       console.error('Failed to fetch shifts:', err);
-    } finally {
-      setShiftsLoading(false);
+      return [] as Shift[];
     }
   };
 
@@ -97,9 +117,25 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
 
   const weekDates = getWeekDates(currentDate);
 
+  // When currentDate, view or selectedSiteId changes, reload users and shifts
   useEffect(() => {
-    fetchShifts(weekDates);
-  }, [currentDate, view]);
+    const loadUsersAndShifts = async () => {
+      setShiftsLoading(true);
+      try {
+        const usersData = await loadUsers(selectedSiteId);
+        const shiftsData = await fetchShifts(weekDates);
+        const userIds = new Set(usersData.map(u => u.id));
+        const filtered = shiftsData.filter(s => userIds.has(s.userId));
+        setShifts(filtered);
+      } catch (err) {
+        console.error('Error loading users and shifts:', err);
+      } finally {
+        setShiftsLoading(false);
+      }
+    };
+
+    loadUsersAndShifts();
+  }, [currentDate, view, selectedSiteId]);
 
   const today = new Date();
 
@@ -163,9 +199,20 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
 
   // Formatear horarios del shift
   const formatShiftTime = (startTime: string, endTime: string): string => {
-    const start = startTime.substring(0, 5); // "09:00" de "09:00:00"
-    const end = endTime.substring(0, 5);
-    return `${start} a ${end}hs`;
+    const to12 = (time: string) => {
+      const parts = time.split(':');
+      if (parts.length < 2) return time;
+      const h = Number(parts[0]);
+      const m = Number(parts[1]);
+      if (Number.isNaN(h) || Number.isNaN(m)) return `${parts[0]}:${parts[1]}`;
+      const period = h >= 12 ? 'PM' : 'AM';
+      const hour12 = ((h + 11) % 12) + 1;
+      return `${hour12}:${m.toString().padStart(2, '0')} ${period}`;
+    };
+
+    const start = to12(startTime);
+    const end = to12(endTime);
+    return `${start} - ${end}`;
   };
 
   // Calcular horas entre dos strings "HH:mm:ss"
@@ -299,7 +346,10 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
           ) : users.length === 0 ? (
             <div className={styles.emptyContainer}>No se encontraron usuarios</div>
           ) : (
-            users.map((user: User) => (
+            // filter users by selected site if available
+            users
+              .filter((u: User) => selectedSiteId == null ? true : u.siteId === selectedSiteId)
+              .map((user: User) => (
               <div key={user.id} className={styles.userRow}>
                 {/* Columna de usuario */}
                 <div className={styles.userCell}>
