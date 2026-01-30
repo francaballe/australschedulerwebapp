@@ -221,6 +221,21 @@
     height: 16px;
 }
 
+.loadingState,
+.errorState,
+.emptyState {
+    padding: 12px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--foreground-secondary);
+    background: var(--card-bg);
+    border-radius: 4px;
+}
+
+.errorState {
+    color: #ef4444;
+}
+
 .positionList {
     display: flex;
     flex-direction: column;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './Sidebar.module.css';
 
 interface Position {
@@ -24,17 +24,32 @@ const Sidebar: React.FC<SidebarProps> = ({
     onAddPosition
 }) => {
     const [showAllUsers, setShowAllUsers] = useState(false);
-    // Mock data with state for demonstration
-    const [positions, setPositions] = useState<Position[]>([
-        { id: 'conflicts', name: 'Conflicts', color: '#ef4444', checked: true },
-        { id: 'overtime', name: 'Overtime', color: '#22c55e', checked: true },
-        { id: 'no_position', name: 'No Position', color: '#94a3b8', checked: true },
-        { id: 'unavailable', name: 'Unavailable', color: '#f59e0b', checked: true },
-        { id: 'manager', name: 'Manager', color: '#f97316', checked: true },
-        { id: 'close', name: 'Close', color: '#ef4444', checked: true },
-        { id: 'training', name: 'Training Route', color: '#a855f7', checked: true },
-        { id: 'driver', name: 'Driver Morning', color: '#f472b6', checked: true },
-    ]);
+    const [positions, setPositions] = useState<Position[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchPositions = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch('/api/positions');
+                if (!response.ok) {
+                    throw new Error('Error al cargar posiciones');
+                }
+                const data = await response.json();
+                // Initialize with checked: true
+                setPositions(data.map((p: any) => ({ ...p, checked: true })));
+                setError(null);
+            } catch (err: any) {
+                console.error('Failed to fetch positions:', err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPositions();
+    }, []);
 
     const handleTogglePosition = (id: string | number) => {
         setPositions(prev => prev.map(p =>
@@ -116,37 +131,45 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 <div className={styles.positionList}>
-                    {positions.map((pos) => (
-                        <div key={pos.id} className={styles.positionItem}>
-                            <label className={styles.checkboxWrapper}>
-                                <input
-                                    type="checkbox"
-                                    checked={pos.checked}
-                                    onChange={() => handleTogglePosition(pos.id)}
-                                />
-                                <span className={styles.checkbox}></span>
-                                <span className={styles.positionName}>{pos.name}</span>
-                            </label>
-                            <div className={styles.positionActions}>
-                                <div
-                                    className={styles.colorIndicator}
-                                    style={{ backgroundColor: pos.color }}
-                                />
-                                <button className={styles.actionIconBtn} title="Horarios">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <polyline points="12 6 12 12 16 14" />
-                                    </svg>
-                                </button>
-                                <button className={`${styles.actionIconBtn} ${styles.delete}`} title="Eliminar">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M3 6h18" />
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                    </svg>
-                                </button>
+                    {loading ? (
+                        <div className={styles.loadingState}>Cargando posiciones...</div>
+                    ) : error ? (
+                        <div className={styles.errorState}>{error}</div>
+                    ) : positions.length === 0 ? (
+                        <div className={styles.emptyState}>No hay posiciones</div>
+                    ) : (
+                        positions.map((pos) => (
+                            <div key={pos.id} className={styles.positionItem}>
+                                <label className={styles.checkboxWrapper}>
+                                    <input
+                                        type="checkbox"
+                                        checked={pos.checked}
+                                        onChange={() => handleTogglePosition(pos.id)}
+                                    />
+                                    <span className={styles.checkbox}></span>
+                                    <span className={styles.positionName}>{pos.name}</span>
+                                </label>
+                                <div className={styles.positionActions}>
+                                    <div
+                                        className={styles.colorIndicator}
+                                        style={{ backgroundColor: pos.color || '#94a3b8' }}
+                                    />
+                                    <button className={styles.actionIconBtn} title="Horarios">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <polyline points="12 6 12 12 16 14" />
+                                        </svg>
+                                    </button>
+                                    <button className={`${styles.actionIconBtn} ${styles.delete}`} title="Eliminar">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M3 6h18" />
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             </div>
         </aside>
