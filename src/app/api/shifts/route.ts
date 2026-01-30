@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const userId = searchParams.get('userId');
 
     if (!startDate || !endDate) {
         return NextResponse.json(
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
             WHERE s.to_be_deleted = false
             AND s.date >= ${startDate}
             AND s.date <= ${endDate}
+            ${userId ? sql`AND s.user_id = ${userId}` : sql``}
             ORDER BY s.date, s.starttime
         `;
 
