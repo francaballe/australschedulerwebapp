@@ -137,6 +137,22 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     loadUsersAndShifts();
   }, [currentDate, view, selectedSiteId]);
 
+  // Expose a manual refresh that other UI can call
+  const refreshData = async () => {
+    setShiftsLoading(true);
+    try {
+      const usersData = await loadUsers(selectedSiteId);
+      const shiftsData = await fetchShifts(weekDates);
+      const userIds = new Set(usersData.map(u => u.id));
+      const filtered = shiftsData.filter(s => userIds.has(s.userId));
+      setShifts(filtered);
+    } catch (err) {
+      console.error('Error refreshing calendar data:', err);
+    } finally {
+      setShiftsLoading(false);
+    }
+  };
+
   const today = new Date();
 
   const formatDate = (date: Date) => {
@@ -281,7 +297,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
         </div>
 
         <div className={styles.headerActions}>
-          <button className={styles.actionButton} title="Actualizar">
+          <button className={styles.actionButton} title="Actualizar" onClick={() => refreshData()}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M23 4v6h-6" />
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />

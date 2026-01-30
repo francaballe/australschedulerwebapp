@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         const users = await sql`
             SELECT id, email, firstname, lastname, userroleid, siteid
             FROM app.users 
-            WHERE isblocked = false AND userroleid = 2
+            WHERE isblocked = false
             ${siteIdParam ? sql`AND siteid = ${Number(siteIdParam)}` : sql``}
             ORDER BY lastname, firstname
         `;
