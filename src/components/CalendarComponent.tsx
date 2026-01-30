@@ -140,17 +140,17 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   const today = new Date();
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('es-AR', {
+    return date.toLocaleDateString('en-US', {
       weekday: 'short',
-      day: 'numeric',
-      month: 'short'
+      month: 'short',
+      day: 'numeric'
     });
   };
 
   const formatDisplayRange = () => {
     if (view === 'day') {
-      return currentDate.toLocaleDateString('es-AR', {
-        day: '2-digit', month: '2-digit', year: 'numeric'
+      return currentDate.toLocaleDateString('en-US', {
+        month: '2-digit', day: '2-digit', year: 'numeric'
       });
     }
 
@@ -158,10 +158,10 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     const end = weekDates[weekDates.length - 1];
 
     const options: Intl.DateTimeFormatOptions = {
-      day: '2-digit', month: '2-digit', year: 'numeric'
+      month: '2-digit', day: '2-digit', year: 'numeric'
     };
 
-    return `${start.toLocaleDateString('es-AR', options)} - ${end.toLocaleDateString('es-AR', options)}`;
+    return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
   };
 
   const formatMonth = (date: Date) => {

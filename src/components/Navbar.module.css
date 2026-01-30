@@ -37,13 +37,19 @@
 }
 
 .centerSection {
-  flex: 1 1 auto;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   justify-content: center;
   align-items: center;
+  pointer-events: none; /* let children decide events */
+  width: 100%;
+  max-width: 720px;
 }
 
 .siteSelect {
+  pointer-events: auto;
   min-width: 220px;
   max-width: 420px;
   padding: 8px 12px;
@@ -53,7 +59,6 @@
   color: var(--foreground);
   font-size: 0.95rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  margin-left: 32px; /* nudge a bit to the right */
 }
 
 .backArrow {
