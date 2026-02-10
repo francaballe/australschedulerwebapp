@@ -303,16 +303,17 @@
 }
 
 .shiftTime {
-  font-weight: 600;
+  font-weight: 400;
   color: var(--foreground);
   margin-bottom: 4px;
 }
 
 .shiftPosition {
   font-size: 11px;
-  color: #64748b;
+  color: #000000;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-weight: 900;
 }
 
 .emptyCell {
@@ -387,10 +388,12 @@
 
   .shiftTime {
     font-size: 12px;
+    font-weight: 400;
   }
 
   .shiftPosition {
     font-size: 10px;
+    font-weight: 700;
   }
 }
 

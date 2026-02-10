@@ -16,8 +16,8 @@ interface Shift {
   id: number;
   userId: number;
   date: string;
-  startTime: string;
-  endTime: string;
+  startTime: string | null;
+  endTime: string | null;
   position?: string;
   positionColor?: string;
   published: boolean;
@@ -214,8 +214,14 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   };
 
   // Formatear horarios del shift
-  const formatShiftTime = (startTime: string, endTime: string): string => {
+  const formatShiftTime = (startTime: string | null, endTime: string | null): string => {
+    // Si startTime o endTime son null/undefined, retornar string vacía (no mostrar horario)
+    if (!startTime || !endTime) {
+      return "";
+    }
+
     const to12 = (time: string) => {
+      if (!time) return "";
       const parts = time.split(':');
       if (parts.length < 2) return time;
       const h = Number(parts[0]);
@@ -232,7 +238,11 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   };
 
   // Calcular horas entre dos strings "HH:mm:ss"
-  const calculateHours = (startTime: string, endTime: string): number => {
+  const calculateHours = (startTime: string | null, endTime: string | null): number => {
+    // Si startTime o endTime son null/undefined (como en "unavailable"), retornar 0
+    if (!startTime || !endTime) {
+      return 0;
+    }
     const [h1, m1] = startTime.split(':').map(Number);
     const [h2, m2] = endTime.split(':').map(Number);
     const totalMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
@@ -374,6 +384,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                 {/* Una celda para cada día de la semana */}
                 {weekDates.map((date: Date, dayIndex: number) => {
                   const shift = getShiftForUserAndDay(user.id, date);
+                  const shiftTimeText = shift ? formatShiftTime(shift.startTime, shift.endTime) : "";
                   return (
                     <div
                       key={`${user.id}-${dayIndex}`}
@@ -388,9 +399,11 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                             borderLeftColor: shift.positionColor
                           } : {}}
                         >
-                          <div className={styles.shiftTime}>
-                            {formatShiftTime(shift.startTime, shift.endTime)}
-                          </div>
+                          {shiftTimeText && (
+                            <div className={styles.shiftTime} style={{ fontWeight: 'normal' }}>
+                              {shiftTimeText}
+                            </div>
+                          )}
                           {shift.position && (
                             <div className={styles.shiftPosition}>
                               {shift.position}
