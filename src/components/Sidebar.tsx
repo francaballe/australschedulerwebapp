@@ -87,10 +87,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <h3 className={styles.sectionTitle}>Filtros</h3>
                 <div className={styles.searchWrapper}>
                     <input
-                        type="text"
+                        type="search"
+                        name="search-filter"
                         placeholder="Buscar usuario"
                         className={styles.searchInput}
                         onChange={(e) => onSearchChange?.(e.target.value)}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck="false"
+                        data-lpignore="true"
+                        data-lastpass-ignore="true"
+                        data-1p-ignore="true"
+                        data-bwignore="true"
                     />
                     <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="11" cy="11" r="8" />
