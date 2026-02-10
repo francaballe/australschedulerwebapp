@@ -4,7 +4,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Roster Loop",
+  title: "RosterLoop",
   description: "Sistema de gestión de horarios",
 };
 

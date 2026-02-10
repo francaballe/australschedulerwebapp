@@ -71,7 +71,7 @@ export default function LoginPage() {
                 <line x1="3" y1="10" x2="21" y2="10" />
               </svg>
             </div>
-            <h1 className={styles.title}>Roster Loop</h1>
+            <h1 className={styles.title}>RosterLoop</h1>
             <p className={styles.subtitle}>Iniciá sesión para continuar</p>
           </div>
 

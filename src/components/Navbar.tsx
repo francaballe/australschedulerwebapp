@@ -35,9 +35,9 @@ export default function Navbar() {
                 if (data.length > 0) {
                     const minId = data.reduce((acc: number, s: any) => Math.min(acc, s.id), data[0].id);
                     setSelectedSite(minId);
-                    try { window.localStorage.setItem('selectedSiteId', String(minId)); } catch {}
+                    try { window.localStorage.setItem('selectedSiteId', String(minId)); } catch { }
                     // notify other components
-                    try { window.dispatchEvent(new CustomEvent('siteChanged', { detail: minId })); } catch {}
+                    try { window.dispatchEvent(new CustomEvent('siteChanged', { detail: minId })); } catch { }
                 }
             } catch (err) {
                 console.warn('Could not fetch sites', err);
@@ -50,8 +50,8 @@ export default function Navbar() {
     const onSiteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const id = Number(e.target.value) || null;
         setSelectedSite(id);
-        try { window.localStorage.setItem('selectedSiteId', String(id)); } catch {}
-        try { window.dispatchEvent(new CustomEvent('siteChanged', { detail: id })); } catch {}
+        try { window.localStorage.setItem('selectedSiteId', String(id)); } catch { }
+        try { window.dispatchEvent(new CustomEvent('siteChanged', { detail: id })); } catch { }
     };
 
     return (
@@ -63,7 +63,7 @@ export default function Navbar() {
                         <polyline points="12 19 5 12 12 5" />
                     </svg>
                 )}
-                <span className={styles.logoText}>Roster Loop</span>
+                <span className={styles.logoText}>RosterLoop</span>
             </div>
 
             <div className={styles.centerSection}>
