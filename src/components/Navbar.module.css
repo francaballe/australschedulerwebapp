@@ -36,6 +36,14 @@
   background-clip: text;
 }
 
+.logoVersion {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--foreground-secondary);
+  -webkit-text-fill-color: var(--foreground-secondary); /* Override gradient for version */
+  margin-left: 4px;
+}
+
 .centerSection {
   position: absolute;
   left: 50%;

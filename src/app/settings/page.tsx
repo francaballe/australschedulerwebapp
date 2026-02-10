@@ -175,6 +175,12 @@ export default function SettingsPage() {
                             🏢 Admin. de Sitios
                         </button>
                         <button
+                            className={`${styles.tab} ${activeTab === 'logs' ? styles.active : ''}`}
+                            onClick={() => setActiveTab('logs')}
+                        >
+                            📜 Logs del Sistema
+                        </button>
+                        <button
                             className={`${styles.tab} ${activeTab === 'messaging' ? styles.active : ''}`}
                             onClick={() => setActiveTab('messaging')}
                         >
@@ -263,6 +269,26 @@ export default function SettingsPage() {
                                     <li>Editar perfiles de usuario</li>
                                     <li>Gestión de roles y permisos</li>
                                     <li>Activar/desactivar cuentas</li>
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Logs del Sistema Tab */}
+                    {activeTab === 'logs' && (
+                        <div className={styles.section}>
+                            <h2>📜 Logs del Sistema</h2>
+                            <p className={styles.sectionDescription}>
+                                Seguimiento de eventos y auditoría de la plataforma
+                            </p>
+                            <div className={styles.placeholder}>
+                                <p>Esta sección mostrará logs detallados de la plataforma:</p>
+                                <ul>
+                                    <li>Historial de inicios de sesión</li>
+                                    <li>Cambios en la programación (turnos publicados/editados)</li>
+                                    <li>Altas y bajas de usuarios</li>
+                                    <li>Errores críticos del servidor</li>
+                                    <li>Notificaciones push enviadas</li>
                                 </ul>
                             </div>
                         </div>

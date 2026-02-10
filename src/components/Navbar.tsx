@@ -63,20 +63,24 @@ export default function Navbar() {
                         <polyline points="12 19 5 12 12 5" />
                     </svg>
                 )}
-                <span className={styles.logoText}>RosterLoop</span>
+                <span className={styles.logoText}>
+                    RosterLoop <span className={styles.logoVersion}>(v1.0.0)</span>
+                </span>
             </div>
 
-            <div className={styles.centerSection}>
-                <select className={styles.siteSelect} value={selectedSite ?? ''} onChange={onSiteChange}>
-                    {sites.length === 0 ? (
-                        <option value="">No hay sitios</option>
-                    ) : (
-                        sites.map(site => (
-                            <option key={site.id} value={site.id}>{site.name}</option>
-                        ))
-                    )}
-                </select>
-            </div>
+            {pathname !== "/settings" && (
+                <div className={styles.centerSection}>
+                    <select className={styles.siteSelect} value={selectedSite ?? ''} onChange={onSiteChange}>
+                        {sites.length === 0 ? (
+                            <option value="">No hay sitios</option>
+                        ) : (
+                            sites.map(site => (
+                                <option key={site.id} value={site.id}>{site.name}</option>
+                            ))
+                        )}
+                    </select>
+                </div>
+            )}
 
             <div className={styles.userSection}>
                 <span className={styles.username}>
