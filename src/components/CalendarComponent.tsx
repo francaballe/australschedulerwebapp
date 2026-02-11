@@ -98,15 +98,26 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   // Fetch user confirmations for the current week
   const fetchUserConfirmations = async (weekStartDate: string, usersData: User[]) => {
     try {
+      console.log('🔍 WEB: Fetching confirmations for weekStartDate:', weekStartDate);
+      console.log('🔍 WEB: Users to check:', usersData.map(u => u.id));
+      
       const confirmationsMap = new Map<number, boolean>();
       
       // Fetch all confirmations at once for better performance
       const promises = usersData.map(async (user) => {
         try {
-          const response = await fetch(`/api/confirm-weeks?userId=${user.id}&date=${weekStartDate}`);
+          const url = `/api/confirm-weeks?userId=${user.id}&date=${weekStartDate}`;
+          console.log('🔍 WEB: Fetching from URL:', url);
+          
+          const response = await fetch(url);
           if (response.ok) {
             const confirmations = await response.json();
-            const isConfirmed = confirmations.length > 0 && confirmations[0].confirmed;
+            console.log(`🔍 WEB: User ${user.id} confirmations:`, confirmations);
+            
+            // Just check if there's any record for this user/week, don't check .confirmed field
+            const isConfirmed = confirmations.length > 0;
+            console.log(`🔍 WEB: User ${user.id} isConfirmed:`, isConfirmed);
+            
             return { userId: user.id, confirmed: isConfirmed };
           }
         } catch (error) {
@@ -120,9 +131,11 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
         confirmationsMap.set(result.userId, result.confirmed);
       });
       
+      console.log('🔍 WEB: Final confirmationsMap:', confirmationsMap);
       setUserConfirmations(confirmationsMap);
     } catch (error) {
       console.error('Failed to fetch user confirmations:', error);
+      setUserConfirmations(new Map()); // Clear confirmations on error
     }
   };
 
@@ -153,6 +166,12 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   useEffect(() => {
     const loadUsersAndShifts = async () => {
       setShiftsLoading(true);
+      
+      // Clear confirmations immediately when changing weeks to prevent visual artifacts
+      if (view === 'week') {
+        setUserConfirmations(new Map());
+      }
+      
       try {
         const usersData = await loadUsers(selectedSiteId);
         setUsers(usersData); // Update users state first
@@ -179,6 +198,12 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   // Expose a manual refresh that other UI can call
   const refreshData = async () => {
     setShiftsLoading(true);
+    
+    // Clear confirmations immediately when refreshing to prevent visual artifacts
+    if (view === 'week') {
+      setUserConfirmations(new Map());
+    }
+    
     try {
       const usersData = await loadUsers(selectedSiteId);
       setUsers(usersData); // Update users state first
@@ -406,6 +431,11 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
         {/* Contenido de usuarios */}
         {loading ? (
           <div className={styles.loadingContainer}>Cargando usuarios...</div>
+        ) : shiftsLoading ? (
+          <div className={styles.loadingContainer}>
+            <div className={styles.loadingSpinner}></div>
+            <div>Cargando semana...</div>
+          </div>
         ) : error ? (
           <div className={styles.errorContainer}>{error}</div>
         ) : users.length === 0 ? (

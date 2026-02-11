@@ -10,7 +10,11 @@ const corsHeaders = {
 
 // Helper function to get the start of week (Sunday)
 function getWeekStartDate(date: Date): Date {
-    const d = new Date(date);
+    // Create date without timezone issues
+    const dateStr = date.toISOString().split('T')[0]; // Get YYYY-MM-DD
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const d = new Date(year, month - 1, day); // month is 0-indexed
+    
     const dayOfWeek = d.getDay(); // 0 = Sunday, 1 = Monday, etc.
     const diff = dayOfWeek; // Days to subtract to get to Sunday
     d.setDate(d.getDate() - diff);
@@ -32,14 +36,23 @@ export async function GET(request: NextRequest) {
     try {
         let queryResult;
         
+        console.log('🔍 API: GET confirm-weeks - userId:', userId, 'date:', date);
+        
         // If date is provided, get the confirmation status for that specific week
         if (date) {
             const weekStartDate = getWeekStartDate(new Date(date));
+            const weekStartString = weekStartDate.toISOString().split('T')[0];
+            
+            console.log('🔍 API: weekStartDate object:', weekStartDate);
+            console.log('🔍 API: weekStartString:', weekStartString);
+            
             queryResult = await prisma.$queryRaw`
                 SELECT * FROM app.confirmedweeks 
-                WHERE user_id = ${parseInt(userId)} AND date = ${weekStartDate}
+                WHERE user_id = ${parseInt(userId)} AND date = ${weekStartString}::date
                 ORDER BY date DESC
             `;
+            
+            console.log('🔍 API: Query result:', queryResult);
         } else {
             queryResult = await prisma.$queryRaw`
                 SELECT * FROM app.confirmedweeks 
