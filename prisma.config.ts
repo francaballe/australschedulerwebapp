@@ -4,6 +4,9 @@
 import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
 
+// Import helper to build DATABASE_URL from individual variables
+import "../src/lib/database-url";
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
