@@ -479,15 +479,15 @@
   background: var(--background-secondary);
   border: 1px solid var(--border);
   color: var(--foreground);
-  padding: 8px;
+  padding: 10px;
   border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  height: 36px;
-  width: 36px;
+  height: 40px;
+  width: 40px;
 }
 
 .actionButton:hover {

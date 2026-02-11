@@ -46,7 +46,7 @@
 
 .centerSection {
   position: absolute;
-  left: 320px; /* Move a bit more to the right */
+  left: 305px; /* Move just a bit to the left */
   display: flex;
   justify-content: flex-start;
   align-items: center;
