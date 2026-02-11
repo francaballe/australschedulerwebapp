@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
     const corsHeaders = {
@@ -60,8 +61,10 @@ export async function GET(request: NextRequest) {
             }
         });
 
+        type ShiftResult = typeof shifts[0];
+
         // Transform to match frontend expectations
-        const transformedShifts = shifts.map(shift => ({
+        const transformedShifts = shifts.map((shift: ShiftResult) => ({
             id: shift.id,
             userId: shift.userId,
             user: shift.user ? {
@@ -75,8 +78,12 @@ export async function GET(request: NextRequest) {
             position: shift.position?.name || null,
             positionColor: shift.position?.color || null,
             date: shift.date,
-            startTime: shift.starttime,
-            endTime: shift.endtime,
+            startTime: shift.starttime ? 
+                `${shift.starttime.getUTCHours().toString().padStart(2, '0')}:${shift.starttime.getUTCMinutes().toString().padStart(2, '0')}:${shift.starttime.getUTCSeconds().toString().padStart(2, '0')}` 
+                : null,
+            endTime: shift.endtime ? 
+                `${shift.endtime.getUTCHours().toString().padStart(2, '0')}:${shift.endtime.getUTCMinutes().toString().padStart(2, '0')}:${shift.endtime.getUTCSeconds().toString().padStart(2, '0')}` 
+                : null,
             published: shift.published
         }));
 
