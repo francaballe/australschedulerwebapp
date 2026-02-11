@@ -125,15 +125,15 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error('❌ Failed to confirm week - Full error:', error);
-        console.error('❌ Error name:', error.name);
+        console.error('❌ Error name:', error instanceof Error ? error.name : 'Unknown');
         console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
-        console.error('❌ Error stack:', error.stack);
+        console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
         
         return NextResponse.json(
             { 
                 error: 'Failed to confirm week',
                 details: error instanceof Error ? error.message : String(error),
-                type: error.name
+                type: error instanceof Error ? error.name : 'Unknown'
             },
             { status: 500, headers: corsHeaders }
         );
