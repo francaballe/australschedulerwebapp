@@ -310,10 +310,10 @@
 
 .shiftPosition {
   font-size: 11px;
-  color: #000000;
+  color: var(--foreground);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .emptyCell {

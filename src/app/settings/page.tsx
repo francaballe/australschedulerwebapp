@@ -9,35 +9,19 @@ import styles from "./page.module.css";
 
 export default function SettingsPage() {
     const { user, isLoading } = useAuth();
-    const { theme, setTheme, language, setLanguage } = useTheme();
+    const { theme, setTheme, language, setLanguage, showOnlyActiveUsers, setShowOnlyActiveUsers } = useTheme();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('general'); // 'general' o 'messaging'
     const [greeting, setGreeting] = useState<string | null>(null);
     const [customEmail, setCustomEmail] = useState("");
     const [customTitle, setCustomTitle] = useState("");
     const [customBody, setCustomBody] = useState("");
-    const [showOnlyActiveUsers, setShowOnlyActiveUsers] = useState(true);
 
     useEffect(() => {
         if (!isLoading && !user) {
             router.push("/");
         }
     }, [user, isLoading, router]);
-
-    // Load user filter preference from localStorage
-    useEffect(() => {
-        const saved = localStorage.getItem('showOnlyActiveUsers');
-        if (saved !== null) {
-            setShowOnlyActiveUsers(JSON.parse(saved));
-        }
-    }, []);
-
-    // Save user filter preference to localStorage
-    useEffect(() => {
-        localStorage.setItem('showOnlyActiveUsers', JSON.stringify(showOnlyActiveUsers));
-        // Notify other components about the change
-        window.dispatchEvent(new CustomEvent('userFilterChanged', { detail: showOnlyActiveUsers }));
-    }, [showOnlyActiveUsers]);
 
     // Load user filter preference from localStorage
     useEffect(() => {

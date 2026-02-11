@@ -8,9 +8,11 @@ type Language = "es" | "en";
 interface ThemeContextType {
     theme: Theme;
     language: Language;
+    showOnlyActiveUsers: boolean;
     toggleTheme: () => void;
     setTheme: (theme: Theme) => void;
     setLanguage: (lang: Language) => void;
+    setShowOnlyActiveUsers: (show: boolean) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -18,12 +20,14 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [theme, setThemeState] = useState<Theme>("dark");
     const [language, setLanguageState] = useState<Language>("es");
+    const [showOnlyActiveUsers, setShowOnlyActiveUsersState] = useState<boolean>(true);
     const [mounted, setMounted] = useState(false);
 
     // Cargar preferencias del localStorage al montar
     useEffect(() => {
         const savedTheme = localStorage.getItem("theme") as Theme | null;
         const savedLanguage = localStorage.getItem("language") as Language | null;
+        const savedUserFilter = localStorage.getItem("showOnlyActiveUsers");
 
         if (savedTheme) {
             setThemeState(savedTheme);
@@ -35,6 +39,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
         if (savedLanguage) {
             setLanguageState(savedLanguage);
+        }
+
+        if (savedUserFilter !== null) {
+            setShowOnlyActiveUsersState(JSON.parse(savedUserFilter));
         }
 
         setMounted(true);
@@ -55,6 +63,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         }
     }, [language, mounted]);
 
+    // Guardar filtro de usuarios en localStorage cuando cambia
+    useEffect(() => {
+        if (mounted) {
+            localStorage.setItem("showOnlyActiveUsers", JSON.stringify(showOnlyActiveUsers));
+            // Notify other components about the change
+            window.dispatchEvent(new CustomEvent('userFilterChanged', { detail: showOnlyActiveUsers }));
+        }
+    }, [showOnlyActiveUsers, mounted]);
+
     const toggleTheme = () => {
         setThemeState((prev) => (prev === "light" ? "dark" : "light"));
     };
@@ -67,13 +84,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setLanguageState(lang);
     };
 
+    const setShowOnlyActiveUsers = (show: boolean) => {
+        setShowOnlyActiveUsersState(show);
+    };
+
     // Evitar hydration mismatch
     if (!mounted) {
         return null;
     }
 
     return (
-        <ThemeContext.Provider value={{ theme, language, toggleTheme, setTheme, setLanguage }}>
+        <ThemeContext.Provider value={{ theme, language, showOnlyActiveUsers, toggleTheme, setTheme, setLanguage, setShowOnlyActiveUsers }}>
             {children}
         </ThemeContext.Provider>
     );
