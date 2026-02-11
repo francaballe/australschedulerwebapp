@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
     const corsHeaders = {
@@ -38,8 +39,10 @@ export async function GET(request: NextRequest) {
             }
         });
 
+        type UserResult = typeof users[0];
+
         // Transform to match frontend expectations (camelCase)
-        const formattedUsers = users.map(user => ({
+        const formattedUsers = users.map((user: UserResult) => ({
             id: user.id,
             email: user.email,
             firstName: user.firstname,

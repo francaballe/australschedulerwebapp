@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
     const corsHeaders = {
@@ -58,8 +59,10 @@ export async function GET(request: NextRequest) {
             }
         });
 
+        type ShiftResult = typeof shifts[0];
+
         // Transform to match frontend expectations
-        const transformedShifts = shifts.map(shift => ({
+        const transformedShifts = shifts.map((shift: ShiftResult) => ({
             id: shift.id,
             date: shift.date.toISOString().split('T')[0], // Format as YYYY-MM-DD
             userId: shift.userId,
