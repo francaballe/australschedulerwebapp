@@ -16,12 +16,43 @@ export default function SettingsPage() {
     const [customEmail, setCustomEmail] = useState("");
     const [customTitle, setCustomTitle] = useState("");
     const [customBody, setCustomBody] = useState("");
+    const [showOnlyActiveUsers, setShowOnlyActiveUsers] = useState(true);
 
     useEffect(() => {
         if (!isLoading && !user) {
             router.push("/");
         }
     }, [user, isLoading, router]);
+
+    // Load user filter preference from localStorage
+    useEffect(() => {
+        const saved = localStorage.getItem('showOnlyActiveUsers');
+        if (saved !== null) {
+            setShowOnlyActiveUsers(JSON.parse(saved));
+        }
+    }, []);
+
+    // Save user filter preference to localStorage
+    useEffect(() => {
+        localStorage.setItem('showOnlyActiveUsers', JSON.stringify(showOnlyActiveUsers));
+        // Notify other components about the change
+        window.dispatchEvent(new CustomEvent('userFilterChanged', { detail: showOnlyActiveUsers }));
+    }, [showOnlyActiveUsers]);
+
+    // Load user filter preference from localStorage
+    useEffect(() => {
+        const saved = localStorage.getItem('showOnlyActiveUsers');
+        if (saved !== null) {
+            setShowOnlyActiveUsers(JSON.parse(saved));
+        }
+    }, []);
+
+    // Save user filter preference to localStorage
+    useEffect(() => {
+        localStorage.setItem('showOnlyActiveUsers', JSON.stringify(showOnlyActiveUsers));
+        // Notify other components about the change
+        window.dispatchEvent(new CustomEvent('userFilterChanged', { detail: showOnlyActiveUsers }));
+    }, [showOnlyActiveUsers]);
 
     const handleSendMessage = async () => {
         if (!customEmail || !customTitle || !customBody) {
@@ -246,6 +277,32 @@ export default function SettingsPage() {
                                                 onClick={() => setLanguage('en')}
                                             >
                                                 🇺🇸 English
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Filtros de Visualización */}
+                                <div className={styles.settingItem}>
+                                    <div className={styles.settingInfo}>
+                                        <span className={styles.settingLabel}>👁️ Filtros de Visualización</span>
+                                        <span className={styles.settingDescription}>
+                                            Controla qué usuarios se muestran en el calendario
+                                        </span>
+                                    </div>
+                                    <div className={styles.settingControl}>
+                                        <div className={styles.toggleGroup}>
+                                            <button
+                                                className={`${styles.toggleOption} ${showOnlyActiveUsers ? styles.toggleActive : ''}`}
+                                                onClick={() => setShowOnlyActiveUsers(true)}
+                                            >
+                                                👤 Solo usuarios activos
+                                            </button>
+                                            <button
+                                                className={`${styles.toggleOption} ${!showOnlyActiveUsers ? styles.toggleActive : ''}`}
+                                                onClick={() => setShowOnlyActiveUsers(false)}
+                                            >
+                                                👥 Todos los usuarios
                                             </button>
                                         </div>
                                     </div>

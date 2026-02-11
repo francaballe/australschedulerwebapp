@@ -2,13 +2,15 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import styles from "./Navbar.module.css";
 
 export default function Navbar() {
     const { user, logout } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const navigateToCalendar = () => {
         router.push("/calendar");
@@ -47,6 +49,18 @@ export default function Navbar() {
         fetchSites();
     }, []);
 
+    // Handle clicks outside dropdown to close it
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const onSiteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const id = Number(e.target.value) || null;
         setSelectedSite(id);
@@ -64,7 +78,7 @@ export default function Navbar() {
                     </svg>
                 )}
                 <span className={styles.logoText}>
-                    RosterLoop <span className={styles.logoVersion}>(v1.0.0)</span>
+                    RosterLoop <span className={styles.logoVersion}>(v1.1.0)</span>
                 </span>
             </div>
 
@@ -91,25 +105,50 @@ export default function Navbar() {
                     {user?.firstName} {user?.lastName}
                 </span>
 
-                <button
-                    className={`${styles.navBtn} ${isActive("/settings") ? styles.active : ""}`}
-                    onClick={navigateToSettings}
-                >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
-                    </svg>
-                    Configuración
-                </button>
+                <div className={styles.dropdown} ref={dropdownRef}>
+                    <button 
+                        className={styles.dropdownToggle}
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="1" />
+                            <circle cx="12" cy="5" r="1" />
+                            <circle cx="12" cy="19" r="1" />
+                        </svg>
+                    </button>
 
-                <button className={styles.logoutBtn} onClick={logout}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16,17 21,12 16,7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
-                    Cerrar Sesión
-                </button>
+                    {isDropdownOpen && (
+                        <div className={styles.dropdownMenu}>
+                            <button
+                                className={styles.dropdownItem}
+                                onClick={() => {
+                                    setIsDropdownOpen(false);
+                                    navigateToSettings();
+                                }}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="3" />
+                                    <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+                                </svg>
+                                Configuración
+                            </button>
+                            <button
+                                className={styles.dropdownItem}
+                                onClick={() => {
+                                    setIsDropdownOpen(false);
+                                    logout();
+                                }}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                    <polyline points="16,17 21,12 16,7" />
+                                    <line x1="21" y1="12" x2="9" y2="12" />
+                                </svg>
+                                Cerrar Sesión
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
         </nav>
     );

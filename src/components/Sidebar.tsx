@@ -23,7 +23,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     onPublishChanges,
     onAddPosition
 }) => {
-    const [showAllUsers, setShowAllUsers] = useState(false);
     const [positions, setPositions] = useState<Position[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -106,20 +105,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
                 </div>
-
-                <label className={styles.toggleWrapper}>
-                    <input
-                        type="checkbox"
-                        checked={showAllUsers}
-                        onChange={(e) => setShowAllUsers(e.target.checked)}
-                    />
-                    <div className={styles.toggleSwitch}>
-                        <div className={styles.toggleSlider}></div>
-                    </div>
-                    <span className={styles.toggleLabel}>
-                        {showAllUsers ? "Mostrando todos los usuarios" : "Mostrando sólo usuarios activos"}
-                    </span>
-                </label>
             </div>
 
             <div className={styles.section}>
