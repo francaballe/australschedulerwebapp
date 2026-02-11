@@ -46,13 +46,12 @@
 
 .centerSection {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 320px; /* Move a bit more to the right */
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   pointer-events: none; /* let children decide events */
-  width: 100%;
+  width: calc(100% - 300px); /* Account for logo and userSection width */
   max-width: 720px;
 }
 

@@ -69,6 +69,17 @@ const Sidebar: React.FC<SidebarProps> = ({
         setPositions(prev => prev.map(p => ({ ...p, checked: false })));
     };
 
+    const handleToggleAllSelection = () => {
+        const allSelected = positions.every(p => p.checked);
+        if (allSelected) {
+            handleSelectNone();
+        } else {
+            handleSelectAll();
+        }
+    };
+
+    const allPositionsSelected = positions.every(p => p.checked);
+
     return (
         <aside className={styles.sidebar}>
             <div className={styles.section}>
@@ -108,20 +119,13 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             <div className={styles.section}>
-                <div className={styles.headerWithAction}>
-                    <div className={styles.sectionTitle}>
-                        Posiciones
-                        <span style={{ marginLeft: '12px', fontSize: '0.75rem', color: '#888', fontWeight: 'normal' }}>
-                            <button className={styles.textBtn} onClick={handleSelectAll}>TODO</button>
-                            <button className={styles.textBtn} onClick={handleSelectNone}>NADA</button>
-                        </span>
-                    </div>
-                    <button className={styles.iconBtn} onClick={onAddPosition} title="Agregar posición">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                    </button>
+                <div className={styles.sectionTitle}>
+                    Posiciones
+                    <span style={{ marginLeft: '12px', fontSize: '0.75rem', color: '#888', fontWeight: 'normal' }}>
+                        <button className={styles.textBtn} onClick={handleToggleAllSelection}>
+                            {allPositionsSelected ? 'NADA' : 'TODO'}
+                        </button>
+                    </span>
                 </div>
 
                 <div className={styles.positionList}>
@@ -148,23 +152,35 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         className={styles.colorIndicator}
                                         style={{ backgroundColor: pos.color || '#94a3b8' }}
                                     />
-                                    <button className={styles.actionIconBtn} title="Horarios">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <circle cx="12" cy="12" r="10" />
-                                            <polyline points="12 6 12 12 16 14" />
-                                        </svg>
-                                    </button>
-                                    <button className={`${styles.actionIconBtn} ${styles.delete}`} title="Eliminar">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M3 6h18" />
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                        </svg>
-                                    </button>
+                                    {pos.id !== 0 && pos.id !== 1 && (
+                                        <button className={styles.actionIconBtn} title="Horarios">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <polyline points="12 6 12 12 16 14" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                    {pos.id !== 0 && pos.id !== 1 && (
+                                        <button className={`${styles.actionIconBtn} ${styles.delete}`} title="Eliminar">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M3 6h18" />
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                            </svg>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))
                     )}
                 </div>
+                
+                <button className={styles.addPositionBtn} onClick={onAddPosition}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    <span>Agregar posición</span>
+                </button>
             </div>
         </aside>
     );

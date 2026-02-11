@@ -244,7 +244,7 @@
 
 .positionItem {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     padding: 8px;
     background-color: var(--card-bg);
@@ -252,6 +252,14 @@
     border-radius: 4px;
     transition: background-color 0.2s;
     border: 1px solid transparent;
+}
+
+.positionItem .checkboxWrapper {
+    flex: 1;
+}
+
+.positionItem .positionActions {
+    margin-left: auto;
 }
 
 .positionItem:hover {
@@ -324,6 +332,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    justify-content: flex-start;
+    min-width: 80px; /* Fixed width to maintain alignment */
 }
 
 .colorIndicator {
@@ -358,6 +368,35 @@
 }
 
 .actionIconBtn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.addPositionBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--foreground-secondary);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    margin-top: 12px;
+    width: 100%;
+    justify-content: center;
+}
+
+.addPositionBtn:hover {
+    background: var(--hover-bg);
+    border-color: var(--primary);
+    color: var(--foreground);
+}
+
+.addPositionBtn svg {
     width: 16px;
     height: 16px;
 }
