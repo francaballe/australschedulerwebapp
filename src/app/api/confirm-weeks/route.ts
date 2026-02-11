@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
         console.error('Failed to fetch confirmed weeks:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch confirmed weeks', details: error.message },
+            { error: 'Failed to fetch confirmed weeks', details: error instanceof Error ? error.message : String(error) },
             { status: 500, headers: corsHeaders }
         );
     }
@@ -138,15 +138,15 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error('❌ Failed to confirm week - Full error:', error);
-        console.error('❌ Error name:', error.name);
-        console.error('❌ Error message:', error.message);
-        console.error('❌ Error stack:', error.stack);
+        console.error('❌ Error name:', error instanceof Error ? error.name : 'Unknown');
+        console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
+        console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
         
         return NextResponse.json(
             { 
                 error: 'Failed to confirm week',
-                details: error.message,
-                type: error.name
+                details: error instanceof Error ? error.message : String(error),
+                type: error instanceof Error ? error.name : 'Unknown'
             },
             { status: 500, headers: corsHeaders }
         );
