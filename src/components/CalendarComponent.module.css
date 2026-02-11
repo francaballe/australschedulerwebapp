@@ -248,6 +248,34 @@
   font-size: 14px;
   color: var(--foreground);
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.confirmationIndicator {
+  height: 18px;
+  width: 18px;
+  background-color: #22c55e;
+  border: 2px solid #22c55e;
+  border-radius: 50%;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  position: relative;
+}
+
+.confirmationIndicator:after {
+  content: "";
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-bottom: 1px;
 }
 
 .userHours {

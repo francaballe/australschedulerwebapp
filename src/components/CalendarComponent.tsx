@@ -29,6 +29,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
 
   const [users, setUsers] = useState<User[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
+  const [userConfirmations, setUserConfirmations] = useState<Map<number, boolean>>(new Map());
   const [loading, setLoading] = useState(true);
   const [shiftsLoading, setShiftsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +95,37 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     }
   };
 
+  // Fetch user confirmations for the current week
+  const fetchUserConfirmations = async (weekStartDate: string, usersData: User[]) => {
+    try {
+      const confirmationsMap = new Map<number, boolean>();
+      
+      // Fetch all confirmations at once for better performance
+      const promises = usersData.map(async (user) => {
+        try {
+          const response = await fetch(`/api/confirm-weeks?userId=${user.id}&date=${weekStartDate}`);
+          if (response.ok) {
+            const confirmations = await response.json();
+            const isConfirmed = confirmations.length > 0 && confirmations[0].confirmed;
+            return { userId: user.id, confirmed: isConfirmed };
+          }
+        } catch (error) {
+          console.error(`Error fetching confirmation for user ${user.id}:`, error);
+        }
+        return { userId: user.id, confirmed: false };
+      });
+      
+      const results = await Promise.all(promises);
+      results.forEach(result => {
+        confirmationsMap.set(result.userId, result.confirmed);
+      });
+      
+      setUserConfirmations(confirmationsMap);
+    } catch (error) {
+      console.error('Failed to fetch user confirmations:', error);
+    }
+  };
+
   // Obtener días de la semana (domingo a sábado)
   const getWeekDates = (date: Date) => {
     const currentDate = new Date(date);
@@ -123,10 +155,17 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
       setShiftsLoading(true);
       try {
         const usersData = await loadUsers(selectedSiteId);
+        setUsers(usersData); // Update users state first
         const shiftsData = await fetchShifts(weekDates);
         const userIds = new Set(usersData.map(u => u.id));
         const filtered = shiftsData.filter(s => userIds.has(s.userId));
         setShifts(filtered);
+        
+        // Only fetch confirmations for week view
+        if (view === 'week' && weekDates.length > 0) {
+          const weekStartDate = weekDates[0].toISOString().split('T')[0];
+          await fetchUserConfirmations(weekStartDate, usersData);
+        }
       } catch (err) {
         console.error('Error loading users and shifts:', err);
       } finally {
@@ -142,10 +181,17 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     setShiftsLoading(true);
     try {
       const usersData = await loadUsers(selectedSiteId);
+      setUsers(usersData); // Update users state first
       const shiftsData = await fetchShifts(weekDates);
       const userIds = new Set(usersData.map(u => u.id));
       const filtered = shiftsData.filter(s => userIds.has(s.userId));
       setShifts(filtered);
+      
+      // Only fetch confirmations for week view
+      if (view === 'week' && weekDates.length > 0) {
+        const weekStartDate = weekDates[0].toISOString().split('T')[0];
+        await fetchUserConfirmations(weekStartDate, usersData);
+      }
     } catch (err) {
       console.error('Error refreshing calendar data:', err);
     } finally {
@@ -374,6 +420,9 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                 <div className={styles.userCell}>
                   <div className={styles.userName}>
                     {user.firstName} {user.lastName}
+                    {view === 'week' && userConfirmations.get(user.id) && (
+                      <div className={styles.confirmationIndicator} title="Programación confirmada"></div>
+                    )}
                   </div>
                   <div className={styles.userHours}>
                     {getUserTotalHours(user.id).toFixed(1)}h

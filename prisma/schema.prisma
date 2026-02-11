@@ -29,11 +29,12 @@ model User {
   siteid       Int?      @default(1)
 
   // Relations
-  shifts     Shift[]
-  pushTokens UserPushToken[]
-  messages   Message[]
-  role       Role?           @relation(fields: [userroleid], references: [id])
-  site       Site?           @relation(fields: [siteid], references: [id])
+  shifts        Shift[]
+  pushTokens    UserPushToken[]
+  messages      Message[]
+  confirmedWeeks ConfirmedWeek[]
+  role          Role?           @relation(fields: [userroleid], references: [id])
+  site          Site?           @relation(fields: [siteid], references: [id])
 
   @@map("users")
   @@schema("app")
@@ -124,5 +125,18 @@ model Message {
   @@index([userId], map: "idx_messages_user_id")
   @@index([userId, read], map: "idx_messages_user_unread")
   @@map("messages")
+  @@schema("app")
+}
+
+model ConfirmedWeek {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @db.Date
+  confirmed Boolean  @default(false)
+  userId    Int      @map("user_id")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("confirmedweeks")
   @@schema("app")
 }
