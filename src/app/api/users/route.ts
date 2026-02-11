@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import sql from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
     const corsHeaders = {
@@ -9,17 +9,36 @@ export async function GET(request: NextRequest) {
     };
 
     try {
-        // Fetch users from the app.users table (allow optional siteId filter)
+        // Get optional siteId filter from query params
         const siteIdParam = request.nextUrl.searchParams.get('siteId');
-        const users = await sql`
-            SELECT id, email, firstname, lastname, userroleid, siteid
-            FROM app.users 
-            WHERE isblocked = false
-            ${siteIdParam ? sql`AND siteid = ${Number(siteIdParam)}` : sql``}
-            ORDER BY lastname, firstname
-        `;
+        
+        // Build where clause dynamically
+        const whereClause: any = {
+            isblocked: false
+        };
 
-        // Map database field names to frontend camelCase
+        if (siteIdParam) {
+            whereClause.siteid = Number(siteIdParam);
+        }
+
+        // Using Prisma ORM with conditional filtering
+        const users = await prisma.user.findMany({
+            where: whereClause,
+            orderBy: [
+                { lastname: 'asc' },
+                { firstname: 'asc' }
+            ],
+            select: {
+                id: true,
+                email: true,
+                firstname: true,
+                lastname: true,
+                userroleid: true,
+                siteid: true
+            }
+        });
+
+        // Transform to match frontend expectations (camelCase)
         const formattedUsers = users.map(user => ({
             id: user.id,
             email: user.email,

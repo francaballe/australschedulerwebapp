@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import sql from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
     const corsHeaders = {
@@ -9,15 +9,18 @@ export async function GET(request: NextRequest) {
     };
 
     try {
-        const sites = await sql`
-            SELECT id, "name"
-            FROM app.sites
-            ORDER BY id ASC
-        `;
+        // Using Prisma ORM instead of raw SQL
+        const sites = await prisma.site.findMany({
+            orderBy: {
+                id: 'asc'
+            },
+            select: {
+                id: true,
+                name: true
+            }
+        });
 
-        const formatted = sites.map((s: any) => ({ id: s.id, name: s.name }));
-
-        return NextResponse.json(formatted, { headers: corsHeaders });
+        return NextResponse.json(sites, { headers: corsHeaders });
 
     } catch (error: any) {
         console.error('API Sites Error:', error);

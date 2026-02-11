@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  schemas           = ["app"]
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String?   @unique
+  password     String?
+  firstname    String?
+  lastname     String?
+  lastlogin    DateTime? @db.Timestamptz
+  createddate  DateTime  @default(now()) @db.Timestamptz
+  isblocked    Boolean?  @default(false)
+  userroleid   Int?
+  phone        String?
+  siteid       Int?      @default(1)
+
+  // Relations
+  shifts     Shift[]
+  pushTokens UserPushToken[]
+  messages   Message[]
+  role       Role?           @relation(fields: [userroleid], references: [id])
+  site       Site?           @relation(fields: [siteid], references: [id])
+
+  @@map("users")
+  @@schema("app")
+}
+
+model Role {
+  id    Int     @id
+  name  String?
+
+  // Relations
+  users User[]
+
+  @@map("roles")
+  @@schema("app")
+}
+
+model Site {
+  id   Int     @id @default(autoincrement())
+  name String?
+
+  // Relations
+  users User[]
+
+  @@map("sites")
+  @@schema("app")
+}
+
+model Position {
+  id        Int     @id @default(autoincrement())
+  name      String?
+  color     String?
+  starttime DateTime? @db.Time
+  endtime   DateTime? @db.Time
+  eliminated Boolean? @default(false)
+
+  // Relations
+  shifts Shift[]
+
+  @@map("positions")
+  @@schema("app")
+}
+
+model Shift {
+  id           Int      @id @default(autoincrement())
+  date         DateTime @db.Date
+  positionId   Int      @map("position_id")
+  published    Boolean  @default(false)
+  userId       Int      @map("user_id")
+  toBeDeleted  Boolean  @default(false) @map("to_be_deleted")
+  unavailable  Boolean?
+  starttime    DateTime?  @db.Time
+  endtime      DateTime?  @db.Time
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  position Position @relation(fields: [positionId], references: [id])
+
+  @@map("shifts")
+  @@schema("app")
+}
+
+model UserPushToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int?      @map("user_id")
+  token     String
+  createdAt DateTime? @default(now()) @db.Timestamp @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token])
+  @@map("user_push_tokens")
+  @@schema("app")
+}
+
+model Message {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  title     String    @db.VarChar(255)
+  body      String
+  read      Boolean?  @default(false)
+  createdAt DateTime? @default(now()) @db.Timestamp @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)], map: "idx_messages_created_at")
+  @@index([userId], map: "idx_messages_user_id")
+  @@index([userId, read], map: "idx_messages_user_unread")
+  @@map("messages")
+  @@schema("app")
+}

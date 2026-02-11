@@ -4,34 +4,33 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
     const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
 
-    const searchParams = request.nextUrl.searchParams;
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const userId = searchParams.get('userId');
-
-    if (!startDate || !endDate) {
-        return NextResponse.json(
-            { error: 'startDate and endDate parameters are required' },
-            { status: 400, headers: corsHeaders }
-        );
-    }
-
     try {
+        // Get query parameters
+        const { searchParams } = request.nextUrl;
+        const startDate = searchParams.get('startDate');
+        const endDate = searchParams.get('endDate');
+        const siteId = searchParams.get('siteId');
+
         // Build where clause dynamically
         const whereClause: any = {
             toBeDeleted: false,
-            date: {
-                gte: new Date(startDate),
-                lte: new Date(endDate)
-            }
         };
 
-        if (userId) {
-            whereClause.userId = parseInt(userId);
+        if (startDate && endDate) {
+            whereClause.date = {
+                gte: new Date(startDate),
+                lte: new Date(endDate)
+            };
+        }
+
+        if (siteId) {
+            whereClause.user = {
+                siteid: parseInt(siteId)
+            };
         }
 
         // Using Prisma with relations instead of manual JOINs
@@ -39,18 +38,21 @@ export async function GET(request: NextRequest) {
             where: whereClause,
             orderBy: [
                 { date: 'asc' },
-                { starttime: 'asc' }
+                { userId: 'asc' }
             ],
-            select: {
-                id: true,
-                date: true,
-                userId: true,
-                starttime: true,
-                endtime: true,
-                published: true,
-                positionId: true,
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstname: true,
+                        lastname: true,
+                        email: true,
+                        siteid: true
+                    }
+                },
                 position: {
                     select: {
+                        id: true,
                         name: true,
                         color: true
                     }
@@ -61,18 +63,21 @@ export async function GET(request: NextRequest) {
         // Transform to match frontend expectations
         const transformedShifts = shifts.map(shift => ({
             id: shift.id,
-            date: shift.date.toISOString().split('T')[0], // Format as YYYY-MM-DD
             userId: shift.userId,
-            startTime: shift.starttime ? 
-                `${shift.starttime.getUTCHours().toString().padStart(2, '0')}:${shift.starttime.getUTCMinutes().toString().padStart(2, '0')}:${shift.starttime.getUTCSeconds().toString().padStart(2, '0')}` 
-                : null,
-            endTime: shift.endtime ? 
-                `${shift.endtime.getUTCHours().toString().padStart(2, '0')}:${shift.endtime.getUTCMinutes().toString().padStart(2, '0')}:${shift.endtime.getUTCSeconds().toString().padStart(2, '0')}` 
-                : null,
-            published: shift.published,
+            user: shift.user ? {
+                id: shift.user.id,
+                firstName: shift.user.firstname,
+                lastName: shift.user.lastname,
+                email: shift.user.email,
+                siteId: shift.user.siteid
+            } : null,
             positionId: shift.positionId,
             position: shift.position?.name || null,
-            positionColor: shift.position?.color || null
+            positionColor: shift.position?.color || null,
+            date: shift.date,
+            startTime: shift.starttime,
+            endTime: shift.endtime,
+            published: shift.published
         }));
 
         return NextResponse.json(transformedShifts, { headers: corsHeaders });
@@ -105,7 +110,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Using Prisma create instead of raw INSERT (auto-incrementing ID)
+        // Using Prisma create instead of raw INSERT
         const newShift = await prisma.shift.create({
             data: {
                 userId: parseInt(userId),
@@ -116,25 +121,34 @@ export async function POST(request: NextRequest) {
                 published: published ?? true,
                 toBeDeleted: false
             },
-            select: {
-                id: true,
-                userId: true,
-                positionId: true,
-                date: true,
-                starttime: true,
-                endtime: true,
-                published: true
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstname: true,
+                        lastname: true
+                    }
+                },
+                position: {
+                    select: {
+                        name: true,
+                        color: true
+                    }
+                }
             }
         });
 
-        // Transform response to match expected format
+        // Transform response
         const response = {
             id: newShift.id,
-            user_id: newShift.userId,
-            position_id: newShift.positionId,
+            userId: newShift.userId,
+            user: newShift.user,
+            positionId: newShift.positionId, 
+            position: newShift.position?.name,
+            positionColor: newShift.position?.color,
             date: newShift.date,
-            starttime: newShift.starttime,
-            endtime: newShift.endtime,
+            startTime: newShift.starttime,
+            endTime: newShift.endtime,
             published: newShift.published
         };
 
@@ -150,12 +164,15 @@ export async function POST(request: NextRequest) {
 }
 
 export async function OPTIONS() {
-    return new NextResponse(null, {
-        status: 204,
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        },
-    });
+    return NextResponse.json(
+        {},
+        {
+            status: 200,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            },
+        }
+    );
 }
