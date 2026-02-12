@@ -166,21 +166,66 @@ export async function POST(request: NextRequest) {
 
         console.log('📤 Creating shift with data:', shiftData);
 
-        // Using Prisma create instead of raw INSERT (auto-incrementing ID)
-        const newShift = await prisma.shift.create({
-            data: shiftData,
-            select: {
-                id: true,
-                userId: true,
-                positionId: true,
-                date: true,
-                starttime: true,
-                endtime: true,
-                published: true
+        // First, try to find existing shift for same user and date
+        const existingShift = await prisma.shift.findFirst({
+            where: {
+                userId: parsedUserId,
+                date: new Date(date),
+                toBeDeleted: false
             }
         });
 
-        console.log('✅ Shift created successfully:', newShift);
+        let newShift;
+        if (existingShift) {
+            console.log('📝 Found existing shift, updating:', existingShift.id);
+            // Update existing shift
+            newShift = await prisma.shift.update({
+                where: { id: existingShift.id },
+                data: {
+                    positionId: parsedPositionId,
+                    starttime: position.starttime,
+                    endtime: position.endtime,
+                    published: published ?? false,
+                    toBeDeleted: false
+                },
+                select: {
+                    id: true,
+                    userId: true,
+                    positionId: true,
+                    date: true,
+                    starttime: true,
+                    endtime: true,
+                    published: true
+                }
+            });
+        } else {
+            console.log('📝 No existing shift found, creating new one');
+            // Ensure no ID is included in create data
+            const createData = {
+                userId: parsedUserId,
+                positionId: parsedPositionId,
+                date: new Date(date),
+                published: published ?? false,
+                toBeDeleted: false,
+                starttime: position.starttime,
+                endtime: position.endtime
+            };
+            
+            newShift = await prisma.shift.create({
+                data: createData,
+                select: {
+                    id: true,
+                    userId: true,
+                    positionId: true,
+                    date: true,
+                    starttime: true,
+                    endtime: true,
+                    published: true
+                }
+            });
+        }
+
+        console.log('✅ Shift operation successful:', newShift);
 
         // Transform response to match expected format
         const response = {
@@ -200,17 +245,34 @@ export async function POST(request: NextRequest) {
         console.error('❌ Error details:', {
             message: error?.message,
             code: error?.code,
-            stack: error?.stack
+            stack: error?.stack,
+            name: error?.name,
+            cause: error?.cause
         });
         
-        // Return more specific error message
-        const errorMessage = error?.message || 'Unknown error occurred';
+        // Return more specific error message based on error type
+        let errorMessage = 'Unknown error occurred';
+        let statusCode = 500;
+        
+        if (error?.code === 'P2002') {
+            errorMessage = 'Ya existe un turno para este usuario en esta fecha';
+            statusCode = 409; // Conflict
+        } else if (error?.code === 'P2025') {
+            errorMessage = 'Registro no encontrado';
+            statusCode = 404;
+        } else if (error?.code?.startsWith('P')) {
+            errorMessage = `Database error: ${error.message}`;
+        } else {
+            errorMessage = error?.message || 'Error interno del servidor';
+        }
+        
         return NextResponse.json(
             { 
                 error: `Error al crear turno: ${errorMessage}`,
-                details: error?.code ? `Code: ${error.code}` : 'No additional details'
+                details: error?.code ? `Code: ${error.code}` : 'No additional details',
+                timestamp: new Date().toISOString()
             },
-            { status: 500, headers: corsHeaders }
+            { status: statusCode, headers: corsHeaders }
         );
     }
 }

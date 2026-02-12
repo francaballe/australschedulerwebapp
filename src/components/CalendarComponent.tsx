@@ -171,13 +171,16 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
 
       if (!response.ok) {
         // Try to get detailed error message from server
-        let errorMessage = 'Error al crear la asignación';
+        let errorMessage = `Error al crear la asignación (${response.status})`;
         try {
           const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
+          if (errorData && errorData.error) {
+            errorMessage = errorData.error;
+          }
           console.error('❌ Server error response:', errorData);
         } catch (parseError) {
-          console.error('❌ Failed to parse error response:', parseError);
+          console.error('❌ Failed to parse error response, using status:', response.status, response.statusText);
+          errorMessage = `Error ${response.status}: ${response.statusText}`;
         }
         throw new Error(errorMessage);
       }
@@ -323,6 +326,16 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
       setShiftsLoading(false);
     }
   };
+
+  // Listen for publish events to refresh data
+  useEffect(() => {
+    const handler = () => {
+      console.log('🔄 Detected published shifts - refreshing calendar');
+      refreshData();
+    };
+    window.addEventListener('publishedShifts', handler);
+    return () => window.removeEventListener('publishedShifts', handler);
+  }, []);
 
   const today = new Date();
 
@@ -591,10 +604,13 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                       {shift ? (
                         <div
                           className={`${styles.shiftContent} ${!shift.published ? styles.unpublishedShift : ''}`}
-                          style={shift.positionColor ? {
-                            backgroundColor: `${shift.positionColor}${!shift.published ? '40' : '20'}`,
-                            borderLeftColor: shift.positionColor
-                          } : {}}
+                          style={{
+                            backgroundColor: shift.positionColor ? 
+                              `${shift.positionColor}${!shift.published ? '30' : '85'}` : 
+                              (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)'),
+                            borderLeftColor: shift.positionColor || '#3b82f6',
+                            color: shift.positionColor || '#fbbf24'
+                          }}
                         >
                           {shiftTimeText && (
                             <div className={styles.shiftTime} style={{ fontWeight: 'normal' }}>

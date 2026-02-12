@@ -344,15 +344,10 @@
 }
 
 .unpublishedShift {
-  background-image: repeating-linear-gradient(45deg,
-      rgba(255, 255, 255, 0.1),
-      rgba(255, 255, 255, 0.1) 10px,
-      transparent 10px,
-      transparent 20px) !important;
-  border: 2px solid #fbbf24 !important;
-  /* Golden border */
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+  border: 2px dashed currentColor !important;
 }
+
+
 
 .shiftTime {
   font-weight: 400;
