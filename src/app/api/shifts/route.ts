@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         const { userId, date, positionId, startTime, endTime, published } = body;
 
         // Basic validation
-        if (!userId || !date || !positionId) {
+        if (userId == null || !date || positionId == null) {
             console.error('❌ Missing required fields:', { userId, date, positionId });
             return NextResponse.json(
                 { error: 'Missing required fields: userId, date, positionId' },
