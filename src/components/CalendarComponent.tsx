@@ -589,7 +589,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                     )}
                   </div>
                   <div className={styles.userHours}>
-                    {getUserTotalHours(user.id).toFixed(1)}h
+                    {getUserTotalHours(user.id).toFixed(1)}
                   </div>
                 </div>
 
@@ -651,7 +651,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                 key={`footer-${index}`}
                 className={styles.footerCell}
               >
-                {totalHours > 0 ? `${totalHours.toFixed(1)}h` : '-'}
+                {totalHours > 0 ? `${totalHours.toFixed(1)}` : '-'}
               </div>
             );
           })}
