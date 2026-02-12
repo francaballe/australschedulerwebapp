@@ -18,7 +18,7 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   cursor: pointer;
   transition: opacity 0.2s ease;
 }
@@ -28,7 +28,7 @@
 }
 
 .logoText {
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   font-weight: 700;
   background: linear-gradient(135deg, #60a5fa, #a78bfa);
   -webkit-background-clip: text;
@@ -37,22 +37,30 @@
 }
 
 .logoVersion {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--foreground-secondary);
   -webkit-text-fill-color: var(--foreground-secondary); /* Override gradient for version */
-  margin-left: 4px;
+  margin-left: 6px;
 }
 
 .centerSection {
   position: absolute;
-  left: 305px; /* Move just a bit to the left */
+  left: 375px; /* moved to match sidebar width 350px + 25px spacing */
   display: flex;
   justify-content: flex-start;
   align-items: center;
   pointer-events: none; /* let children decide events */
-  width: calc(100% - 300px); /* Account for logo and userSection width */
+  width: calc(100% - 375px); /* Account for logo and userSection width */
   max-width: 720px;
+}
+
+/* Adjust centerSection when sidebar is narrower at <=1024px */
+@media (max-width: 1024px) {
+  .centerSection {
+    left: 325px; /* 300px sidebar + 25px spacing */
+    width: calc(100% - 325px);
+  }
 }
 
 .siteSelect {
@@ -89,8 +97,8 @@
 }
 
 .backArrow {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   color: #60a5fa;
   transition: transform 0.2s ease;
 }
