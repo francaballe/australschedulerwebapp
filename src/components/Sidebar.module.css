@@ -1,5 +1,5 @@
 .sidebar {
-    width: 280px;
+    width: 350px; /* increased 25% from 280px */
     background: var(--background-secondary);
     border-right: 1px solid var(--border);
     height: calc(100vh - 64px);
@@ -14,6 +14,11 @@
 
 .section {
     margin-bottom: 32px;
+}
+
+/* Reduce vertical space after the first section (Publish buttons) */
+.sidebar > .section:first-of-type {
+    margin-bottom: 16px;
 }
 
 .sectionTitle {
@@ -100,7 +105,7 @@
     position: relative;
     display: flex;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 0px;
 }
 
 .searchIcon {
@@ -404,7 +409,7 @@
 /* Responsive */
 @media (max-width: 1024px) {
     .sidebar {
-        width: 240px;
+        width: 300px; /* scaled down proportionally from 350px */
         padding: 16px;
     }
 }
