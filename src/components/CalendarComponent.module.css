@@ -577,6 +577,64 @@
   padding: 20px;
   border-bottom: 1px solid var(--border);
   position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.modalHeaderActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.modalDeleteButton {
+  background: var(--background-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.modalDeleteButton:hover {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+}
+
+.modalDeleteButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.modalCloseButton {
+  background: var(--background-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.modalCloseButton:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+  border-color: var(--primary);
 }
 
 .modalHeader h3 {
@@ -590,23 +648,6 @@
   margin: 8px 0 0 0;
   color: var(--text-secondary);
   font-size: 0.9rem;
-}
-
-.modalCloseButton {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-
-.modalCloseButton:hover {
-  color: var(--text-primary);
 }
 
 .modalBody {
@@ -654,25 +695,9 @@
   color: var(--text-primary);
 }
 
-.modalFooter {
-  padding: 16px 20px;
-  border-top: 1px solid var(--border);
+.positionInfo {
   display: flex;
-  justify-content: flex-end;
-}
-
-.modalCancelButton {
-  background: var(--background-secondary);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-}
-
-.modalCancelButton:hover {
-  background: var(--hover-bg);
-  color: var(--text-primary);
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }

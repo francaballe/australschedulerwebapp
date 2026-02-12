@@ -27,6 +27,8 @@ interface Position {
   id: number;
   name: string;
   color: string;
+  starttime: string | null;
+  endtime: string | null;
 }
 
 const CalendarComponent: React.FC<CalendarProps> = () => {
@@ -661,17 +663,29 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
         <div className={styles.modalOverlay} onClick={handleModalClose}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3>Asignar Turno</h3>
-              {selectedCell && (
-                <p>
-                  Usuario: {users.find(u => u.id === selectedCell.userId)?.firstName} {users.find(u => u.id === selectedCell.userId)?.lastName}
-                  <br />
-                  Fecha: {selectedCell.date.toLocaleDateString()}
-                </p>
-              )}
-              <button className={styles.modalCloseButton} onClick={handleModalClose}>
-                ×
-              </button>
+              <div>
+                <h3>Asignar Turno</h3>
+                {selectedCell && (
+                  <p>
+                    Usuario: {users.find(u => u.id === selectedCell.userId)?.firstName} {users.find(u => u.id === selectedCell.userId)?.lastName}
+                    <br />
+                    Fecha: {selectedCell.date.toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              <div className={styles.modalHeaderActions}>
+                <button className={styles.modalDeleteButton} onClick={() => {}} title="Borrar">  
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <line x1="10" y1="11" x2="10" y2="17" />
+                    <line x1="14" y1="11" x2="14" y2="17" />
+                  </svg>
+                </button>
+                <button className={styles.modalCloseButton} onClick={handleModalClose} title="Cerrar">
+                  ×
+                </button>
+              </div>
             </div>
             
             <div className={styles.modalBody}>
@@ -689,19 +703,22 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                         borderLeftColor: position.color || '#ccc'
                       }}
                     >
-                      <span className={styles.positionName}>{position.name}</span>
+                      <div className={styles.positionInfo}>
+                        <div className={styles.shiftPosition}>
+                          {position.name}
+                        </div>
+                        {position.starttime && position.endtime && (
+                          <div className={styles.shiftTime} style={{ fontWeight: 'normal' }}>
+                            {formatShiftTime(position.starttime, position.endtime)}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className={styles.modalError}>No hay posiciones disponibles</div>
               )}
-            </div>
-            
-            <div className={styles.modalFooter}>
-              <button className={styles.modalCancelButton} onClick={handleModalClose}>
-                Cancelar
-              </button>
             </div>
           </div>
         </div>

@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Using Prisma ORM instead of raw SQL
-        const positions = await prisma.position.findMany({
+        const positionsRaw = await prisma.position.findMany({
             where: whereClause,
             orderBy: {
                 id: 'asc'
@@ -32,9 +32,18 @@ export async function GET(request: NextRequest) {
             select: {
                 id: true,
                 name: true,
-                color: true
+                color: true,
+                starttime: true,
+                endtime: true
             }
         });
+
+        // Format the times properly
+        const positions = positionsRaw.map(pos => ({
+            ...pos,
+            starttime: pos.starttime ? pos.starttime.toISOString().slice(11, 16) : null,
+            endtime: pos.endtime ? pos.endtime.toISOString().slice(11, 16) : null
+        }));
 
         return NextResponse.json(positions, { headers: corsHeaders });
 
