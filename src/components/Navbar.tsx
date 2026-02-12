@@ -78,7 +78,7 @@ export default function Navbar() {
                     </svg>
                 )}
                 <span className={styles.logoText}>
-                    RosterLoop <span className={styles.logoVersion}>(v1.2.6)</span>
+                    RosterLoop <span className={styles.logoVersion}>(v1.2.7)</span>
                 </span>
             </div>
 
@@ -106,7 +106,7 @@ export default function Navbar() {
                 </span>
 
                 <div className={styles.dropdown} ref={dropdownRef}>
-                    <button 
+                    <button
                         className={styles.dropdownToggle}
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     >

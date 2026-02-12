@@ -21,6 +21,7 @@ interface Shift {
   position?: string;
   positionColor?: string;
   published: boolean;
+  toBeDeleted?: boolean;
 }
 
 interface Position {
@@ -41,12 +42,13 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   const [loading, setLoading] = useState(true);
   const [shiftsLoading, setShiftsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCell, setSelectedCell] = useState<{userId: number, date: Date} | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{ userId: number, date: Date } | null>(null);
   const [positions, setPositions] = useState<Position[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
   // Load users (optionally filtered by siteId)
   const loadUsers = async (siteId?: number | null) => {
@@ -131,14 +133,14 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   const createShiftAssignment = async (userId: number, date: Date, positionId: number) => {
     try {
       const dateStr = date.toISOString().split('T')[0];
-      
+
       // Check if shift already exists for this user/date
       const existingShift = getShiftForUserAndDay(userId, date);
-      
+
       if (existingShift) {
         // If shift exists, delete it first and then create new one
         console.log('🔄 Updating existing shift:', existingShift);
-        
+
         // Delete existing shift first
         const deleteResponse = await fetch(`/api/shifts/${existingShift.id}`, {
           method: 'DELETE',
@@ -146,14 +148,14 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
             'Content-Type': 'application/json',
           }
         });
-        
+
         if (!deleteResponse.ok) {
           console.warn('⚠️ Could not delete existing shift, will try to create new one anyway');
         } else {
           console.log('✅ Existing shift deleted successfully');
         }
       }
-      
+
       const requestData = {
         userId: userId,
         date: dateStr,
@@ -205,24 +207,24 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     try {
       console.log('🔍 WEB: Fetching confirmations for weekStartDate:', weekStartDate);
       console.log('🔍 WEB: Users to check:', usersData.map(u => u.id));
-      
+
       const confirmationsMap = new Map<number, boolean>();
-      
+
       // Fetch all confirmations at once for better performance
       const promises = usersData.map(async (user) => {
         try {
           const url = `/api/confirm-weeks?userId=${user.id}&date=${weekStartDate}`;
           console.log('🔍 WEB: Fetching from URL:', url);
-          
+
           const response = await fetch(url);
           if (response.ok) {
             const confirmations = await response.json();
             console.log(`🔍 WEB: User ${user.id} confirmations:`, confirmations);
-            
+
             // Just check if there's any record for this user/week, don't check .confirmed field
             const isConfirmed = confirmations.length > 0;
             console.log(`🔍 WEB: User ${user.id} isConfirmed:`, isConfirmed);
-            
+
             return { userId: user.id, confirmed: isConfirmed };
           }
         } catch (error) {
@@ -230,12 +232,12 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
         }
         return { userId: user.id, confirmed: false };
       });
-      
+
       const results = await Promise.all(promises);
       results.forEach(result => {
         confirmationsMap.set(result.userId, result.confirmed);
       });
-      
+
       console.log('🔍 WEB: Final confirmationsMap:', confirmationsMap);
       setUserConfirmations(confirmationsMap);
     } catch (error) {
@@ -271,12 +273,12 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   useEffect(() => {
     const loadUsersAndShifts = async () => {
       setShiftsLoading(true);
-      
+
       // Clear confirmations immediately when changing weeks to prevent visual artifacts
       if (view === 'week') {
         setUserConfirmations(new Map());
       }
-      
+
       try {
         const usersData = await loadUsers(selectedSiteId);
         setUsers(usersData); // Update users state first
@@ -284,7 +286,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
         const userIds = new Set(usersData.map(u => u.id));
         const filtered = shiftsData.filter(s => userIds.has(s.userId));
         setShifts(filtered);
-        
+
         // Only fetch confirmations for week view
         if (view === 'week' && weekDates.length > 0) {
           const weekStartDate = weekDates[0].toISOString().split('T')[0];
@@ -303,12 +305,12 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   // Expose a manual refresh that other UI can call
   const refreshData = async () => {
     setShiftsLoading(true);
-    
+
     // Clear confirmations immediately when refreshing to prevent visual artifacts
     if (view === 'week') {
       setUserConfirmations(new Map());
     }
-    
+
     try {
       const usersData = await loadUsers(selectedSiteId);
       setUsers(usersData); // Update users state first
@@ -316,7 +318,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
       const userIds = new Set(usersData.map(u => u.id));
       const filtered = shiftsData.filter(s => userIds.has(s.userId));
       setShifts(filtered);
-      
+
       // Only fetch confirmations for week view
       if (view === 'week' && weekDates.length > 0) {
         const weekStartDate = weekDates[0].toISOString().split('T')[0];
@@ -445,7 +447,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   // Manejar click en celda
   const handleCellClick = (userId: number, date: Date) => {
     console.log(`Clicked on user ${userId} for date ${date.toDateString()}`);
-    
+
     // Open modal for position selection
     setSelectedCell({ userId, date });
     setIsModalOpen(true);
@@ -456,14 +458,86 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedCell(null);
+    setShowDeleteConfirmation(false);
   };
 
   const handlePositionSelect = async (positionId: number) => {
     if (!selectedCell) return;
 
+    // Check if there is an existing shift marked for deletion
+    const existingShift = getShiftForUserAndDay(selectedCell.userId, selectedCell.date);
+    if (existingShift?.toBeDeleted) {
+      if (!confirm('Este turno está marcado para borrar. ¿Deseas restaurarlo antes de cambiar la posición?')) {
+        return;
+      }
+      // Restore logic if needed, or just proceed to overwrite
+      // For now, let's just proceed to create/update which will overwrite the 'toBeDeleted' flag in backend logic usually
+      // But looking at backend create logic:
+      // It updates existing shift: 
+      // data: { ..., toBeDeleted: false }
+      // So simply selecting a new position will implicitly "restore" (really overwrite) the shift.
+    }
+
     const success = await createShiftAssignment(selectedCell.userId, selectedCell.date, positionId);
     if (success) {
       handleModalClose();
+    }
+  };
+
+  const handleRestoreShift = async () => {
+    if (!selectedCell) return;
+    const shift = getShiftForUserAndDay(selectedCell.userId, selectedCell.date);
+    if (!shift) return;
+
+    try {
+      setModalLoading(true);
+      const response = await fetch(`/api/shifts/${shift.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toBeDeleted: false })
+      });
+
+      if (!response.ok) throw new Error('Error al restaurar turno');
+
+      await refreshData();
+      handleModalClose();
+    } catch (err) {
+      console.error('Failed to restore shift:', err);
+      alert('Error al restaurar turno');
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const handleDeleteShift = async (confirmed: boolean = false) => {
+    if (!selectedCell) return;
+
+    const shift = getShiftForUserAndDay(selectedCell.userId, selectedCell.date);
+    if (!shift) return;
+
+    // If shift is published and not yet confirmed, show confirmation
+    if (shift.published && !confirmed) {
+      setShowDeleteConfirmation(true);
+      return;
+    }
+
+    try {
+      setModalLoading(true);
+      const response = await fetch(`/api/shifts/${shift.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar turno');
+      }
+
+      await refreshData();
+      handleModalClose();
+    } catch (err: any) {
+      console.error('Failed to delete shift:', err);
+      alert('Error al eliminar turno');
+    } finally {
+      setModalLoading(false);
     }
   };
 
@@ -605,15 +679,26 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                     >
                       {shift ? (
                         <div
-                          className={`${styles.shiftContent} ${!shift.published ? styles.unpublishedShift : ''}`}
+                          className={`${styles.shiftContent} ${!shift.published ? styles.unpublishedShift : ''} ${shift.toBeDeleted ? styles.toBeDeleted : ''}`}
                           style={{
-                            backgroundColor: shift.positionColor ? 
-                              `${shift.positionColor}${!shift.published ? '30' : '85'}` : 
+                            backgroundColor: shift.positionColor ?
+                              `${shift.positionColor}${!shift.published ? '30' : '85'}` :
                               (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)'),
                             borderLeftColor: shift.positionColor || '#3b82f6',
-                            color: shift.positionColor || '#fbbf24'
+                            color: shift.positionColor || '#fbbf24',
+                            position: 'relative'
                           }}
                         >
+                          {shift.toBeDeleted && (
+                            <div className={styles.trashIconOverlay} title="Marcado para borrar">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 6h18" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                <line x1="10" y1="11" x2="10" y2="17" />
+                                <line x1="14" y1="11" x2="14" y2="17" />
+                              </svg>
+                            </div>
+                          )}
                           {shiftTimeText && (
                             <div className={styles.shiftTime} style={{ fontWeight: 'normal' }}>
                               {shiftTimeText}
@@ -674,22 +759,58 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
                 )}
               </div>
               <div className={styles.modalHeaderActions}>
-                <button className={styles.modalDeleteButton} onClick={() => {}} title="Borrar">  
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M3 6h18" />
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    <line x1="10" y1="11" x2="10" y2="17" />
-                    <line x1="14" y1="11" x2="14" y2="17" />
-                  </svg>
-                </button>
+                {selectedCell && getShiftForUserAndDay(selectedCell.userId, selectedCell.date)?.toBeDeleted ? (
+                  <button className={`${styles.modalDeleteButton} ${styles.restoreButton}`} onClick={handleRestoreShift} title="Deshacer borrado">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 10h10a5 5 0 0 1 5 5v2" />
+                      <line x1="3" y1="10" x2="9" y2="4" />
+                      <line x1="3" y1="10" x2="9" y2="16" />
+                    </svg>
+                  </button>
+                ) : (
+                  <button className={styles.modalDeleteButton} onClick={() => handleDeleteShift()} title="Borrar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      <line x1="10" y1="11" x2="10" y2="17" />
+                      <line x1="14" y1="11" x2="14" y2="17" />
+                    </svg>
+                  </button>
+                )}
                 <button className={styles.modalCloseButton} onClick={handleModalClose} title="Cerrar">
                   ×
                 </button>
               </div>
             </div>
-            
+
             <div className={styles.modalBody}>
-              {modalLoading ? (
+              {showDeleteConfirmation ? (
+                <div className={styles.deleteConfirmation}>
+                  <div className={styles.deleteIconContainer}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                      <line x1="12" y1="9" x2="12" y2="13" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                  </div>
+                  <h4>¿Eliminar turno publicado?</h4>
+                  <p>Este turno ya fue publicado. Si continúas, se marcará para borrar pero permanecerá visible hasta la próxima publicación.</p>
+                  <div className={styles.confirmationActions}>
+                    <button
+                      className={styles.cancelButton}
+                      onClick={() => setShowDeleteConfirmation(false)}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      className={styles.confirmDeleteButton}
+                      onClick={() => handleDeleteShift(true)}
+                    >
+                      Marcar para borrar
+                    </button>
+                  </div>
+                </div>
+              ) : modalLoading ? (
                 <div className={styles.modalLoading}>Cargando posiciones...</div>
               ) : positions.length > 0 ? (
                 <div className={styles.positionsGrid}>

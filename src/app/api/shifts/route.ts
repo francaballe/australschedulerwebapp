@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
     try {
         // Build where clause dynamically
         const whereClause: any = {
-            toBeDeleted: false,
             date: {
                 gte: new Date(startDate),
                 lte: new Date(endDate)
@@ -49,6 +48,7 @@ export async function GET(request: NextRequest) {
                 starttime: true,
                 endtime: true,
                 published: true,
+                toBeDeleted: true,
                 positionId: true,
                 position: {
                     select: {
@@ -66,13 +66,14 @@ export async function GET(request: NextRequest) {
             id: shift.id,
             date: shift.date.toISOString().split('T')[0], // Format as YYYY-MM-DD
             userId: shift.userId,
-            startTime: shift.starttime ? 
-                `${shift.starttime.getUTCHours().toString().padStart(2, '0')}:${shift.starttime.getUTCMinutes().toString().padStart(2, '0')}:${shift.starttime.getUTCSeconds().toString().padStart(2, '0')}` 
+            startTime: shift.starttime ?
+                `${shift.starttime.getUTCHours().toString().padStart(2, '0')}:${shift.starttime.getUTCMinutes().toString().padStart(2, '0')}:${shift.starttime.getUTCSeconds().toString().padStart(2, '0')}`
                 : null,
-            endTime: shift.endtime ? 
-                `${shift.endtime.getUTCHours().toString().padStart(2, '0')}:${shift.endtime.getUTCMinutes().toString().padStart(2, '0')}:${shift.endtime.getUTCSeconds().toString().padStart(2, '0')}` 
+            endTime: shift.endtime ?
+                `${shift.endtime.getUTCHours().toString().padStart(2, '0')}:${shift.endtime.getUTCMinutes().toString().padStart(2, '0')}:${shift.endtime.getUTCSeconds().toString().padStart(2, '0')}`
                 : null,
             published: shift.published,
+            toBeDeleted: shift.toBeDeleted,
             positionId: shift.positionId,
             position: shift.position?.name || null,
             positionColor: shift.position?.color || null
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         console.log('📝 Shift POST request body:', body);
-        
+
         const { userId, date, positionId, startTime, endTime, published } = body;
 
         // Basic validation
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
         // Parse and validate data
         const parsedUserId = parseInt(userId);
         const parsedPositionId = parseInt(positionId);
-        
+
         if (isNaN(parsedUserId) || isNaN(parsedPositionId)) {
             console.error('❌ Invalid IDs:', { userId, positionId });
             return NextResponse.json(
@@ -210,7 +211,7 @@ export async function POST(request: NextRequest) {
                 starttime: position.starttime,
                 endtime: position.endtime
             };
-            
+
             newShift = await prisma.shift.create({
                 data: createData,
                 select: {
@@ -249,11 +250,11 @@ export async function POST(request: NextRequest) {
             name: error?.name,
             cause: error?.cause
         });
-        
+
         // Return more specific error message based on error type
         let errorMessage = 'Unknown error occurred';
         let statusCode = 500;
-        
+
         if (error?.code === 'P2002') {
             errorMessage = 'Ya existe un turno para este usuario en esta fecha';
             statusCode = 409; // Conflict
@@ -265,9 +266,9 @@ export async function POST(request: NextRequest) {
         } else {
             errorMessage = error?.message || 'Error interno del servidor';
         }
-        
+
         return NextResponse.json(
-            { 
+            {
                 error: `Error al crear turno: ${errorMessage}`,
                 details: error?.code ? `Code: ${error.code}` : 'No additional details',
                 timestamp: new Date().toISOString()

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import sql from '@/lib/db';
+import { prisma } from '@/lib/prisma'; // Ensure this import path is correct for your project structure
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const corsHeaders = {
@@ -9,17 +9,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     };
 
     try {
-        console.log('DELETE request received');
-        
         // Await params in newer Next.js versions
         const resolvedParams = await params;
-        console.log('Resolved params:', resolvedParams);
-        
         const shiftId = resolvedParams.id;
-        console.log('ID from params:', shiftId);
 
         if (!shiftId) {
-            console.log('No shift ID provided');
             return NextResponse.json(
                 { error: 'No shift ID provided' },
                 { status: 400, headers: corsHeaders }
@@ -28,40 +22,110 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
         const idNumber = Number(shiftId);
         if (isNaN(idNumber)) {
-            console.log('Invalid shift ID format:', shiftId);
             return NextResponse.json(
                 { error: 'Invalid shift ID format' },
                 { status: 400, headers: corsHeaders }
             );
         }
 
-        console.log('Deleting shift with ID:', idNumber);
+        // 1. Fetch the shift to check its status
+        const shift = await prisma.shift.findUnique({
+            where: { id: idNumber }
+        });
 
-        // Delete the shift
-        const result = await sql`
-            DELETE FROM app.shifts 
-            WHERE id = ${idNumber}
-            RETURNING id
-        `;
-
-        console.log('Delete result:', result);
-
-        if (result.length === 0) {
+        if (!shift) {
             return NextResponse.json(
                 { error: 'Shift not found' },
                 { status: 404, headers: corsHeaders }
             );
         }
 
+        let result;
+        let action = '';
+
+        // 2. Conditional Logic
+        if (shift.published) {
+            // If published, mark for deletion (soft delete style)
+            // The user requested setting a boolean value corresponding to 'unavailable' (which seems to be 'toBeDeleted' based on context)
+            // but also "true su valor booleano correspondiente (unavilable...revisa el modelo en prisma por las dudas...y usa prisma dicho sea de paso)"
+            // Looking at schema: `toBeDeleted Boolean @default(false) @map("to_be_deleted")` seems the right one for "mark for deletion".
+            // The user also mentioned "unavailable", but that field is `unavailable Boolean?`.
+            // However, the requirement "se pone en true su valor booleano correspondiente (unavilable...revisa el modelo en prisma por las dudas...)" 
+            // likely refers to `toBeDeleted` as "mark to be deleted".
+            // Let's assume `toBeDeleted` is the flag for "pending deletion" that is processed on publish.
+
+            console.log(`Marking published shift ${idNumber} for deletion`);
+            result = await prisma.shift.update({
+                where: { id: idNumber },
+                data: { toBeDeleted: true }
+            });
+            action = 'marked_for_deletion';
+        } else {
+            // If NOT published, actually delete it
+            console.log(`Deleting unpublished shift ${idNumber}`);
+            result = await prisma.shift.delete({
+                where: { id: idNumber }
+            });
+            action = 'deleted';
+        }
+
         return NextResponse.json(
-            { message: 'Shift deleted successfully', id: result[0].id }, 
+            { message: 'Shift processed successfully', id: result.id, action: action, status: result },
             { status: 200, headers: corsHeaders }
         );
 
     } catch (error: any) {
         console.error('API Shifts Delete Error:', error);
         return NextResponse.json(
-            { error: 'Error deleting shift' },
+            { error: 'Error processing shift deletion' },
+            { status: 500, headers: corsHeaders }
+        );
+    }
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, DELETE, PATCH, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+
+    try {
+        const resolvedParams = await params;
+        const shiftId = resolvedParams.id;
+
+        if (!shiftId) {
+            return NextResponse.json({ error: 'No shift ID provided' }, { status: 400, headers: corsHeaders });
+        }
+
+        const idNumber = Number(shiftId);
+        if (isNaN(idNumber)) {
+            return NextResponse.json({ error: 'Invalid shift ID format' }, { status: 400, headers: corsHeaders });
+        }
+
+        const body = await request.json();
+
+        // Find existing shift
+        const shift = await prisma.shift.findUnique({
+            where: { id: idNumber }
+        });
+
+        if (!shift) {
+            return NextResponse.json({ error: 'Shift not found' }, { status: 404, headers: corsHeaders });
+        }
+
+        // Update shift
+        const updatedShift = await prisma.shift.update({
+            where: { id: idNumber },
+            data: body
+        });
+
+        return NextResponse.json(updatedShift, { status: 200, headers: corsHeaders });
+
+    } catch (error: any) {
+        console.error('API Shifts Patch Error:', error);
+        return NextResponse.json(
+            { error: 'Error updating shift' },
             { status: 500, headers: corsHeaders }
         );
     }
@@ -72,7 +136,7 @@ export async function OPTIONS() {
         status: 204,
         headers: {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, DELETE, PATCH, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         },
     });
