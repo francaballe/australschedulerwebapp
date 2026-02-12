@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import sql from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
     // Headers CORS - Permitir Vercel y APK
@@ -10,9 +10,9 @@ export async function POST(request: NextRequest) {
         'file://', // Para APK
         'null' // Para APK también
     ];
-    
+
     const corsOrigin = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-    
+
     const headers = {
         'Access-Control-Allow-Origin': corsOrigin || '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -29,31 +29,34 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Verificar que el usuario existe
-        const user = await sql`
-            SELECT id FROM app.users WHERE email = ${email}
-        `;
+        // Verificar que el usuario existe usando Prisma
+        const user = await prisma.user.findFirst({
+            where: { email },
+            select: { id: true }
+        });
 
-        if (user.length === 0) {
+        if (!user) {
             return NextResponse.json(
                 { error: 'User not found' },
                 { status: 404, headers }
             );
         }
 
-        const userId = user[0].id;
+        const userId = user.id;
 
-        // Eliminar tokens antiguos del mismo usuario si existen
-        await sql`
-            DELETE FROM app.user_push_tokens 
-            WHERE user_id = ${userId}
-        `;
+        // Usar upsert para manejar el token del usuario (eliminar antiguos e insertar nuevo en una operación)
+        // O simplemente borrar y crear si queremos mantener la lógica original exactamente
+        await prisma.userPushToken.deleteMany({
+            where: { userId }
+        });
 
-        // Insertar el nuevo token
-        await sql`
-            INSERT INTO app.user_push_tokens (user_id, token, created_at)
-            VALUES (${userId}, ${token}, NOW())
-        `;
+        await prisma.userPushToken.create({
+            data: {
+                userId,
+                token,
+                createdAt: new Date()
+            }
+        });
 
         return NextResponse.json({
             message: 'Push token registered successfully'
@@ -87,17 +90,23 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Obtener el token del usuario
-        const result = await sql`
-            SELECT upt.token, upt.created_at 
-            FROM app.user_push_tokens upt
-            JOIN app.users u ON upt.user_id = u.id
-            WHERE u.email = ${email}
-            ORDER BY upt.created_at DESC
-            LIMIT 1
-        `;
+        // Obtener el token del usuario usando Prisma con relación
+        const result = await prisma.userPushToken.findFirst({
+            where: {
+                user: {
+                    email: email
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            },
+            select: {
+                token: true,
+                createdAt: true
+            }
+        });
 
-        if (result.length === 0) {
+        if (!result) {
             return NextResponse.json(
                 { error: 'No push token found for this user' },
                 { status: 404, headers }
@@ -105,8 +114,8 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json({
-            token: result[0].token,
-            created_at: result[0].created_at
+            token: result.token,
+            created_at: result.createdAt // Mantengo el nombre de la propiedad de salida si es necesario, pero uso el campo correcto
         }, { headers });
 
     } catch (error) {
@@ -136,30 +145,22 @@ export async function DELETE(request: NextRequest) {
             );
         }
 
-        // Eliminar token usando el email para buscar el usuario
-        // Usamos una trasacción o un join DELETE si es posible, 
-        // pero con @vercel/postgres/neon a veces es mejor ser explícito
-        
-        // 1. Obtener ID de usuario
-        const user = await sql`
-            SELECT id FROM app.users WHERE email = ${email}
-        `;
+        // Eliminar token usando Prisma
+        const user = await prisma.user.findFirst({
+            where: { email },
+            select: { id: true }
+        });
 
-        if (user.length === 0) {
-            // Si el usuairo no existe, técnicamente ya no tiene token, así que OK
+        if (!user) {
             return NextResponse.json(
                 { message: 'User not found, nothing to delete' },
                 { status: 200, headers }
             );
         }
 
-        const userId = user[0].id;
-
-        // 2. Eliminar token
-        await sql`
-            DELETE FROM app.user_push_tokens 
-            WHERE user_id = ${userId}
-        `;
+        await prisma.userPushToken.deleteMany({
+            where: { userId: user.id }
+        });
 
         return NextResponse.json({
             message: 'Push token deleted successfully'
@@ -173,6 +174,7 @@ export async function DELETE(request: NextRequest) {
         );
     }
 }
+
 // Handle preflight requests
 export async function OPTIONS(request: NextRequest) {
     return new Response(null, {

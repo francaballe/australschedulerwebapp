@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import sql from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export async function OPTIONS() {
     return new NextResponse(null, {
@@ -34,24 +34,14 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Query user by email (Prefixing with 'app.' schema)
-        let users;
-        try {
-            users = await sql`
-        SELECT id, email, password, firstname, lastname, isblocked, userroleid 
-        FROM app.users 
-        WHERE email = ${email.toLowerCase().trim()}
-      `;
-            console.log('Database query successful, found users:', users.length);
-        } catch (dbError) {
-            console.error('Database Query Error:', dbError);
-            return NextResponse.json(
-                { error: 'Error de conexión con la base de datos' },
-                { status: 500, headers: corsHeaders }
-            );
-        }
+        // Query user by email using Prisma
+        const user = await prisma.user.findFirst({
+            where: {
+                email: email.toLowerCase().trim()
+            }
+        });
 
-        if (!users || users.length === 0) {
+        if (!user) {
             console.log('User not found in app.users');
             return NextResponse.json(
                 { error: 'Credenciales inválidas' },
@@ -59,10 +49,14 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const user = users[0];
-
         // Verify password
         console.log('Verifying password with bcrypt...');
+        if (!user.password) {
+            return NextResponse.json(
+                { error: 'Credenciales inválidas' },
+                { status: 401, headers: corsHeaders }
+            );
+        }
         const isValidPassword = await bcrypt.compare(password, user.password);
         console.log('Password valid:', isValidPassword);
 
@@ -80,9 +74,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Update last login (Prefixing with 'app.' schema)
+        // Update last login using Prisma
         try {
-            await sql`UPDATE app.users SET lastlogin = NOW() WHERE id = ${user.id}`;
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { lastlogin: new Date() }
+            });
         } catch (updateError) {
             console.error('Failed to update last login:', updateError);
         }

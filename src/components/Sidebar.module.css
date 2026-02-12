@@ -1,5 +1,6 @@
 .sidebar {
-    width: 350px; /* increased 25% from 280px */
+    width: 350px;
+    /* increased 25% from 280px */
     background: var(--background-secondary);
     border-right: 1px solid var(--border);
     height: calc(100vh - 64px);
@@ -17,7 +18,7 @@
 }
 
 /* Reduce vertical space after the first section (Publish buttons) */
-.sidebar > .section:first-of-type {
+.sidebar>.section:first-of-type {
     margin-bottom: 16px;
 }
 
@@ -338,7 +339,8 @@
     align-items: center;
     gap: 6px;
     justify-content: flex-start;
-    min-width: 80px; /* Fixed width to maintain alignment */
+    width: 120px;
+    /* Fixed width to ensure color blocks align vertically even when buttons are missing */
 }
 
 .colorIndicator {
@@ -373,8 +375,8 @@
 }
 
 .actionIconBtn svg {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
 }
 
 .addPositionBtn {
@@ -409,7 +411,8 @@
 /* Responsive */
 @media (max-width: 1024px) {
     .sidebar {
-        width: 300px; /* scaled down proportionally from 350px */
+        width: 300px;
+        /* scaled down proportionally from 350px */
         padding: 16px;
     }
 }

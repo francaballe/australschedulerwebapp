@@ -1,24 +1,24 @@
-import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 // Endpoint para disparar limpieza manual
 export async function POST() {
     try {
         // Llamar al endpoint de limpieza
         const cleanupUrl = `${process.env.VERCEL_URL || 'http://localhost:3000'}/api/cleanup-fcm-tokens`;
-        
+
         const response = await fetch(cleanupUrl, {
             method: 'POST'
         });
-        
+
         const result = await response.json();
-        
+
         return NextResponse.json({
             success: true,
             message: 'Limpieza manual iniciada',
             cleanup: result
         });
-        
+
     } catch (error: any) {
         return NextResponse.json({
             success: false,
@@ -28,41 +28,70 @@ export async function POST() {
     }
 }
 
-// Endpoint de estado de tokens
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+
     try {
-        const stats = await sql`
-            SELECT 
-                COUNT(*) as total_tokens,
-                COUNT(DISTINCT user_id) as unique_users,
-                DATE_TRUNC('day', MIN(created_at)) as oldest_token,
-                DATE_TRUNC('day', MAX(created_at)) as newest_token
-            FROM app.user_push_tokens
-        `;
-
-        const recentTokens = await sql`
-            SELECT 
-                DATE_TRUNC('day', created_at) as date,
-                COUNT(*) as count
-            FROM app.user_push_tokens 
-            WHERE created_at >= NOW() - INTERVAL '7 days'
-            GROUP BY DATE_TRUNC('day', created_at)
-            ORDER BY date DESC
-        `;
-
-        return NextResponse.json({
-            success: true,
-            statistics: stats.rows[0],
-            recentActivity: recentTokens.rows,
-            lastCleanup: 'Check logs for last cleanup time',
-            nextScheduledCleanup: 'Every Sunday 3 AM UTC'
+        // Obtener estadísticas generales usando Prisma
+        const totalTokens = await prisma.userPushToken.count();
+        const tokensWithUser = await prisma.userPushToken.count({
+            where: {
+                user: { id: { gte: 1 } } // Usuarios que existen
+            }
         });
 
-    } catch (error: any) {
+        // Obtener tokens recientes con info de usuario
+        const recentTokens = await prisma.userPushToken.findMany({
+            take: 50,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                user: {
+                    select: {
+                        email: true,
+                        firstname: true,
+                        lastname: true
+                    }
+                }
+            }
+        });
+
+        const stats = {
+            totalTokens,
+            tokensWithUser,
+            tokensWithoutUser: totalTokens - tokensWithUser
+        };
+
         return NextResponse.json({
-            success: false,
-            error: 'Error getting token statistics',
-            details: error?.message || 'Unknown error'
-        }, { status: 500 });
+            stats,
+            recentTokens: recentTokens.map(t => ({
+                id: t.id,
+                token: t.token ? `${t.token.substring(0, 15)}...` : 'null',
+                created_at: t.createdAt,
+                email: t.user?.email || 'N/A',
+                userName: t.user ? `${t.user.firstname} ${t.user.lastname}` : 'N/A'
+            }))
+        }, { headers: corsHeaders });
+
+    } catch (error) {
+        console.error('Error in FCM Admin:', error);
+        return NextResponse.json(
+            { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
+            { status: 500, headers: corsHeaders }
+        );
     }
+}
+
+export async function OPTIONS() {
+    return new Response(null, {
+        status: 204,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+    });
 }

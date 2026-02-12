@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import sql from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { sendPushNotification } from '@/lib/firebase-admin';
 
 // CORS headers helper
@@ -41,43 +41,48 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Verificar que el usuario existe
-        const user = await sql`
-            SELECT id FROM app.users WHERE email = ${email}
-        `;
+        // Verificar que el usuario existe usando Prisma
+        const user = await prisma.user.findFirst({
+            where: { email },
+            select: { id: true }
+        });
 
-        if (user.length === 0) {
+        if (!user) {
             return NextResponse.json(
                 { error: 'User not found' },
                 { status: 404, headers }
             );
         }
 
-        const userId = user[0].id;
+        const userId = user.id;
 
-        // Insertar mensaje en la BD
-        const message = await sql`
-            INSERT INTO app.messages (user_id, title, body, read, created_at)
-            VALUES (${userId}, ${title}, ${body}, FALSE, NOW())
-            RETURNING id, user_id, title, body, read, created_at
-        `;
+        // Insertar mensaje en la BD usando Prisma
+        const message = await prisma.message.create({
+            data: {
+                userId,
+                title,
+                body,
+                read: false,
+                createdAt: new Date()
+            }
+        });
 
-        const messageId = message[0].id;
+        const messageId = message.id;
 
         // Intentar enviar push notification
         let pushSent = false;
         let pushError = null;
 
         try {
-            // Obtener token FCM del usuario
-            const tokenResult = await sql`
-                SELECT token FROM app.user_push_tokens 
-                WHERE user_id = ${userId}
-            `;
+            // Obtener token FCM del usuario usando Prisma
+            const tokenResult = await prisma.userPushToken.findFirst({
+                where: { userId },
+                select: { token: true }
+            });
 
-            if (tokenResult.length > 0 && tokenResult[0].token) {
+            if (tokenResult && tokenResult.token) {
                 await sendPushNotification(
-                    tokenResult[0].token,
+                    tokenResult.token,
                     title,
                     body
                 );
@@ -97,7 +102,7 @@ export async function POST(request: NextRequest) {
             messageId,
             pushSent,
             pushError,
-            data: message[0]
+            data: message
         }, { headers });
 
     } catch (error) {
@@ -124,38 +129,35 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Verificar que el usuario existe
-        const user = await sql`
-            SELECT id FROM app.users WHERE email = ${email}
-        `;
+        // Verificar que el usuario existe usando Prisma
+        const user = await prisma.user.findFirst({
+            where: { email },
+            select: { id: true }
+        });
 
-        if (user.length === 0) {
+        if (!user) {
             return NextResponse.json(
                 { error: 'User not found' },
                 { status: 404, headers }
             );
         }
 
-        const userId = user[0].id;
+        const userId = user.id;
 
-        // Obtener mensajes del usuario, ordenados por más recientes
-        const messages = await sql`
-            SELECT id, title, body, read, created_at
-            FROM app.messages
-            WHERE user_id = ${userId}
-            ORDER BY created_at DESC
-        `;
+        // Obtener mensajes del usuario usando Prisma
+        const messages = await prisma.message.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' }
+        });
 
-        // Contar mensajes no leídos
-        const unreadCount = await sql`
-            SELECT COUNT(*) as count
-            FROM app.messages
-            WHERE user_id = ${userId} AND read = FALSE
-        `;
+        // Contar mensajes no leídos usando Prisma
+        const unreadCount = await prisma.message.count({
+            where: { userId, read: false }
+        });
 
         return NextResponse.json({
             messages,
-            unreadCount: parseInt(unreadCount[0].count)
+            unreadCount
         }, { headers });
 
     } catch (error) {
@@ -181,29 +183,27 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
-        // Marcar como leído
-        const result = await sql`
-            UPDATE app.messages
-            SET read = TRUE
-            WHERE id = ${messageId}
-            RETURNING id, read
-        `;
+        // Marcar como leído usando Prisma
+        const updatedMessage = await prisma.message.update({
+            where: { id: messageId },
+            data: { read: true },
+            select: { id: true, read: true }
+        });
 
-        if (result.length === 0) {
+        return NextResponse.json({
+            success: true,
+            message: 'Message marked as read',
+            data: updatedMessage
+        }, { headers });
+
+    } catch (error: any) {
+        console.error('Error updating message:', error);
+        if (error.code === 'P2025') {
             return NextResponse.json(
                 { error: 'Message not found' },
                 { status: 404, headers }
             );
         }
-
-        return NextResponse.json({
-            success: true,
-            message: 'Message marked as read',
-            data: result[0]
-        }, { headers });
-
-    } catch (error) {
-        console.error('Error updating message:', error);
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500, headers }

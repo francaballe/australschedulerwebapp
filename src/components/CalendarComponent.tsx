@@ -440,7 +440,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   // Calcular total de horas para un usuario en el rango visible
   const getUserTotalHours = (userId: number): number => {
     return shifts
-      .filter(s => s.userId === userId)
+      .filter(s => s.userId === userId && !s.toBeDeleted)
       .reduce((acc, s) => acc + calculateHours(s.startTime, s.endTime), 0);
   };
 
@@ -726,7 +726,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
         <div className={styles.tableFooter}>
           <div className={styles.footerLabel}>Totales:</div>
           {weekDates.map((date, index) => {
-            const dailyShifts = shifts.filter(s => s.date === date.toISOString().split('T')[0]);
+            const dailyShifts = shifts.filter(s => s.date === date.toISOString().split('T')[0] && !s.toBeDeleted);
             const totalHours = dailyShifts.reduce((acc, shift) => {
               return acc + calculateHours(shift.startTime, shift.endTime);
             }, 0);

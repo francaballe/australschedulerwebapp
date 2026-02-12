@@ -14,10 +14,11 @@ function getWeekStartDate(date: Date): Date {
     const dateStr = date.toISOString().split('T')[0]; // Get YYYY-MM-DD
     const [year, month, day] = dateStr.split('-').map(Number);
     const d = new Date(year, month - 1, day); // month is 0-indexed
-    
+
     const dayOfWeek = d.getDay(); // 0 = Sunday, 1 = Monday, etc.
     const diff = dayOfWeek; // Days to subtract to get to Sunday
     d.setDate(d.getDate() - diff);
+    d.setHours(0, 0, 0, 0); // Ensure time is reset
     return d;
 }
 
@@ -35,30 +36,31 @@ export async function GET(request: NextRequest) {
 
     try {
         let queryResult;
-        
+        const parsedUserId = parseInt(userId);
+
         console.log('🔍 API: GET confirm-weeks - userId:', userId, 'date:', date);
-        
-        // If date is provided, get the confirmation status for that specific week
+
         if (date) {
             const weekStartDate = getWeekStartDate(new Date(date));
-            const weekStartString = weekStartDate.toISOString().split('T')[0];
-            
-            console.log('🔍 API: weekStartDate object:', weekStartDate);
-            console.log('🔍 API: weekStartString:', weekStartString);
-            
-            queryResult = await prisma.$queryRaw`
-                SELECT * FROM app.confirmedweeks 
-                WHERE user_id = ${parseInt(userId)} AND date = ${weekStartString}::date
-                ORDER BY date DESC
-            `;
-            
-            console.log('🔍 API: Query result:', queryResult);
+
+            queryResult = await prisma.confirmedWeek.findMany({
+                where: {
+                    userId: parsedUserId,
+                    date: weekStartDate
+                },
+                orderBy: {
+                    date: 'desc'
+                }
+            });
         } else {
-            queryResult = await prisma.$queryRaw`
-                SELECT * FROM app.confirmedweeks 
-                WHERE user_id = ${parseInt(userId)}
-                ORDER BY date DESC
-            `;
+            queryResult = await prisma.confirmedWeek.findMany({
+                where: {
+                    userId: parsedUserId
+                },
+                orderBy: {
+                    date: 'desc'
+                }
+            });
         }
 
         return NextResponse.json(queryResult || [], { headers: corsHeaders });
@@ -74,10 +76,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         console.log('📅 POST /api/confirm-weeks - Starting...');
-        
+
         const body = await request.json();
         const { userId, date } = body;
-        
+
         console.log('📅 Received data:', { userId, date });
 
         if (!userId || !date) {
@@ -88,30 +90,28 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Calculate the start of the week (Sunday)
+        const parsedUserId = parseInt(userId);
         const weekStartDate = getWeekStartDate(new Date(date));
         console.log('📅 Week start date calculated:', weekStartDate);
 
-        // Use raw SQL to avoid Prisma type issues
-        console.log('📅 Checking existing confirmation with raw SQL...');
-        const existingResult = await prisma.$queryRaw`
-            SELECT * FROM app.confirmedweeks 
-            WHERE user_id = ${parseInt(userId)} AND date = ${weekStartDate}
-        `;
-        
-        console.log('📅 Existing confirmation result:', existingResult);
+        // Usar upsert o findFirst + update/create con Prisma
+        // Para coincidir con la lógica original de raw SQL
+        const existing = await prisma.confirmedWeek.findFirst({
+            where: {
+                userId: parsedUserId,
+                date: weekStartDate
+            }
+        });
 
-        if (existingResult && Array.isArray(existingResult) && existingResult.length > 0) {
-            console.log('📅 Updating existing confirmation with raw SQL...');
-            const updateResult = await prisma.$executeRaw`
-                UPDATE app.confirmedweeks 
-                SET confirmed = true 
-                WHERE user_id = ${parseInt(userId)} AND date = ${weekStartDate}
-            `;
+        if (existing) {
+            console.log('📅 Updating existing confirmation with Prisma...');
+            await prisma.confirmedWeek.update({
+                where: { id: existing.id },
+                data: { confirmed: true }
+            });
 
-            console.log('✅ Week confirmation updated, rows affected:', updateResult);
             return NextResponse.json(
-                { 
+                {
                     message: 'Week confirmation updated successfully',
                     confirmed: true,
                     weekStartDate: weekStartDate.toISOString().split('T')[0]
@@ -119,15 +119,17 @@ export async function POST(request: NextRequest) {
                 { headers: corsHeaders }
             );
         } else {
-            console.log('📅 Creating new confirmation with raw SQL...');
-            const insertResult = await prisma.$executeRaw`
-                INSERT INTO app.confirmedweeks (user_id, date, confirmed) 
-                VALUES (${parseInt(userId)}, ${weekStartDate}, true)
-            `;
+            console.log('📅 Creating new confirmation with Prisma...');
+            await prisma.confirmedWeek.create({
+                data: {
+                    userId: parsedUserId,
+                    date: weekStartDate,
+                    confirmed: true
+                }
+            });
 
-            console.log('✅ Week confirmed successfully, rows affected:', insertResult);
             return NextResponse.json(
-                { 
+                {
                     message: 'Week confirmed successfully',
                     confirmed: true,
                     weekStartDate: weekStartDate.toISOString().split('T')[0]
@@ -138,12 +140,8 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error('❌ Failed to confirm week - Full error:', error);
-        console.error('❌ Error name:', error instanceof Error ? error.name : 'Unknown');
-        console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
-        console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-        
         return NextResponse.json(
-            { 
+            {
                 error: 'Failed to confirm week',
                 details: error instanceof Error ? error.message : String(error),
                 type: error instanceof Error ? error.name : 'Unknown'
