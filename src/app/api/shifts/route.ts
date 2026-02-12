@@ -98,27 +98,77 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
+        console.log('📝 Shift POST request body:', body);
+        
         const { userId, date, positionId, startTime, endTime, published } = body;
 
         // Basic validation
         if (!userId || !date || !positionId) {
+            console.error('❌ Missing required fields:', { userId, date, positionId });
             return NextResponse.json(
                 { error: 'Missing required fields: userId, date, positionId' },
                 { status: 400, headers: corsHeaders }
             );
         }
 
+        // Parse and validate data
+        const parsedUserId = parseInt(userId);
+        const parsedPositionId = parseInt(positionId);
+        
+        if (isNaN(parsedUserId) || isNaN(parsedPositionId)) {
+            console.error('❌ Invalid IDs:', { userId, positionId });
+            return NextResponse.json(
+                { error: 'Invalid userId or positionId' },
+                { status: 400, headers: corsHeaders }
+            );
+        }
+
+        // Fetch position to get its start and end times
+        const position = await prisma.position.findUnique({
+            where: { id: parsedPositionId },
+            select: {
+                id: true,
+                name: true,
+                starttime: true,
+                endtime: true
+            }
+        });
+
+        if (!position) {
+            console.error('❌ Position not found:', parsedPositionId);
+            return NextResponse.json(
+                { error: `Position with ID ${parsedPositionId} not found` },
+                { status: 404, headers: corsHeaders }
+            );
+        }
+
+        console.log('📍 Position found:', position);
+
+        // Prepare shift data with position's time values
+        const shiftData: any = {
+            userId: parsedUserId,
+            positionId: parsedPositionId,
+            date: new Date(date),
+            published: published ?? false,
+            toBeDeleted: false,
+            // Copy start and end times from position
+            starttime: position.starttime,
+            endtime: position.endtime
+        };
+
+        // Override with provided times if any (optional)
+        if (startTime) {
+            shiftData.starttime = new Date(`1970-01-01T${startTime}`);
+        }
+        if (endTime) {
+            shiftData.endtime = new Date(`1970-01-01T${endTime}`);
+        }
+
+        console.log('📤 Creating shift with data:', shiftData);
+
         // Using Prisma create instead of raw INSERT (auto-incrementing ID)
         const newShift = await prisma.shift.create({
-            data: {
-                userId: parseInt(userId),
-                positionId: parseInt(positionId),
-                date: new Date(date),
-                starttime: startTime || '00:00:00',
-                endtime: endTime || '00:00:00',
-                published: published ?? true,
-                toBeDeleted: false
-            },
+            data: shiftData,
             select: {
                 id: true,
                 userId: true,
@@ -129,6 +179,8 @@ export async function POST(request: NextRequest) {
                 published: true
             }
         });
+
+        console.log('✅ Shift created successfully:', newShift);
 
         // Transform response to match expected format
         const response = {
@@ -144,9 +196,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(response, { status: 201, headers: corsHeaders });
 
     } catch (error: any) {
-        console.error('API Shifts POST Error:', error);
+        console.error('❌ API Shifts POST Error:', error);
+        console.error('❌ Error details:', {
+            message: error?.message,
+            code: error?.code,
+            stack: error?.stack
+        });
+        
+        // Return more specific error message
+        const errorMessage = error?.message || 'Unknown error occurred';
         return NextResponse.json(
-            { error: 'Error al crear turno' },
+            { 
+                error: `Error al crear turno: ${errorMessage}`,
+                details: error?.code ? `Code: ${error.code}` : 'No additional details'
+            },
             { status: 500, headers: corsHeaders }
         );
     }

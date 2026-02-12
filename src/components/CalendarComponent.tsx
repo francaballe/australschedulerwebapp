@@ -23,6 +23,12 @@ interface Shift {
   published: boolean;
 }
 
+interface Position {
+  id: number;
+  name: string;
+  color: string;
+}
+
 const CalendarComponent: React.FC<CalendarProps> = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'week' | 'day' | 'twoWeeks'>('week');
@@ -33,6 +39,12 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   const [loading, setLoading] = useState(true);
   const [shiftsLoading, setShiftsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCell, setSelectedCell] = useState<{userId: number, date: Date} | null>(null);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [modalLoading, setModalLoading] = useState(false);
 
   // Load users (optionally filtered by siteId)
   const loadUsers = async (siteId?: number | null) => {
@@ -92,6 +104,94 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     } catch (err: any) {
       console.error('Failed to fetch shifts:', err);
       return [] as Shift[];
+    }
+  };
+
+  // Fetch available positions for admin assignment
+  const fetchPositions = async () => {
+    try {
+      setModalLoading(true);
+      const response = await fetch('/api/positions?adminOnly=true');
+      if (!response.ok) {
+        throw new Error('Error al cargar posiciones');
+      }
+      const data = await response.json();
+      setPositions(data);
+    } catch (err: any) {
+      console.error('Failed to fetch positions:', err);
+      setError('Error al cargar posiciones');
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  // Create new shift assignment
+  const createShiftAssignment = async (userId: number, date: Date, positionId: number) => {
+    try {
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // Check if shift already exists for this user/date
+      const existingShift = getShiftForUserAndDay(userId, date);
+      
+      if (existingShift) {
+        // If shift exists, delete it first and then create new one
+        console.log('🔄 Updating existing shift:', existingShift);
+        
+        // Delete existing shift first
+        const deleteResponse = await fetch(`/api/shifts/${existingShift.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (!deleteResponse.ok) {
+          console.warn('⚠️ Could not delete existing shift, will try to create new one anyway');
+        } else {
+          console.log('✅ Existing shift deleted successfully');
+        }
+      }
+      
+      const requestData = {
+        userId: userId,
+        date: dateStr,
+        positionId: positionId,
+        published: false
+      };
+
+      console.log('📤 Sending shift assignment request:', requestData);
+
+      const response = await fetch('/api/shifts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        // Try to get detailed error message from server
+        let errorMessage = 'Error al crear la asignación';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+          console.error('❌ Server error response:', errorData);
+        } catch (parseError) {
+          console.error('❌ Failed to parse error response:', parseError);
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      console.log('✅ Shift assignment successful:', result);
+
+      // Refresh shifts data
+      await refreshData();
+      return true;
+    } catch (err: any) {
+      console.error('❌ Failed to create shift assignment:', err);
+      alert(`Error al asignar turno: ${err.message}`);
+      return false;
     }
   };
 
@@ -330,7 +430,26 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   // Manejar click en celda
   const handleCellClick = (userId: number, date: Date) => {
     console.log(`Clicked on user ${userId} for date ${date.toDateString()}`);
-    // Aquí iría la lógica para abrir el diálogo de asignación/edición
+    
+    // Open modal for position selection
+    setSelectedCell({ userId, date });
+    setIsModalOpen(true);
+    fetchPositions(); // Load available positions
+  };
+
+  // Modal handlers
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedCell(null);
+  };
+
+  const handlePositionSelect = async (positionId: number) => {
+    if (!selectedCell) return;
+
+    const success = await createShiftAssignment(selectedCell.userId, selectedCell.date, positionId);
+    if (success) {
+      handleModalClose();
+    }
   };
 
   return (
@@ -520,6 +639,57 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
           })}
         </div>
       </div>
+
+      {/* Modal for Position Selection */}
+      {isModalOpen && (
+        <div className={styles.modalOverlay} onClick={handleModalClose}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Asignar Turno</h3>
+              {selectedCell && (
+                <p>
+                  Usuario: {users.find(u => u.id === selectedCell.userId)?.firstName} {users.find(u => u.id === selectedCell.userId)?.lastName}
+                  <br />
+                  Fecha: {selectedCell.date.toLocaleDateString()}
+                </p>
+              )}
+              <button className={styles.modalCloseButton} onClick={handleModalClose}>
+                ×
+              </button>
+            </div>
+            
+            <div className={styles.modalBody}>
+              {modalLoading ? (
+                <div className={styles.modalLoading}>Cargando posiciones...</div>
+              ) : positions.length > 0 ? (
+                <div className={styles.positionsGrid}>
+                  {positions.map((position) => (
+                    <div
+                      key={position.id}
+                      className={styles.positionCard}
+                      onClick={() => handlePositionSelect(position.id)}
+                      style={{
+                        backgroundColor: position.color ? `${position.color}20` : '#f5f5f5',
+                        borderLeftColor: position.color || '#ccc'
+                      }}
+                    >
+                      <span className={styles.positionName}>{position.name}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.modalError}>No hay posiciones disponibles</div>
+              )}
+            </div>
+            
+            <div className={styles.modalFooter}>
+              <button className={styles.modalCancelButton} onClick={handleModalClose}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

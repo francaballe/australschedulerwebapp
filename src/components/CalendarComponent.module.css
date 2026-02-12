@@ -552,3 +552,132 @@
   border-color: #ef4444;
   color: #ef4444;
 }
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: var(--background);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  min-width: 400px;
+  max-width: 600px;
+  max-height: 70vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.modalHeader {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modalHeader p {
+  margin: 8px 0 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.modalCloseButton {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modalCloseButton:hover {
+  color: var(--text-primary);
+}
+
+.modalBody {
+  padding: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.modalLoading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+}
+
+.modalError {
+  text-align: center;
+  padding: 40px;
+  color: var(--error);
+}
+
+.positionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.positionCard {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--background-secondary);
+}
+
+.positionCard:hover {
+  background: var(--hover-bg);
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.positionName {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.modalFooter {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modalCancelButton {
+  background: var(--background-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.modalCancelButton:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}

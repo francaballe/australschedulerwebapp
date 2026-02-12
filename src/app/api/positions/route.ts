@@ -9,11 +9,23 @@ export async function GET(request: NextRequest) {
     };
 
     try {
+        // Get query parameter to determine if we want admin positions only
+        const adminOnly = request.nextUrl.searchParams.get('adminOnly') === 'true';
+        
+        // Build where clause - admin only positions exclude id <= 1
+        const whereClause: any = {
+            eliminated: false
+        };
+        
+        if (adminOnly) {
+            whereClause.id = {
+                gt: 1  // Only positions with id > 1 for admin assignment
+            };
+        }
+
         // Using Prisma ORM instead of raw SQL
         const positions = await prisma.position.findMany({
-            where: {
-                eliminated: false
-            },
+            where: whereClause,
             orderBy: {
                 id: 'asc'
             },
