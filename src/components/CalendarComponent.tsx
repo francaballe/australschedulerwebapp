@@ -588,13 +588,13 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       shift.userId === userId && shift.date === dateStr
     );
 
-    // If multiple shifts exist (data inconsistency), log warning and take the first enabled one
+    // If multiple shifts exist (data inconsistency), log warning and take the first one
     if (userShiftsForDate.length > 1) {
       console.warn(`Multiple shifts found for user ${userId} on ${dateStr}:`, userShiftsForDate);
     }
 
-    // Return the first shift that matches enabled positions
-    return userShiftsForDate.find(shift => enabledPositions.has(shift.positionId));
+    // Return the first shift (regardless of position filter)
+    return userShiftsForDate[0];
   };
 
   // Formatear horarios del shift
@@ -643,7 +643,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     const shiftsByDate = new Map<string, Shift[]>();
 
     shifts
-      .filter(s => s.userId === userId && !s.toBeDeleted && enabledPositions.has(s.positionId))
+      .filter(s => s.userId === userId && !s.toBeDeleted)
       .forEach(shift => {
         const date = shift.date;
         if (!shiftsByDate.has(date)) {
@@ -1016,6 +1016,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                 {weekDates.map((date: Date, dayIndex: number) => {
                   const shift = getShiftForUserAndDay(user.id, date);
                   const shiftTimeText = shift ? formatShiftTime(shift.startTime, shift.endTime) : "";
+                  const isFilteredOut = shift ? !enabledPositions.has(shift.positionId) : false;
                   const dateStr = formatDateLocal(date);
                   const isDropTarget = dropTarget?.userId === user.id && dropTarget?.dateStr === dateStr;
                   return (
@@ -1029,16 +1030,18 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                     >
                       {shift ? (
                         <div
-                          className={`${styles.shiftContent} ${!shift.published ? styles.unpublishedShift : ''} ${shift.toBeDeleted ? styles.toBeDeleted : ''} `}
+                          className={`${styles.shiftContent} ${!shift.published ? styles.unpublishedShift : ''} ${shift.toBeDeleted ? styles.toBeDeleted : ''} ${isFilteredOut ? styles.filteredShift : ''}`}
                           draggable={isShiftDraggable(shift)}
                           onDragStart={(e) => handleDragStart(e, shift)}
                           onDragEnd={handleDragEnd}
                           style={{
-                            backgroundColor: shift.positionColor ?
-                              `${shift.positionColor}${!shift.published ? '30' : '85'}` :
-                              (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)'),
+                            backgroundColor: isFilteredOut
+                              ? 'transparent'
+                              : (shift.positionColor ?
+                                `${shift.positionColor}${!shift.published ? '30' : '85'}` :
+                                (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)')),
                             borderLeftColor: shift.positionColor || '#3b82f6',
-                            color: shift.positionColor || '#fbbf24',
+                            color: isFilteredOut ? 'var(--foreground-secondary, #94a3b8)' : (shift.positionColor || '#fbbf24'),
                             position: 'relative'
                           }}
                         >
@@ -1093,7 +1096,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
             const dailyShiftsMap = new Map<number, Shift>();
 
             shifts
-              .filter(s => s.date === dateStr && !s.toBeDeleted && enabledPositions.has(s.positionId))
+              .filter(s => s.date === dateStr && !s.toBeDeleted)
               .forEach(shift => {
                 // Only keep one shift per user per day
                 if (!dailyShiftsMap.has(shift.userId)) {
@@ -1150,7 +1153,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                           ⚠️ Se detectaron múltiples turnos para esta fecha. Se mostrará/operará con el primero.
                         </div>
                       )}
-                      {shift?.toBeDeleted ? (
+                      {shift && (shift.toBeDeleted ? (
                         <button className={`${styles.modalDeleteButton} ${styles.restoreButton}`} onClick={handleRestoreShift} title="Deshacer borrado">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M3 10h10a5 5 0 0 1 5 5v2" />
@@ -1167,7 +1170,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                             <line x1="14" y1="11" x2="14" y2="17" />
                           </svg>
                         </button>
-                      )}
+                      ))}
                     </div>
                   );
                 })()}
