@@ -219,78 +219,68 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     try {
       const dateStr = formatDateLocal(date);
 
-      // Get ALL existing shifts for this user/date (there should only be one, but clean up if multiple)
-      const existingShifts = shifts.filter(shift => shift.userId === userId && shift.date === dateStr);
+      // Check for existing shift on this user/date
+      const existingShift = shifts.find(shift => shift.userId === userId && shift.date === dateStr);
 
-      // Check if any existing shift was marked as unavailable (user marked as "not available" from mobile app)
-      const wasUnavailable = existingShifts.some(shift => shift.unavailable === true);
+      if (existingShift) {
+        // PATCH existing shift — include position's schedule
+        const selectedPosition = positions.find(p => p.id === positionId);
+        const patchData: any = { positionId, published: false };
 
-      if (wasUnavailable) {
-        console.log(`📱 User ${userId} was marked as unavailable on ${dateStr}. New shift will maintain unavailable flag.`);
-      }
+        // If the existing shift was unavailable (positionId === 1), mark as unavailable
+        if (existingShift.positionId === 1) {
+          patchData.unavailable = true;
+        }
+        // Otherwise, don't touch the unavailable field — it keeps its current value
 
-      // Delete ALL existing shifts for this user/date to ensure data consistency
-      if (existingShifts.length > 0) {
-        console.log(`🔄 Found ${existingShifts.length} existing shift(s) for user ${userId} on ${dateStr}, cleaning up...`);
+        console.log(`🔄 PATCHing existing shift ${existingShift.id} for user ${userId} on ${dateStr}:`, patchData);
 
-        for (const existingShift of existingShifts) {
+        const response = await fetch(`/api/shifts/${existingShift.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patchData)
+        });
+
+        if (!response.ok) {
+          let errorMessage = `Error al actualizar turno (${response.status})`;
           try {
-            const deleteResponse = await fetch(`/api/shifts/${existingShift.id}`, {
-              method: 'DELETE',
-              headers: {
-                'Content-Type': 'application/json',
-              }
-            });
-
-            if (!deleteResponse.ok) {
-              console.warn('⚠️ Could not delete existing shift:', existingShift.id);
-            } else {
-              console.log('✅ Deleted existing shift:', existingShift.id);
-            }
-          } catch (deleteError) {
-            console.warn('⚠️ Error deleting shift:', deleteError);
-          }
+            const errorData = await response.json();
+            if (errorData?.error) errorMessage = errorData.error;
+          } catch { }
+          throw new Error(errorMessage);
         }
-      }
 
-      const requestData = {
-        userId: userId,
-        date: dateStr,
-        positionId: positionId,
-        published: false,
-        // CASE EXCEPCIONAL: Si el usuario se marcó como no disponible desde la app móvil,
-        // el nuevo shift debe mantener el flag unavailable: true
-        ...(wasUnavailable && { unavailable: true })
-      };
+        const result = await response.json();
+        console.log('✅ Shift updated:', result);
+      } else {
+        // POST new shift
+        const requestData = {
+          userId,
+          date: dateStr,
+          positionId,
+          published: false,
+        };
 
-      console.log('📤 Sending shift assignment request:', requestData);
+        console.log('📤 Creating new shift:', requestData);
 
-      const response = await fetch('/api/shifts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData)
-      });
+        const response = await fetch('/api/shifts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestData)
+        });
 
-      if (!response.ok) {
-        // Try to get detailed error message from server
-        let errorMessage = `Error al crear la asignación (${response.status})`;
-        try {
-          const errorData = await response.json();
-          if (errorData && errorData.error) {
-            errorMessage = errorData.error;
-          }
-          console.error('❌ Server error response:', errorData);
-        } catch (parseError) {
-          console.error('❌ Failed to parse error response, using status:', response.status, response.statusText);
-          errorMessage = `Error ${response.status}: ${response.statusText}`;
+        if (!response.ok) {
+          let errorMessage = `Error al crear la asignación (${response.status})`;
+          try {
+            const errorData = await response.json();
+            if (errorData?.error) errorMessage = errorData.error;
+          } catch { }
+          throw new Error(errorMessage);
         }
-        throw new Error(errorMessage);
-      }
 
-      const result = await response.json();
-      console.log('✅ Shift assignment successful:', result);
+        const result = await response.json();
+        console.log('✅ Shift created:', result);
+      }
 
       // Notify sidebar/calendar to enable this position filter so the new shift is visible
       try {
@@ -301,7 +291,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       await refreshData();
       return true;
     } catch (err: any) {
-      console.error('❌ Failed to create shift assignment:', err);
+      console.error('❌ Failed to create/update shift:', err);
       alert(`Error al asignar turno: ${err.message}`);
       return false;
     }
@@ -1055,12 +1045,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                               </svg>
                             </div>
                           )}
-                          {shift.unavailable && (
-                            <div className={styles.unavailableIconOverlay} title="Usuario se marcó como no disponible - turno asignado por manager">
+                          {shift.unavailable && shift.positionId <= 1 && (
+                            <div className={styles.unavailableIconOverlay} title="Usuario se marcó como no disponible">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <circle cx="12" cy="12" r="10" />
                                 <line x1="15" y1="9" x2="9" y2="15" />
                                 <line x1="9" y1="9" x2="15" y2="15" />
+                              </svg>
+                            </div>
+                          )}
+                          {shift.unavailable && shift.positionId > 1 && (
+                            <div className={styles.unavailableWarningOverlay} title="Usuario NO disponible — turno asignado por manager">
+                              <svg className={styles.unavailableWarningIcon} viewBox="0 0 24 24" fill="#000">
+                                <rect x="9.5" y="2" width="5" height="14" rx="2.5" />
+                                <circle cx="12" cy="20.5" r="2.5" />
                               </svg>
                             </div>
                           )}

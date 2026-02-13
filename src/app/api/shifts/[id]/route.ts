@@ -106,10 +106,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             return NextResponse.json({ error: 'Shift not found' }, { status: 404, headers: corsHeaders });
         }
 
+        // If positionId is being updated, also update starttime/endtime from the position
+        const updateData = { ...body };
+        if (body.positionId) {
+            const position = await prisma.position.findUnique({
+                where: { id: body.positionId }
+            });
+            if (position) {
+                updateData.starttime = position.starttime;
+                updateData.endtime = position.endtime;
+            }
+        }
+
         // Update shift
         const updatedShift = await prisma.shift.update({
             where: { id: idNumber },
-            data: body
+            data: updateData
         });
 
         return NextResponse.json(updatedShift, { status: 200, headers: corsHeaders });
