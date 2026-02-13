@@ -349,17 +349,31 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     };
     const handlePositions = (e: any) => {
       console.log('🔄 Detected position changes - updating local state:', e.detail);
-      const { positionId, color } = e.detail;
+      const { positionId, color, name } = e.detail;
 
       // Update shifts locally
-      setShifts(prev => prev.map(s =>
-        s.positionId === positionId ? { ...s, positionColor: color } : s
-      ));
+      setShifts(prev => prev.map(s => {
+        if (s.positionId === positionId) {
+          return {
+            ...s,
+            ...(color !== undefined && { positionColor: color }),
+            ...(name !== undefined && { position: name })
+          };
+        }
+        return s;
+      }));
 
       // Update positions list (for assignment modal) locally
-      setPositions(prev => prev.map(p =>
-        p.id === positionId ? { ...p, color } : p
-      ));
+      setPositions(prev => prev.map(p => {
+        if (p.id === positionId) {
+          return {
+            ...p,
+            ...(color !== undefined && { color }),
+            ...(name !== undefined && { name })
+          };
+        }
+        return p;
+      }));
     };
 
     window.addEventListener('publishedShifts', handlePublish);

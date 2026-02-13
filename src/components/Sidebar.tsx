@@ -71,7 +71,28 @@ const Sidebar: React.FC<SidebarProps> = ({
             }
         };
 
+        const handlePositionsUpdated = (event: any) => {
+            const { positionId, color, name } = event.detail;
+            setPositions(prev => prev.map(p => {
+                if (p.id === positionId) {
+                    return {
+                        ...p,
+                        ...(color !== undefined && { color }),
+                        ...(name !== undefined && { name })
+                    };
+                }
+                return p;
+            }));
+        };
+
         fetchPositions();
+        
+        // Listen for position updates from other components
+        window.addEventListener('positionsUpdated', handlePositionsUpdated);
+        
+        return () => {
+            window.removeEventListener('positionsUpdated', handlePositionsUpdated);
+        };
     }, []);
 
     const handleTogglePosition = (id: string | number) => {

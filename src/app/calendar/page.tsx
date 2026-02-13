@@ -9,6 +9,13 @@ import CalendarComponent from "@/components/CalendarComponent";
 import styles from "./page.module.css";
 import modalStyles from "./modal.module.css";
 
+interface Position {
+  id: string | number;
+  name: string;
+  color: string;
+  checked: boolean;
+}
+
 export default function CalendarPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
@@ -16,6 +23,10 @@ export default function CalendarPage() {
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [publishType, setPublishType] = useState<'all' | 'changes'>('all');
   const [publishLoading, setPublishLoading] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingPosition, setEditingPosition] = useState<Position | null>(null);
+  const [newPositionName, setNewPositionName] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -69,11 +80,60 @@ export default function CalendarPage() {
     }
   };
 
+  const handleEditPosition = (position: Position) => {
+    setEditingPosition(position);
+    setNewPositionName(position.name);
+    setEditModalOpen(true);
+  };
+
+  const confirmEditPosition = async () => {
+    if (!editingPosition || !newPositionName.trim()) return;
+
+    setEditLoading(true);
+    try {
+      const response = await fetch(`/api/positions/${editingPosition.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newPositionName.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar la posición');
+      }
+
+      // Notify sidebar to refresh positions list
+      window.dispatchEvent(new CustomEvent('positionsUpdated', {
+        detail: { positionId: editingPosition.id, name: newPositionName.trim() }
+      }));
+
+      setEditModalOpen(false);
+      setEditingPosition(null);
+      setNewPositionName('');
+    } catch (err) {
+      console.error('Edit position failed', err);
+      alert('Error al actualizar el nombre de la posición. Revisa la consola.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const closeEditModal = () => {
+    setEditModalOpen(false);
+    setEditingPosition(null);
+    setNewPositionName('');
+  };
+
   return (
     <div className={styles.wrapper}>
       <Navbar />
       <div className={styles.content}>
-        <Sidebar onPublishAll={() => openPublish('all')} onPublishChanges={() => openPublish('changes')} />
+        <Sidebar 
+          onPublishAll={() => openPublish('all')} 
+          onPublishChanges={() => openPublish('changes')} 
+          onEditPosition={handleEditPosition}
+        />
         <main className={styles.main}>
 
 
@@ -105,6 +165,61 @@ export default function CalendarPage() {
             <div className={modalStyles.modalFooter}>
               <button className={modalStyles.modalCancelButton} onClick={() => setPublishModalOpen(false)} disabled={publishLoading}>Cancelar</button>
               <button className={modalStyles.primaryBtn} onClick={confirmPublish} disabled={publishLoading}>{publishLoading ? 'Publicando...' : 'Publicar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Position modal */}
+      {editModalOpen && editingPosition && (
+        <div className={modalStyles.modalOverlay} onClick={closeEditModal}>
+          <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={modalStyles.modalHeader}>
+              <h3>Editar Posición</h3>
+              <button className={modalStyles.modalCloseButton} onClick={closeEditModal}>×</button>
+            </div>
+            <div className={modalStyles.modalBody}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                  Nombre de la posición:
+                </label>
+                <input
+                  type="text"
+                  value={newPositionName}
+                  onChange={(e) => setNewPositionName(e.target.value)}
+                  placeholder="Ingrese el nombre de la posición"
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !editLoading && newPositionName.trim()) {
+                      confirmEditPosition();
+                    }
+                  }}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className={modalStyles.modalFooter}>
+              <button 
+                className={modalStyles.modalCancelButton} 
+                onClick={closeEditModal} 
+                disabled={editLoading}
+              >
+                Cancelar
+              </button>
+              <button 
+                className={modalStyles.primaryBtn} 
+                onClick={confirmEditPosition} 
+                disabled={editLoading || !newPositionName.trim()}
+              >
+                {editLoading ? 'Guardando...' : 'Guardar'}
+              </button>
             </div>
           </div>
         </div>
