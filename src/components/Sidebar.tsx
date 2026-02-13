@@ -6,6 +6,8 @@ interface Position {
     name: string;
     color: string;
     checked: boolean;
+    starttime?: string | null;
+    endtime?: string | null;
 }
 
 interface SidebarProps {
@@ -15,6 +17,7 @@ interface SidebarProps {
     onPublishChanges?: () => void;
     onAddPosition?: () => void;
     onEditPosition?: (position: Position) => void;
+    onEditSchedule?: (position: Position) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -23,7 +26,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     onPublishAll,
     onPublishChanges,
     onAddPosition,
-    onEditPosition
+    onEditPosition,
+    onEditSchedule
 }) => {
     const [positions, setPositions] = useState<Position[]>([]);
     const [loading, setLoading] = useState(true);
@@ -72,13 +76,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         };
 
         const handlePositionsUpdated = (event: any) => {
-            const { positionId, color, name } = event.detail;
+            const { positionId, color, name, starttime, endtime } = event.detail;
             setPositions(prev => prev.map(p => {
                 if (p.id === positionId) {
                     return {
                         ...p,
                         ...(color !== undefined && { color }),
-                        ...(name !== undefined && { name })
+                        ...(name !== undefined && { name }),
+                        ...(starttime !== undefined && { starttime }),
+                        ...(endtime !== undefined && { endtime })
                     };
                 }
                 return p;
@@ -254,7 +260,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         </div>
                                     )}
                                     {pos.id !== 0 && pos.id !== 1 && (
-                                        <button className={styles.actionIconBtn} title="Horarios">
+                                        <button className={styles.actionIconBtn} title="Horarios" onClick={() => onEditSchedule?.(pos)}>
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <circle cx="12" cy="12" r="10" />
                                                 <polyline points="12 6 12 12 16 14" />

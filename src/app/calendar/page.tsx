@@ -14,6 +14,8 @@ interface Position {
   name: string;
   color: string;
   checked: boolean;
+  starttime?: string | null;
+  endtime?: string | null;
 }
 
 export default function CalendarPage() {
@@ -27,6 +29,11 @@ export default function CalendarPage() {
   const [editingPosition, setEditingPosition] = useState<Position | null>(null);
   const [newPositionName, setNewPositionName] = useState('');
   const [editLoading, setEditLoading] = useState(false);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [editingSchedulePosition, setEditingSchedulePosition] = useState<Position | null>(null);
+  const [newStartTime, setNewStartTime] = useState('');
+  const [newEndTime, setNewEndTime] = useState('');
+  const [scheduleLoading, setScheduleLoading] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -125,6 +132,98 @@ export default function CalendarPage() {
     setNewPositionName('');
   };
 
+  const handleEditSchedule = (position: Position) => {
+    setEditingSchedulePosition(position);
+    // Format times from Date objects to HH:MM strings
+    const startTime = position.starttime ? formatTimeForInput(position.starttime) : '';
+    const endTime = position.endtime ? formatTimeForInput(position.endtime) : '';
+    setNewStartTime(startTime);
+    setNewEndTime(endTime);
+    setScheduleModalOpen(true);
+  };
+
+  const formatTimeForInput = (timeString: string) => {
+    // Convert database time string to HH:MM format
+    if (!timeString) return '';
+    // If it's already in HH:MM format, return as is
+    if (timeString.match(/^\d{2}:\d{2}$/)) return timeString;
+    // If it's a full time string like "09:00:00", extract HH:MM
+    return timeString.substring(0, 5);
+  };
+
+  const confirmEditSchedule = async () => {
+    if (!editingSchedulePosition) return;
+
+    // Validation: both times are required
+    if (!newStartTime.trim() || !newEndTime.trim()) {
+      alert('Ambos horarios son obligatorios');
+      return;
+    }
+
+    // Validation: start time must be before end time
+    const start = newStartTime.trim();
+    const end = newEndTime.trim();
+    if (start >= end) {
+      alert('La hora de inicio debe ser anterior a la hora de fin');
+      return;
+    }
+
+    setScheduleLoading(true);
+    try {
+      const payload = {
+        starttime: start,
+        endtime: end
+      };
+
+      console.log('Sending schedule update:', payload);
+
+      const response = await fetch(`/api/positions/${editingSchedulePosition.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Response error:', errorData);
+        throw new Error('Error al actualizar el horario');
+      }
+
+      const result = await response.json();
+      console.log('Update successful:', result);
+
+      // Notify components to refresh
+      window.dispatchEvent(new CustomEvent('positionsUpdated', {
+        detail: { 
+          positionId: editingSchedulePosition.id, 
+          starttime: start,
+          endtime: end
+        }
+      }));
+
+      setScheduleModalOpen(false);
+      setEditingSchedulePosition(null);
+      setNewStartTime('');
+      setNewEndTime('');
+    } catch (err) {
+      console.error('Edit schedule failed', err);
+      alert('Error al actualizar el horario. Revisa la consola.');
+    } finally {
+      setScheduleLoading(false);
+    }
+  };
+
+  const closeScheduleModal = () => {
+    setScheduleModalOpen(false);
+    setEditingSchedulePosition(null);
+    setNewStartTime('');
+    setNewEndTime('');
+  };
+
   return (
     <div className={styles.wrapper}>
       <Navbar />
@@ -133,6 +232,7 @@ export default function CalendarPage() {
           onPublishAll={() => openPublish('all')} 
           onPublishChanges={() => openPublish('changes')} 
           onEditPosition={handleEditPosition}
+          onEditSchedule={handleEditSchedule}
         />
         <main className={styles.main}>
 
@@ -219,6 +319,74 @@ export default function CalendarPage() {
                 disabled={editLoading || !newPositionName.trim()}
               >
                 {editLoading ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Schedule modal */}
+      {scheduleModalOpen && editingSchedulePosition && (
+        <div className={modalStyles.modalOverlay} onClick={closeScheduleModal}>
+          <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={modalStyles.modalHeader}>
+              <h3>Editar Horario - {editingSchedulePosition.name}</h3>
+              <button className={modalStyles.modalCloseButton} onClick={closeScheduleModal}>×</button>
+            </div>
+            <div className={modalStyles.modalBody}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                  Hora de inicio: *
+                </label>
+                <input
+                  type="time"
+                  value={newStartTime}
+                  onChange={(e) => setNewStartTime(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                  Hora de fin: *
+                </label>
+                <input
+                  type="time"
+                  value={newEndTime}
+                  onChange={(e) => setNewEndTime(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+            </div>
+            <div className={modalStyles.modalFooter}>
+              <button 
+                className={modalStyles.modalCancelButton} 
+                onClick={closeScheduleModal} 
+                disabled={scheduleLoading}
+              >
+                Cancelar
+              </button>
+              <button 
+                className={modalStyles.primaryBtn} 
+                onClick={confirmEditSchedule} 
+                disabled={scheduleLoading || !newStartTime.trim() || !newEndTime.trim() || newStartTime >= newEndTime}
+              >
+                {scheduleLoading ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
           </div>

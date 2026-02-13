@@ -23,12 +23,12 @@ export async function PATCH(
         }
 
         const body = await request.json();
-        const { color, name } = body;
+        const { color, name, starttime, endtime } = body;
 
         // Validation: At least one field should be provided
-        if (color === undefined && name === undefined) {
+        if (color === undefined && name === undefined && starttime === undefined && endtime === undefined) {
             return NextResponse.json(
-                { error: 'No se proporcionan aplicaciones para actualizar' },
+                { error: 'No se proporcionan campos para actualizar' },
                 { status: 400, headers: corsHeaders }
             );
         }
@@ -36,12 +36,37 @@ export async function PATCH(
         const updateData: any = {};
         if (color !== undefined) updateData.color = color;
         if (name !== undefined) updateData.name = name;
+        if (starttime !== undefined) {
+            // For @db.Time fields in Prisma, create DateTime with dummy date
+            if (starttime === null || starttime === '') {
+                updateData.starttime = null;
+            } else {
+                // Create a DateTime with time portion for @db.Time field
+                const [hours, minutes] = starttime.split(':');
+                const timeDate = new Date('1970-01-01T' + starttime + ':00.000Z');
+                updateData.starttime = timeDate;
+            }
+        }
+        if (endtime !== undefined) {
+            // For @db.Time fields in Prisma, create DateTime with dummy date
+            if (endtime === null || endtime === '') {
+                updateData.endtime = null;
+            } else {
+                // Create a DateTime with time portion for @db.Time field
+                const [hours, minutes] = endtime.split(':');
+                const timeDate = new Date('1970-01-01T' + endtime + ':00.000Z');
+                updateData.endtime = timeDate;
+            }
+        }
+
+        console.log('Updating position with data:', updateData);
 
         const updatedPosition = await prisma.position.update({
             where: { id: positionId },
             data: updateData,
         });
 
+        console.log('Position updated successfully:', updatedPosition);
         return NextResponse.json(updatedPosition, { headers: corsHeaders });
 
     } catch (error: any) {

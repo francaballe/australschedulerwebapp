@@ -349,7 +349,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     };
     const handlePositions = (e: any) => {
       console.log('🔄 Detected position changes - updating local state:', e.detail);
-      const { positionId, color, name } = e.detail;
+      const { positionId, color, name, starttime, endtime } = e.detail;
 
       // Update shifts locally
       setShifts(prev => prev.map(s => {
@@ -369,7 +369,9 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
           return {
             ...p,
             ...(color !== undefined && { color }),
-            ...(name !== undefined && { name })
+            ...(name !== undefined && { name }),
+            ...(starttime !== undefined && { starttime }),
+            ...(endtime !== undefined && { endtime })
           };
         }
         return p;
