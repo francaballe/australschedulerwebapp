@@ -46,20 +46,20 @@
 
 .centerSection {
   position: absolute;
-  left: 375px; /* moved to match sidebar width 350px + 25px spacing */
+  left: 285px; /* moved to match sidebar width 260px + 25px spacing */
   display: flex;
   justify-content: flex-start;
   align-items: center;
   pointer-events: none; /* let children decide events */
-  width: calc(100% - 375px); /* Account for logo and userSection width */
+  width: calc(100% - 285px); /* Account for logo and userSection width */
   max-width: 720px;
 }
 
 /* Adjust centerSection when sidebar is narrower at <=1024px */
 @media (max-width: 1024px) {
   .centerSection {
-    left: 325px; /* 300px sidebar + 25px spacing */
-    width: calc(100% - 325px);
+    left: 235px; /* 210px sidebar + 25px spacing - proportionally reduced */
+    width: calc(100% - 235px);
   }
 }
 

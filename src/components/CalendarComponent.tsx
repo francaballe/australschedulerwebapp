@@ -25,6 +25,7 @@ interface Shift {
   positionColor?: string;
   published: boolean;
   toBeDeleted?: boolean;
+  unavailable?: boolean;
 }
 
 interface Position {
@@ -159,6 +160,31 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
         throw new Error('Error al cargar turnos');
       }
       const data = await response.json();
+      
+      // Data consistency check: detect multiple shifts per user per day
+      const shiftsByUserDate = new Map<string, Shift[]>();
+      
+      (data as Shift[]).forEach(shift => {
+        const key = `${shift.userId}-${shift.date}`;
+        if (!shiftsByUserDate.has(key)) {
+          shiftsByUserDate.set(key, []);
+        }
+        shiftsByUserDate.get(key)!.push(shift);
+      });
+      
+      // Report inconsistencies
+      const inconsistencies = Array.from(shiftsByUserDate.entries())
+        .filter(([key, shifts]) => shifts.length > 1);
+        
+      if (inconsistencies.length > 0) {
+        console.warn('🔥 DATA INCONSISTENCY DETECTED: Multiple shifts per user per day:', 
+          inconsistencies.reduce((acc, [key, shifts]) => {
+            acc[key] = shifts;
+            return acc;
+          }, {} as Record<string, Shift[]>)
+        );
+      }
+      
       return data as Shift[];
     } catch (err: any) {
       console.error('Failed to fetch shifts:', err);
@@ -189,25 +215,37 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     try {
       const dateStr = formatDateLocal(date);
 
-      // Check if shift already exists for this user/date
-      const existingShift = getShiftForUserAndDay(userId, date);
+      // Get ALL existing shifts for this user/date (there should only be one, but clean up if multiple)
+      const existingShifts = shifts.filter(shift => shift.userId === userId && shift.date === dateStr);
 
-      if (existingShift) {
-        // If shift exists, delete it first and then create new one
-        console.log('🔄 Updating existing shift:', existingShift);
+      // Check if any existing shift was marked as unavailable (user marked as "not available" from mobile app)
+      const wasUnavailable = existingShifts.some(shift => shift.unavailable === true);
+      
+      if (wasUnavailable) {
+        console.log(`📱 User ${userId} was marked as unavailable on ${dateStr}. New shift will maintain unavailable flag.`);
+      }
 
-        // Delete existing shift first
-        const deleteResponse = await fetch(`/api/shifts/${existingShift.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
+      // Delete ALL existing shifts for this user/date to ensure data consistency
+      if (existingShifts.length > 0) {
+        console.log(`🔄 Found ${existingShifts.length} existing shift(s) for user ${userId} on ${dateStr}, cleaning up...`);
+        
+        for (const existingShift of existingShifts) {
+          try {
+            const deleteResponse = await fetch(`/api/shifts/${existingShift.id}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            });
+            
+            if (!deleteResponse.ok) {
+              console.warn('⚠️ Could not delete existing shift:', existingShift.id);
+            } else {
+              console.log('✅ Deleted existing shift:', existingShift.id);
+            }
+          } catch (deleteError) {
+            console.warn('⚠️ Error deleting shift:', deleteError);
           }
-        });
-
-        if (!deleteResponse.ok) {
-          console.warn('⚠️ Could not delete existing shift, will try to create new one anyway');
-        } else {
-          console.log('✅ Existing shift deleted successfully');
         }
       }
 
@@ -215,7 +253,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
         userId: userId,
         date: dateStr,
         positionId: positionId,
-        published: false
+        published: false,
+        // CASE EXCEPCIONAL: Si el usuario se marcó como no disponible desde la app móvil,
+        // el nuevo shift debe mantener el flag unavailable: true
+        ...(wasUnavailable && { unavailable: true })
       };
 
       console.log('📤 Sending shift assignment request:', requestData);
@@ -336,12 +377,30 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     const weekStart = formatDateLocal(weekDates[0]);
     const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
     
-    return shifts.some(shift => 
-      shift.userId === user.id &&
-      shift.date >= weekStart &&
-      shift.date <= weekEnd &&
-      enabledPositions.has(shift.positionId)
-    );
+    // Group user's shifts by date to avoid counting duplicates
+    const userShiftsByDate = new Map<string, Shift[]>();
+    
+    shifts
+      .filter(shift => 
+        shift.userId === user.id &&
+        shift.date >= weekStart &&
+        shift.date <= weekEnd
+      )
+      .forEach(shift => {
+        if (!userShiftsByDate.has(shift.date)) {
+          userShiftsByDate.set(shift.date, []);
+        }
+        userShiftsByDate.get(shift.date)!.push(shift);
+      });
+    
+    // Check if any date has a shift with enabled position
+    return Array.from(userShiftsByDate.values()).some(shiftsForDate => {
+      if (shiftsForDate.length > 1) {
+        console.warn(`Multiple shifts for user ${user.id} on date:`, shiftsForDate);
+      }
+      // Check if any shift for this date has an enabled position
+      return shiftsForDate.some(shift => enabledPositions.has(shift.positionId));
+    });
   });
 
   // When currentDate, view or selectedSiteId changes, reload users and shifts
@@ -515,11 +574,18 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       return undefined;
     }
     
-    return shifts.find(shift => 
-      shift.userId === userId && 
-      shift.date === dateStr && 
-      enabledPositions.has(shift.positionId)
+    // Get all shifts for this user on this date
+    const userShiftsForDate = shifts.filter(shift => 
+      shift.userId === userId && shift.date === dateStr
     );
+    
+    // If multiple shifts exist (data inconsistency), log warning and take the first enabled one
+    if (userShiftsForDate.length > 1) {
+      console.warn(`Multiple shifts found for user ${userId} on ${dateStr}:`, userShiftsForDate);
+    }
+    
+    // Return the first shift that matches enabled positions
+    return userShiftsForDate.find(shift => enabledPositions.has(shift.positionId));
   };
 
   // Formatear horarios del shift
@@ -564,9 +630,32 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       return 0;
     }
     
-    return shifts
+    // Group shifts by date to detect duplicates
+    const shiftsByDate = new Map<string, Shift[]>();
+    
+    shifts
       .filter(s => s.userId === userId && !s.toBeDeleted && enabledPositions.has(s.positionId))
-      .reduce((acc, s) => acc + calculateHours(s.startTime, s.endTime), 0);
+      .forEach(shift => {
+        const date = shift.date;
+        if (!shiftsByDate.has(date)) {
+          shiftsByDate.set(date, []);
+        }
+        shiftsByDate.get(date)!.push(shift);
+      });
+    
+    let totalHours = 0;
+    
+    // For each date, only count the first shift (log if duplicates found)
+    shiftsByDate.forEach((shiftsForDate, date) => {
+      if (shiftsForDate.length > 1) {
+        console.warn(`Multiple shifts for user ${userId} on ${date}:`, shiftsForDate);
+      }
+      // Only count the first shift
+      const shift = shiftsForDate[0];
+      totalHours += calculateHours(shift.startTime, shift.endTime);
+    });
+    
+    return totalHours;
   };
 
   // Manejar click en celda
@@ -589,18 +678,24 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
   const handlePositionSelect = async (positionId: number) => {
     if (!selectedCell) return;
 
+    // Client-side validation: check for existing shifts
+    const existingShifts = shifts.filter(s => 
+      s.userId === selectedCell.userId && 
+      s.date === formatDateLocal(selectedCell.date)
+    );
+    
+    if (existingShifts.length > 1) {
+      console.error('Multiple shifts detected for this user/date. Data cleanup required.');
+      alert('Error: Se detectaron múltiples turnos para este usuario en esta fecha. Se requiere limpieza de datos.');
+      return;
+    }
+
     // Check if there is an existing shift marked for deletion
-    const existingShift = getShiftForUserAndDay(selectedCell.userId, selectedCell.date);
+    const existingShift = existingShifts[0];
     if (existingShift?.toBeDeleted) {
       if (!confirm('Este turno está marcado para borrar. ¿Deseas restaurarlo antes de cambiar la posición?')) {
         return;
       }
-      // Restore logic if needed, or just proceed to overwrite
-      // For now, let's just proceed to create/update which will overwrite the 'toBeDeleted' flag in backend logic usually
-      // But looking at backend create logic:
-      // It updates existing shift: 
-      // data: { ..., toBeDeleted: false }
-      // So simply selecting a new position will implicitly "restore" (really overwrite) the shift.
     }
 
     const success = await createShiftAssignment(selectedCell.userId, selectedCell.date, positionId);
@@ -611,8 +706,21 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
 
   const handleRestoreShift = async () => {
     if (!selectedCell) return;
-    const shift = getShiftForUserAndDay(selectedCell.userId, selectedCell.date);
-    if (!shift) return;
+    
+    // Get all shifts for this user/date
+    const allShifts = shifts.filter(s => 
+      s.userId === selectedCell.userId && 
+      s.date === formatDateLocal(selectedCell.date)
+    );
+    
+    if (allShifts.length === 0) return;
+    
+    if (allShifts.length > 1) {
+      console.warn('Multiple shifts found for restore operation:', allShifts);
+      alert('Se encontraron múltiples turnos. Se restaurará el primero.');
+    }
+    
+    const shift = allShifts[0]; // Take the first one
 
     try {
       setModalLoading(true);
@@ -637,8 +745,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
   const handleDeleteShift = async (confirmed: boolean = false) => {
     if (!selectedCell) return;
 
-    const shift = getShiftForUserAndDay(selectedCell.userId, selectedCell.date);
-    if (!shift) return;
+    // Get all shifts for this user/date
+    const allShifts = shifts.filter(s => 
+      s.userId === selectedCell.userId && 
+      s.date === formatDateLocal(selectedCell.date)
+    );
+    
+    if (allShifts.length === 0) return;
+    
+    if (allShifts.length > 1) {
+      console.warn('Multiple shifts found for delete operation:', allShifts);
+      alert('Se encontraron múltiples turnos. Se eliminará el primero.');
+    }
+    
+    const shift = allShifts[0]; // Take the first one
 
     // If shift is published and not yet confirmed, show confirmation
     if (shift.published && !confirmed) {
@@ -824,6 +944,15 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                               </svg>
                             </div>
                           )}
+                          {shift.unavailable && (
+                            <div className={styles.unavailableIconOverlay} title="Usuario se marcó como no disponible - turno asignado por manager">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="15" y1="9" x2="9" y2="15" />
+                                <line x1="9" y1="9" x2="15" y2="15" />
+                              </svg>
+                            </div>
+                          )}
                           {shiftTimeText && (
                             <div className={styles.shiftTime} style={{ fontWeight: 'normal' }}>
                               {shiftTimeText}
@@ -852,8 +981,21 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
           <div className={styles.footerLabel}>Totales:</div>
           {weekDates.map((date, index) => {
             const dateStr = formatDateLocal(date);
-            const dailyShifts = enabledPositions.size === 0 ? [] : shifts.filter(s => s.date === dateStr && !s.toBeDeleted && enabledPositions.has(s.positionId));
-            const totalHours = dailyShifts.reduce((acc, shift) => {
+            // Group shifts by user to avoid counting duplicates
+            const dailyShiftsMap = new Map<number, Shift>();
+            
+            shifts
+              .filter(s => s.date === dateStr && !s.toBeDeleted && enabledPositions.has(s.positionId))
+              .forEach(shift => {
+                // Only keep one shift per user per day
+                if (!dailyShiftsMap.has(shift.userId)) {
+                  dailyShiftsMap.set(shift.userId, shift);
+                } else {
+                  console.warn(`Duplicate shift detected for user ${shift.userId} on ${dateStr}`);
+                }
+              });
+            
+            const totalHours = Array.from(dailyShiftsMap.values()).reduce((acc, shift) => {
               return acc + calculateHours(shift.startTime, shift.endTime);
             }, 0);
 
@@ -885,24 +1027,42 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                 )}
               </div>
               <div className={styles.modalHeaderActions}>
-                {selectedCell && getShiftForUserAndDay(selectedCell.userId, selectedCell.date)?.toBeDeleted ? (
-                  <button className={`${styles.modalDeleteButton} ${styles.restoreButton}`} onClick={handleRestoreShift} title="Deshacer borrado">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 10h10a5 5 0 0 1 5 5v2" />
-                      <line x1="3" y1="10" x2="9" y2="4" />
-                      <line x1="3" y1="10" x2="9" y2="16" />
-                    </svg>
-                  </button>
-                ) : (
-                  <button className={styles.modalDeleteButton} onClick={() => handleDeleteShift()} title="Borrar">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 6h18" />
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      <line x1="10" y1="11" x2="10" y2="17" />
-                      <line x1="14" y1="11" x2="14" y2="17" />
-                    </svg>
-                  </button>
-                )}
+                {selectedCell && (() => {
+                  const allUserShifts = shifts.filter(s => 
+                    s.userId === selectedCell.userId && 
+                    s.date === formatDateLocal(selectedCell.date)
+                  );
+                  const hasMultiple = allUserShifts.length > 1;
+                  const shift = allUserShifts[0];
+                  
+                  return (
+                    <div>
+                      {hasMultiple && (
+                        <div style={{ color: 'orange', fontSize: '0.9em', marginBottom: '10px' }}>
+                          ⚠️ Se detectaron múltiples turnos para esta fecha. Se mostrará/operará con el primero.
+                        </div>
+                      )}
+                      {shift?.toBeDeleted ? (
+                        <button className={`${styles.modalDeleteButton} ${styles.restoreButton}`} onClick={handleRestoreShift} title="Deshacer borrado">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 10h10a5 5 0 0 1 5 5v2" />
+                            <line x1="3" y1="10" x2="9" y2="4" />
+                            <line x1="3" y1="10" x2="9" y2="16" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <button className={styles.modalDeleteButton} onClick={() => handleDeleteShift()} title="Borrar">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" />
+                            <line x1="14" y1="11" x2="14" y2="17" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
                 <button className={styles.modalCloseButton} onClick={handleModalClose} title="Cerrar">
                   ×
                 </button>

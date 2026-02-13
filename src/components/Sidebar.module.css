@@ -1,6 +1,6 @@
 .sidebar {
-    width: 350px;
-    /* increased 25% from 280px */
+    width: 260px;
+    /* reduced from 350px - more compact after UI simplification */
     background: var(--background-secondary);
     border-right: 1px solid var(--border);
     height: calc(100vh - 64px);
@@ -332,15 +332,14 @@
     font-size: 0.9rem;
     color: var(--foreground);
     font-weight: 500;
+    flex: 1;
 }
 
 .positionActions {
     display: flex;
     align-items: center;
-    gap: 6px;
-    justify-content: flex-start;
-    width: 120px;
-    /* Fixed width to ensure color blocks align vertically even when buttons are missing */
+    gap: 8px;
+    justify-content: flex-end;
 }
 
 .colorIndicator {

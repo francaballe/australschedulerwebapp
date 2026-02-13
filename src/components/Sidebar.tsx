@@ -17,7 +17,6 @@ interface SidebarProps {
     onPublishChanges?: () => void;
     onAddPosition?: () => void;
     onEditPosition?: (position: Position) => void;
-    onEditSchedule?: (position: Position) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -26,34 +25,15 @@ const Sidebar: React.FC<SidebarProps> = ({
     onPublishAll,
     onPublishChanges,
     onAddPosition,
-    onEditPosition,
-    onEditSchedule
+    onEditPosition
 }) => {
     const [positions, setPositions] = useState<Position[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeColorPicker, setActiveColorPicker] = useState<string | number | null>(null);
-    const colorPickerRef = useRef<HTMLDivElement>(null);
 
-    const PRESET_COLORS = [
-        '#ef4444', '#f97316', '#f59e0b',
-        '#22c55e', '#06b6d4', '#3b82f6',
-        '#6366f1', '#a855f7', '#ec4899',
-        '#64748b', '#475569', '#1e293b'
-    ];
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (colorPickerRef.current && !colorPickerRef.current.contains(event.target as Node)) {
-                setActiveColorPicker(null);
-            }
-        };
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
+
 
     useEffect(() => {
         const fetchPositions = async () => {
@@ -190,41 +170,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         }
     };
 
-    const handleColorClick = (e: React.MouseEvent, posId: string | number) => {
-        e.stopPropagation();
-        setActiveColorPicker(activeColorPicker === posId ? null : posId);
-    };
 
-    const handleColorSelect = async (posId: string | number, color: string) => {
-        try {
-            const response = await fetch(`/api/positions/${posId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ color }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Error al actualizar el color');
-            }
-
-            // Update local state
-            setPositions(prev => prev.map(p =>
-                p.id === posId ? { ...p, color } : p
-            ));
-
-            // Notify other components (like Calendar) to update locally
-            window.dispatchEvent(new CustomEvent('positionsUpdated', {
-                detail: { positionId: posId, color }
-            }));
-
-            setActiveColorPicker(null);
-        } catch (err) {
-            console.error('Failed to update color:', err);
-            alert('No se pudo actualizar el color');
-        }
-    };
 
     const allPositionsSelected = positions.every(p => p.checked);
 
@@ -297,40 +243,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     <span className={styles.positionName}>{pos.name}</span>
                                 </label>
                                 <div className={styles.positionActions}>
-                                    {pos.id !== 0 && (
-                                        <div className={styles.colorSelectorWrapper}>
-                                            <div
-                                                className={styles.colorIndicator}
-                                                style={{ backgroundColor: pos.color || '#94a3b8' }}
-                                                onClick={(e) => handleColorClick(e, pos.id)}
-                                                title="Cambiar color"
-                                            />
-                                            {activeColorPicker === pos.id && (
-                                                <div className={styles.colorPickerPopover} ref={colorPickerRef}>
-                                                    <div className={styles.colorGrid}>
-                                                        {PRESET_COLORS.map(color => (
-                                                            <button
-                                                                key={color}
-                                                                className={`${styles.colorOption} ${pos.color === color ? styles.activeColor : ''}`}
-                                                                style={{ backgroundColor: color }}
-                                                                onClick={() => handleColorSelect(pos.id, color)}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
                                     {pos.id !== 0 && pos.id !== 1 && (
-                                        <button className={styles.actionIconBtn} title="Horarios" onClick={() => onEditSchedule?.(pos)}>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <circle cx="12" cy="12" r="10" />
-                                                <polyline points="12 6 12 12 16 14" />
-                                            </svg>
-                                        </button>
-                                    )}
-                                    {pos.id !== 0 && pos.id !== 1 && (
-                                        <button className={styles.actionIconBtn} title="Editar nombre" onClick={() => onEditPosition?.(pos)}>
+                                        <button className={styles.actionIconBtn} title="Editar posición" onClick={() => onEditPosition?.(pos)}>
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />

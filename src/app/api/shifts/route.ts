@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
                 endtime: true,
                 published: true,
                 toBeDeleted: true,
+                unavailable: true,
                 positionId: true,
                 position: {
                     select: {
@@ -74,6 +75,7 @@ export async function GET(request: NextRequest) {
                 : null,
             published: shift.published,
             toBeDeleted: shift.toBeDeleted,
+            unavailable: shift.unavailable,
             positionId: shift.positionId,
             position: shift.position?.name || null,
             positionColor: shift.position?.color || null
@@ -101,7 +103,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         console.log('📝 Shift POST request body:', body);
 
-        const { userId, date, positionId, startTime, endTime, published } = body;
+        const { userId, date, positionId, startTime, endTime, published, unavailable } = body;
 
         // Basic validation
         if (userId == null || !date || positionId == null) {
@@ -154,7 +156,9 @@ export async function POST(request: NextRequest) {
             toBeDeleted: false,
             // Copy start and end times from position
             starttime: position.starttime,
-            endtime: position.endtime
+            endtime: position.endtime,
+            // Include unavailable flag if provided (caso excepcional: manager assigns shift to unavailable user)
+            ...(unavailable !== undefined && { unavailable })
         };
 
         // Override with provided times if any (optional)
@@ -187,7 +191,9 @@ export async function POST(request: NextRequest) {
                     starttime: position.starttime,
                     endtime: position.endtime,
                     published: published ?? false,
-                    toBeDeleted: false
+                    toBeDeleted: false,
+                    // Include unavailable flag if provided (caso excepcional)
+                    ...(unavailable !== undefined && { unavailable })
                 },
                 select: {
                     id: true,
@@ -209,7 +215,9 @@ export async function POST(request: NextRequest) {
                 published: published ?? false,
                 toBeDeleted: false,
                 starttime: position.starttime,
-                endtime: position.endtime
+                endtime: position.endtime,
+                // Include unavailable flag if provided (caso excepcional)
+                ...(unavailable !== undefined && { unavailable })
             };
 
             newShift = await prisma.shift.create({

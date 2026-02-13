@@ -28,12 +28,10 @@ export default function CalendarPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<Position | null>(null);
   const [newPositionName, setNewPositionName] = useState('');
-  const [editLoading, setEditLoading] = useState(false);
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-  const [editingSchedulePosition, setEditingSchedulePosition] = useState<Position | null>(null);
+  const [newPositionColor, setNewPositionColor] = useState('');
   const [newStartTime, setNewStartTime] = useState('');
   const [newEndTime, setNewEndTime] = useState('');
-  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
   const [enabledPositions, setEnabledPositions] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -109,37 +107,77 @@ export default function CalendarPage() {
   const handleEditPosition = (position: Position) => {
     setEditingPosition(position);
     setNewPositionName(position.name);
+    setNewPositionColor(position.color || '#94a3b8');
+    // Format times from Date objects to HH:MM strings
+    const startTime = position.starttime ? formatTimeForInput(position.starttime) : '';
+    const endTime = position.endtime ? formatTimeForInput(position.endtime) : '';
+    setNewStartTime(startTime);
+    setNewEndTime(endTime);
     setEditModalOpen(true);
   };
 
   const confirmEditPosition = async () => {
     if (!editingPosition || !newPositionName.trim()) return;
 
+    // Validation for schedule times
+    if (newStartTime.trim() && newEndTime.trim()) {
+      const start = newStartTime.trim();
+      const end = newEndTime.trim();
+      if (start >= end) {
+        alert('La hora de inicio debe ser anterior a la hora de fin');
+        return;
+      }
+    }
+
     setEditLoading(true);
     try {
+      const payload: any = {
+        name: newPositionName.trim(),
+        color: newPositionColor
+      };
+
+      // Include schedule if both times are provided
+      if (newStartTime.trim() && newEndTime.trim()) {
+        payload.starttime = newStartTime.trim();
+        payload.endtime = newEndTime.trim();
+      }
+
+      console.log('Sending position update:', payload);
+
       const response = await fetch(`/api/positions/${editingPosition.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: newPositionName.trim() }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         throw new Error('Error al actualizar la posición');
       }
 
-      // Notify sidebar to refresh positions list
+      // Notify sidebar to refresh positions list and calendar
       window.dispatchEvent(new CustomEvent('positionsUpdated', {
-        detail: { positionId: editingPosition.id, name: newPositionName.trim() }
+        detail: { 
+          positionId: editingPosition.id, 
+          name: newPositionName.trim(),
+          color: newPositionColor,
+          ...(newStartTime.trim() && newEndTime.trim() && {
+            starttime: newStartTime.trim(),
+            endtime: newEndTime.trim()
+          })
+        }
       }));
 
       setEditModalOpen(false);
       setEditingPosition(null);
       setNewPositionName('');
+      setNewPositionColor('');
+      setNewStartTime('');
+      setNewEndTime('');
     } catch (err) {
       console.error('Edit position failed', err);
-      alert('Error al actualizar el nombre de la posición. Revisa la consola.');
+      alert('Error al actualizar la posición. Revisa la consola.');
     } finally {
       setEditLoading(false);
     }
@@ -149,16 +187,9 @@ export default function CalendarPage() {
     setEditModalOpen(false);
     setEditingPosition(null);
     setNewPositionName('');
-  };
-
-  const handleEditSchedule = (position: Position) => {
-    setEditingSchedulePosition(position);
-    // Format times from Date objects to HH:MM strings
-    const startTime = position.starttime ? formatTimeForInput(position.starttime) : '';
-    const endTime = position.endtime ? formatTimeForInput(position.endtime) : '';
-    setNewStartTime(startTime);
-    setNewEndTime(endTime);
-    setScheduleModalOpen(true);
+    setNewPositionColor('');
+    setNewStartTime('');
+    setNewEndTime('');
   };
 
   const formatTimeForInput = (timeString: string) => {
@@ -168,79 +199,6 @@ export default function CalendarPage() {
     if (timeString.match(/^\d{2}:\d{2}$/)) return timeString;
     // If it's a full time string like "09:00:00", extract HH:MM
     return timeString.substring(0, 5);
-  };
-
-  const confirmEditSchedule = async () => {
-    if (!editingSchedulePosition) return;
-
-    // Validation: both times are required
-    if (!newStartTime.trim() || !newEndTime.trim()) {
-      alert('Ambos horarios son obligatorios');
-      return;
-    }
-
-    // Validation: start time must be before end time
-    const start = newStartTime.trim();
-    const end = newEndTime.trim();
-    if (start >= end) {
-      alert('La hora de inicio debe ser anterior a la hora de fin');
-      return;
-    }
-
-    setScheduleLoading(true);
-    try {
-      const payload = {
-        starttime: start,
-        endtime: end
-      };
-
-      console.log('Sending schedule update:', payload);
-
-      const response = await fetch(`/api/positions/${editingSchedulePosition.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Response error:', errorData);
-        throw new Error('Error al actualizar el horario');
-      }
-
-      const result = await response.json();
-      console.log('Update successful:', result);
-
-      // Notify components to refresh
-      window.dispatchEvent(new CustomEvent('positionsUpdated', {
-        detail: { 
-          positionId: editingSchedulePosition.id, 
-          starttime: start,
-          endtime: end
-        }
-      }));
-
-      setScheduleModalOpen(false);
-      setEditingSchedulePosition(null);
-      setNewStartTime('');
-      setNewEndTime('');
-    } catch (err) {
-      console.error('Edit schedule failed', err);
-      alert('Error al actualizar el horario. Revisa la consola.');
-    } finally {
-      setScheduleLoading(false);
-    }
-  };
-
-  const closeScheduleModal = () => {
-    setScheduleModalOpen(false);
-    setEditingSchedulePosition(null);
-    setNewStartTime('');
-    setNewEndTime('');
   };
 
   const handlePositionToggle = (positionId: string | number, checked: boolean) => {
@@ -264,7 +222,6 @@ export default function CalendarPage() {
           onPublishAll={() => openPublish('all')} 
           onPublishChanges={() => openPublish('changes')} 
           onEditPosition={handleEditPosition}
-          onEditSchedule={handleEditSchedule}
           onPositionToggle={handlePositionToggle}
           onSearchChange={(q: string) => {
             try { window.dispatchEvent(new CustomEvent('userSearch', { detail: q })); } catch { }
@@ -306,7 +263,7 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* Edit Position modal */}
+      {/* Edit Position modal (unified: name, color, schedule) */}
       {editModalOpen && editingPosition && (
         <div className={modalStyles.modalOverlay} onClick={closeEditModal}>
           <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -315,7 +272,9 @@ export default function CalendarPage() {
               <button className={modalStyles.modalCloseButton} onClick={closeEditModal}>×</button>
             </div>
             <div className={modalStyles.modalBody}>
-              <div style={{ marginBottom: '16px' }}>
+              
+              {/* Nombre */}
+              <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
                   Nombre de la posición:
                 </label>
@@ -332,14 +291,84 @@ export default function CalendarPage() {
                     fontSize: '14px',
                     boxSizing: 'border-box'
                   }}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && !editLoading && newPositionName.trim()) {
-                      confirmEditPosition();
-                    }
-                  }}
                   autoFocus
                 />
               </div>
+
+              {/* Color */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                  Color:
+                </label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    '#ef4444', '#f97316', '#f59e0b',
+                    '#22c55e', '#06b6d4', '#3b82f6', 
+                    '#6366f1', '#a855f7', '#ec4899',
+                    '#64748b', '#475569', '#1e293b'
+                  ].map(color => (
+                    <button
+                      key={color}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '4px',
+                        backgroundColor: color,
+                        border: newPositionColor === color ? '3px solid #000' : '2px solid #ddd',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                      onClick={() => setNewPositionColor(color)}
+                      type="button"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Horarios */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                    Hora de inicio:
+                  </label>
+                  <input
+                    type="time"
+                    value={newStartTime}
+                    onChange={(e) => setNewStartTime(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                    Hora de fin:
+                  </label>
+                  <input
+                    type="time"
+                    value={newEndTime}
+                    onChange={(e) => setNewEndTime(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                Los horarios son opcionales. Si se proporciona uno, ambos son requeridos.
+              </div>
+
             </div>
             <div className={modalStyles.modalFooter}>
               <button 
@@ -355,74 +384,6 @@ export default function CalendarPage() {
                 disabled={editLoading || !newPositionName.trim()}
               >
                 {editLoading ? 'Guardando...' : 'Guardar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Schedule modal */}
-      {scheduleModalOpen && editingSchedulePosition && (
-        <div className={modalStyles.modalOverlay} onClick={closeScheduleModal}>
-          <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div className={modalStyles.modalHeader}>
-              <h3>Editar Horario - {editingSchedulePosition.name}</h3>
-              <button className={modalStyles.modalCloseButton} onClick={closeScheduleModal}>×</button>
-            </div>
-            <div className={modalStyles.modalBody}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                  Hora de inicio: *
-                </label>
-                <input
-                  type="time"
-                  value={newStartTime}
-                  onChange={(e) => setNewStartTime(e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                  Hora de fin: *
-                </label>
-                <input
-                  type="time"
-                  value={newEndTime}
-                  onChange={(e) => setNewEndTime(e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-            </div>
-            <div className={modalStyles.modalFooter}>
-              <button 
-                className={modalStyles.modalCancelButton} 
-                onClick={closeScheduleModal} 
-                disabled={scheduleLoading}
-              >
-                Cancelar
-              </button>
-              <button 
-                className={modalStyles.primaryBtn} 
-                onClick={confirmEditSchedule} 
-                disabled={scheduleLoading || !newStartTime.trim() || !newEndTime.trim() || newStartTime >= newEndTime}
-              >
-                {scheduleLoading ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
           </div>
