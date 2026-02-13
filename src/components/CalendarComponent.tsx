@@ -18,6 +18,7 @@ interface Shift {
   date: string;
   startTime: string | null;
   endTime: string | null;
+  positionId: number;
   position?: string;
   positionColor?: string;
   published: boolean;
@@ -340,14 +341,34 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     }
   };
 
-  // Listen for publish events to refresh data
+  // Listen for publish and position update events to refresh data
   useEffect(() => {
-    const handler = () => {
+    const handlePublish = () => {
       console.log('🔄 Detected published shifts - refreshing calendar');
       refreshData();
     };
-    window.addEventListener('publishedShifts', handler);
-    return () => window.removeEventListener('publishedShifts', handler);
+    const handlePositions = (e: any) => {
+      console.log('🔄 Detected position changes - updating local state:', e.detail);
+      const { positionId, color } = e.detail;
+
+      // Update shifts locally
+      setShifts(prev => prev.map(s =>
+        s.positionId === positionId ? { ...s, positionColor: color } : s
+      ));
+
+      // Update positions list (for assignment modal) locally
+      setPositions(prev => prev.map(p =>
+        p.id === positionId ? { ...p, color } : p
+      ));
+    };
+
+    window.addEventListener('publishedShifts', handlePublish);
+    window.addEventListener('positionsUpdated', handlePositions);
+
+    return () => {
+      window.removeEventListener('publishedShifts', handlePublish);
+      window.removeEventListener('positionsUpdated', handlePositions);
+    };
   }, []);
 
   const today = new Date();
