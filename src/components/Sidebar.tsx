@@ -17,6 +17,7 @@ interface SidebarProps {
     onPublishChanges?: () => void;
     onAddPosition?: () => void;
     onEditPosition?: (position: Position) => void;
+    conflictCount?: number;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -25,7 +26,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     onPublishAll,
     onPublishChanges,
     onAddPosition,
-    onEditPosition
+    onEditPosition,
+    conflictCount = 0
 }) => {
     const [positions, setPositions] = useState<Position[]>([]);
     const [loading, setLoading] = useState(true);
@@ -200,6 +202,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <button className={styles.secondaryBtn} onClick={onPublishChanges}>
                         PUBLICAR SÓLO CAMBIOS
                     </button>
+                    {conflictCount > 0 && (
+                        <div style={{ color: '#f59e0b', fontSize: '0.8em', marginTop: '6px', textAlign: 'center' }}>
+                            ⚠️ {conflictCount} turno{conflictCount > 1 ? 's' : ''} con conflicto
+                        </div>
+                    )}
                 </div>
             </div>
 

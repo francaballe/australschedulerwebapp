@@ -25,6 +25,7 @@ export default function CalendarPage() {
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [publishType, setPublishType] = useState<'all' | 'changes'>('all');
   const [publishLoading, setPublishLoading] = useState(false);
+  const [conflictCount, setConflictCount] = useState(0);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<Position | null>(null);
   const [newPositionName, setNewPositionName] = useState('');
@@ -68,6 +69,14 @@ export default function CalendarPage() {
 
   if (!user) return null;
 
+  // Listen for conflict shifts count from CalendarComponent
+  useEffect(() => {
+    const handleConflictCount = (e: any) => setConflictCount(e.detail || 0);
+    window.addEventListener('conflictShiftsCount', handleConflictCount);
+    return () => window.removeEventListener('conflictShiftsCount', handleConflictCount);
+  }, []);
+
+  // ---------- publish helpers ----------
   const openPublish = (type: 'all' | 'changes') => {
     setPublishType(type);
     setPublishModalOpen(true);
@@ -221,6 +230,7 @@ export default function CalendarPage() {
         <Sidebar
           onPublishAll={() => openPublish('all')}
           onPublishChanges={() => openPublish('changes')}
+          conflictCount={conflictCount}
           onEditPosition={handleEditPosition}
           onPositionToggle={handlePositionToggle}
           onSearchChange={(q: string) => {
@@ -254,6 +264,11 @@ export default function CalendarPage() {
                   ? 'Está seguro de que desea publicar todos los turnos?'
                   : 'Está seguro de que desea publicar sólo los turnos que han sufrido cambios?'}
               </p>
+              {conflictCount > 0 && (
+                <p style={{ color: '#f59e0b', fontSize: '0.9em', marginTop: '12px' }}>
+                  ⚠️ Hay {conflictCount} turno{conflictCount > 1 ? 's' : ''} con conflicto (usuario no disponible con turno asignado).
+                </p>
+              )}
             </div>
             <div className={modalStyles.modalFooter}>
               <button className={modalStyles.modalCancelButton} onClick={() => setPublishModalOpen(false)} disabled={publishLoading}>Cancelar</button>

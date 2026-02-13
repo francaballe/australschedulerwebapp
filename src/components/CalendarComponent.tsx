@@ -510,6 +510,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     };
   }, []);
 
+  // Notify parent about conflict shifts count
+  useEffect(() => {
+    const count = shifts.filter(s => s.unavailable && s.positionId > 1).length;
+    try {
+      window.dispatchEvent(new CustomEvent('conflictShiftsCount', { detail: count }));
+    } catch { }
+  }, [shifts]);
+
   const today = new Date();
 
   const formatDate = (date: Date) => {
