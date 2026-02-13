@@ -47,14 +47,14 @@ export default function CalendarPage() {
         const response = await fetch('/api/positions');
         if (response.ok) {
           const data = await response.json();
-          const allIds = new Set(data.map((p: any) => Number(p.id)));
+          const allIds = new Set<number>(data.map((p: any) => Number(p.id)));
           setEnabledPositions(allIds);
         }
       } catch (err) {
         console.error('Failed to initialize positions:', err);
       }
     };
-    
+
     initPositions();
   }, []);
 
@@ -158,8 +158,8 @@ export default function CalendarPage() {
 
       // Notify sidebar to refresh positions list and calendar
       window.dispatchEvent(new CustomEvent('positionsUpdated', {
-        detail: { 
-          positionId: editingPosition.id, 
+        detail: {
+          positionId: editingPosition.id,
           name: newPositionName.trim(),
           color: newPositionColor,
           ...(newStartTime.trim() && newEndTime.trim() && {
@@ -218,9 +218,9 @@ export default function CalendarPage() {
     <div className={styles.wrapper}>
       <Navbar />
       <div className={styles.content}>
-        <Sidebar 
-          onPublishAll={() => openPublish('all')} 
-          onPublishChanges={() => openPublish('changes')} 
+        <Sidebar
+          onPublishAll={() => openPublish('all')}
+          onPublishChanges={() => openPublish('changes')}
           onEditPosition={handleEditPosition}
           onPositionToggle={handlePositionToggle}
           onSearchChange={(q: string) => {
@@ -272,7 +272,7 @@ export default function CalendarPage() {
               <button className={modalStyles.modalCloseButton} onClick={closeEditModal}>×</button>
             </div>
             <div className={modalStyles.modalBody}>
-              
+
               {/* Nombre */}
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
@@ -303,7 +303,7 @@ export default function CalendarPage() {
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {[
                     '#ef4444', '#f97316', '#f59e0b',
-                    '#22c55e', '#06b6d4', '#3b82f6', 
+                    '#22c55e', '#06b6d4', '#3b82f6',
                     '#6366f1', '#a855f7', '#ec4899',
                     '#64748b', '#475569', '#1e293b'
                   ].map(color => (
@@ -371,16 +371,16 @@ export default function CalendarPage() {
 
             </div>
             <div className={modalStyles.modalFooter}>
-              <button 
-                className={modalStyles.modalCancelButton} 
-                onClick={closeEditModal} 
+              <button
+                className={modalStyles.modalCancelButton}
+                onClick={closeEditModal}
                 disabled={editLoading}
               >
                 Cancelar
               </button>
-              <button 
-                className={modalStyles.primaryBtn} 
-                onClick={confirmEditPosition} 
+              <button
+                className={modalStyles.primaryBtn}
+                onClick={confirmEditPosition}
                 disabled={editLoading || !newPositionName.trim()}
               >
                 {editLoading ? 'Guardando...' : 'Guardar'}
