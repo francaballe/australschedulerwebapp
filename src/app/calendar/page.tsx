@@ -34,12 +34,31 @@ export default function CalendarPage() {
   const [newStartTime, setNewStartTime] = useState('');
   const [newEndTime, setNewEndTime] = useState('');
   const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [enabledPositions, setEnabledPositions] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.push("/");
     }
   }, [user, isLoading, router]);
+
+  // Initialize all positions as enabled on component mount
+  useEffect(() => {
+    const initPositions = async () => {
+      try {
+        const response = await fetch('/api/positions');
+        if (response.ok) {
+          const data = await response.json();
+          const allIds = new Set(data.map((p: any) => Number(p.id)));
+          setEnabledPositions(allIds);
+        }
+      } catch (err) {
+        console.error('Failed to initialize positions:', err);
+      }
+    };
+    
+    initPositions();
+  }, []);
 
   if (isLoading) {
     return (
@@ -224,6 +243,19 @@ export default function CalendarPage() {
     setNewEndTime('');
   };
 
+  const handlePositionToggle = (positionId: string | number, checked: boolean) => {
+    const numId = Number(positionId);
+    setEnabledPositions(prev => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(numId);
+      } else {
+        next.delete(numId);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className={styles.wrapper}>
       <Navbar />
@@ -233,6 +265,10 @@ export default function CalendarPage() {
           onPublishChanges={() => openPublish('changes')} 
           onEditPosition={handleEditPosition}
           onEditSchedule={handleEditSchedule}
+          onPositionToggle={handlePositionToggle}
+          onSearchChange={(q: string) => {
+            try { window.dispatchEvent(new CustomEvent('userSearch', { detail: q })); } catch { }
+          }}
         />
         <main className={styles.main}>
 
@@ -243,7 +279,7 @@ export default function CalendarPage() {
             </div>
           )}
 
-          <CalendarComponent />
+          <CalendarComponent enabledPositions={enabledPositions} />
         </main>
       </div>
 

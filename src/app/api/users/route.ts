@@ -10,8 +10,9 @@ export async function GET(request: NextRequest) {
     };
 
     try {
-        // Get optional siteId filter from query params
+        // Get optional siteId and search query from query params
         const siteIdParam = request.nextUrl.searchParams.get('siteId');
+        const q = request.nextUrl.searchParams.get('q');
         
         // Build where clause dynamically
         const whereClause: any = {
@@ -20,6 +21,16 @@ export async function GET(request: NextRequest) {
 
         if (siteIdParam) {
             whereClause.siteid = Number(siteIdParam);
+        }
+
+        // If a search query is provided, add OR conditions for firstname/lastname/email
+        if (q && q.trim()) {
+            const term = q.trim();
+            whereClause.OR = [
+                { firstname: { contains: term, mode: 'insensitive' } },
+                { lastname: { contains: term, mode: 'insensitive' } },
+                { email: { contains: term, mode: 'insensitive' } }
+            ];
         }
 
         // Using Prisma ORM with conditional filtering

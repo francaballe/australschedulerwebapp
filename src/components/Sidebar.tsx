@@ -65,7 +65,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }
                 const data = await response.json();
                 // Initialize with checked: true
-                setPositions(data.map((p: any) => ({ ...p, checked: true })));
+                const initialized = data.map((p: any) => ({ ...p, checked: true }));
+                setPositions(initialized);
                 setError(null);
             } catch (err: any) {
                 console.error('Failed to fetch positions:', err);
@@ -77,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         const handlePositionsUpdated = (event: any) => {
             const { positionId, color, name, starttime, endtime } = event.detail;
-            setPositions(prev => prev.map(p => {
+            const updater = (p: Position) => {
                 if (p.id === positionId) {
                     return {
                         ...p,
@@ -88,7 +89,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                     };
                 }
                 return p;
-            }));
+            };
+
+            setPositions(prev => prev.map(updater));
         };
 
         fetchPositions();
@@ -101,23 +104,81 @@ const Sidebar: React.FC<SidebarProps> = ({
         };
     }, []);
 
-    const handleTogglePosition = (id: string | number) => {
-        setPositions(prev => prev.map(p =>
-            p.id === id ? { ...p, checked: !p.checked } : p
-        ));
-        // Also call prop if provided
-        const pos = positions.find(p => p.id === id);
-        if (pos && onPositionToggle) {
-            onPositionToggle(id, !pos.checked);
+    // Search input state + debounce (only triggers onSearchChange)
+    const [searchValue, setSearchValue] = useState('');
+    const debounceRef = useRef<number | null>(null);
+
+    const handleSearchChange = (value: string) => {
+        setSearchValue(value);
+        // debounce 300ms
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
         }
+        // @ts-ignore - window.setTimeout returns number in browser
+        debounceRef.current = window.setTimeout(() => {
+            onSearchChange?.(value);
+            debounceRef.current = null;
+        }, 300);
+    };
+
+    // cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+        };
+    }, []);
+
+    const handleTogglePosition = (id: string | number) => {
+        setPositions(prev => {
+            const updated = prev.map(p => {
+                if (p.id === id) {
+                    const newChecked = !p.checked;
+                    // Call parent callback immediately with new value
+                    if (onPositionToggle) {
+                        setTimeout(() => onPositionToggle(Number(id), newChecked), 0);
+                    }
+                    return { ...p, checked: newChecked };
+                }
+                return p;
+            });
+            return updated;
+        });
     };
 
     const handleSelectAll = () => {
-        setPositions(prev => prev.map(p => ({ ...p, checked: true })));
+        setPositions(prev => {
+            const updated = prev.map(p => ({ ...p, checked: true }));
+            // Send notifications after state update
+            if (onPositionToggle) {
+                setTimeout(() => {
+                    prev.forEach(p => {
+                        if (!p.checked) {
+                            onPositionToggle(Number(p.id), true);
+                        }
+                    });
+                }, 0);
+            }
+            return updated;
+        });
     };
 
     const handleSelectNone = () => {
-        setPositions(prev => prev.map(p => ({ ...p, checked: false })));
+        setPositions(prev => {
+            const updated = prev.map(p => ({ ...p, checked: false }));
+            // Send notifications after state update
+            if (onPositionToggle) {
+                setTimeout(() => {
+                    prev.forEach(p => {
+                        if (p.checked) {
+                            onPositionToggle(Number(p.id), false);
+                        }
+                    });
+                }, 0);
+            }
+            return updated;
+        });
     };
 
     const handleToggleAllSelection = () => {
@@ -188,7 +249,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         name="search-filter"
                         placeholder="Buscar usuario"
                         className={styles.searchInput}
-                        onChange={(e) => onSearchChange?.(e.target.value)}
+                        value={searchValue}
+                        onChange={(e) => handleSearchChange(e.target.value)}
                         autoComplete="off"
                         autoCorrect="off"
                         autoCapitalize="off"

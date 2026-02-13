@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import styles from "./CalendarComponent.module.css";
 
-interface CalendarProps { }
+interface CalendarProps { 
+  enabledPositions: Set<number>;
+}
 
 interface User {
   id: number;
@@ -33,7 +35,7 @@ interface Position {
   endtime: string | null;
 }
 
-const CalendarComponent: React.FC<CalendarProps> = () => {
+const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'week' | 'day' | 'twoWeeks'>('week');
 
@@ -90,8 +92,52 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
 
     init();
     window.addEventListener('siteChanged', handler as EventListener);
-    return () => window.removeEventListener('siteChanged', handler as EventListener);
+
+    return () => {
+      window.removeEventListener('siteChanged', handler as EventListener);
+    };
   }, []);
+
+  // Separate effect: listen for search events and update users/shifts accordingly.
+  useEffect(() => {
+    const searchHandler = (e: any) => {
+      const q = e?.detail ?? '';
+      (async () => {
+        try {
+          const url = selectedSiteId ? `/api/users?siteId=${selectedSiteId}&q=${encodeURIComponent(q)}` : `/api/users?q=${encodeURIComponent(q)}`;
+          const resp = await fetch(url);
+          if (!resp.ok) return;
+          const data = await resp.json();
+          setUsers(data);
+
+          // Reload shifts for the visible week and filter them to the found users
+          try {
+            const dates = getWeekDates(currentDate);
+            const shiftsData = await fetchShifts(dates);
+            const userIds = new Set(data.map((u: User) => u.id));
+            const filtered = shiftsData.filter((s: Shift) => userIds.has(s.userId));
+            setShifts(filtered);
+
+            // Refresh confirmations for week view
+            if (view === 'week' && dates.length > 0) {
+              const weekStartDate = formatDateLocal(dates[0]);
+              await fetchUserConfirmations(weekStartDate, data);
+            }
+          } catch (innerErr) {
+            console.error('Error updating shifts after search:', innerErr);
+          }
+        } catch (err) {
+          console.error('Search fetch error', err);
+        }
+      })();
+    };
+
+    window.addEventListener('userSearch', searchHandler as EventListener);
+
+    return () => {
+      window.removeEventListener('userSearch', searchHandler as EventListener);
+    };
+  }, [selectedSiteId, currentDate, view]);
 
   // Helper to format date as YYYY-MM-DD in local time
   const formatDateLocal = (date: Date) => {
@@ -279,6 +325,25 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
 
   const weekDates = getWeekDates(currentDate);
 
+  // Calculate filtered users - only show users that have shifts with enabled positions in current week
+  const filteredUsers = users.filter(user => {
+    // Always show users if "No position" (id=0) is enabled, or if no positions are enabled
+    if (enabledPositions.has(0) || enabledPositions.size === 0) {
+      return true;
+    }
+    
+    // Check if user has any shift with an enabled position in the current week
+    const weekStart = formatDateLocal(weekDates[0]);
+    const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
+    
+    return shifts.some(shift => 
+      shift.userId === user.id &&
+      shift.date >= weekStart &&
+      shift.date <= weekEnd &&
+      enabledPositions.has(shift.positionId)
+    );
+  });
+
   // When currentDate, view or selectedSiteId changes, reload users and shifts
   useEffect(() => {
     const loadUsersAndShifts = async () => {
@@ -444,7 +509,17 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   // Obtener shift para un usuario en una fecha específica
   const getShiftForUserAndDay = (userId: number, date: Date): Shift | undefined => {
     const dateStr = formatDateLocal(date);
-    return shifts.find(shift => shift.userId === userId && shift.date === dateStr);
+    
+    // If no positions are enabled, don't show any shifts
+    if (enabledPositions.size === 0) {
+      return undefined;
+    }
+    
+    return shifts.find(shift => 
+      shift.userId === userId && 
+      shift.date === dateStr && 
+      enabledPositions.has(shift.positionId)
+    );
   };
 
   // Formatear horarios del shift
@@ -485,8 +560,12 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
 
   // Calcular total de horas para un usuario en el rango visible
   const getUserTotalHours = (userId: number): number => {
+    if (enabledPositions.size === 0) {
+      return 0;
+    }
+    
     return shifts
-      .filter(s => s.userId === userId && !s.toBeDeleted)
+      .filter(s => s.userId === userId && !s.toBeDeleted && enabledPositions.has(s.positionId))
       .reduce((acc, s) => acc + calculateHours(s.startTime, s.endTime), 0);
   };
 
@@ -696,7 +775,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
           <div className={styles.emptyContainer}>No se encontraron usuarios</div>
         ) : (
           // filter users by selected site if available
-          users
+          filteredUsers
             .filter((u: User) => selectedSiteId == null ? true : u.siteId === selectedSiteId)
             .map((user: User) => (
               <div key={user.id} className={styles.userRow}>
@@ -773,7 +852,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
           <div className={styles.footerLabel}>Totales:</div>
           {weekDates.map((date, index) => {
             const dateStr = formatDateLocal(date);
-            const dailyShifts = shifts.filter(s => s.date === dateStr && !s.toBeDeleted);
+            const dailyShifts = enabledPositions.size === 0 ? [] : shifts.filter(s => s.date === dateStr && !s.toBeDeleted && enabledPositions.has(s.positionId));
             const totalHours = dailyShifts.reduce((acc, shift) => {
               return acc + calculateHours(shift.startTime, shift.endTime);
             }, 0);
