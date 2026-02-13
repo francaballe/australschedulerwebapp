@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import styles from "./CalendarComponent.module.css";
 
-interface CalendarProps { 
+interface CalendarProps {
   enabledPositions: Set<number>;
 }
 
@@ -53,6 +53,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
+  // Drag & drop states
+  const [draggedShift, setDraggedShift] = useState<Shift | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ userId: number; dateStr: string } | null>(null);
 
   // Load users (optionally filtered by siteId)
   const loadUsers = async (siteId?: number | null) => {
@@ -160,10 +164,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
         throw new Error('Error al cargar turnos');
       }
       const data = await response.json();
-      
+
       // Data consistency check: detect multiple shifts per user per day
       const shiftsByUserDate = new Map<string, Shift[]>();
-      
+
       (data as Shift[]).forEach(shift => {
         const key = `${shift.userId}-${shift.date}`;
         if (!shiftsByUserDate.has(key)) {
@@ -171,20 +175,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
         }
         shiftsByUserDate.get(key)!.push(shift);
       });
-      
+
       // Report inconsistencies
       const inconsistencies = Array.from(shiftsByUserDate.entries())
         .filter(([key, shifts]) => shifts.length > 1);
-        
+
       if (inconsistencies.length > 0) {
-        console.warn('🔥 DATA INCONSISTENCY DETECTED: Multiple shifts per user per day:', 
+        console.warn('🔥 DATA INCONSISTENCY DETECTED: Multiple shifts per user per day:',
           inconsistencies.reduce((acc, [key, shifts]) => {
             acc[key] = shifts;
             return acc;
           }, {} as Record<string, Shift[]>)
         );
       }
-      
+
       return data as Shift[];
     } catch (err: any) {
       console.error('Failed to fetch shifts:', err);
@@ -220,7 +224,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
 
       // Check if any existing shift was marked as unavailable (user marked as "not available" from mobile app)
       const wasUnavailable = existingShifts.some(shift => shift.unavailable === true);
-      
+
       if (wasUnavailable) {
         console.log(`📱 User ${userId} was marked as unavailable on ${dateStr}. New shift will maintain unavailable flag.`);
       }
@@ -228,7 +232,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       // Delete ALL existing shifts for this user/date to ensure data consistency
       if (existingShifts.length > 0) {
         console.log(`🔄 Found ${existingShifts.length} existing shift(s) for user ${userId} on ${dateStr}, cleaning up...`);
-        
+
         for (const existingShift of existingShifts) {
           try {
             const deleteResponse = await fetch(`/api/shifts/${existingShift.id}`, {
@@ -237,7 +241,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                 'Content-Type': 'application/json',
               }
             });
-            
+
             if (!deleteResponse.ok) {
               console.warn('⚠️ Could not delete existing shift:', existingShift.id);
             } else {
@@ -287,6 +291,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
 
       const result = await response.json();
       console.log('✅ Shift assignment successful:', result);
+
+      // Notify sidebar/calendar to enable this position filter so the new shift is visible
+      try {
+        window.dispatchEvent(new CustomEvent('enablePosition', { detail: positionId }));
+      } catch { }
 
       // Refresh shifts data
       await refreshData();
@@ -372,16 +381,16 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     if (enabledPositions.has(0) || enabledPositions.size === 0) {
       return true;
     }
-    
+
     // Check if user has any shift with an enabled position in the current week
     const weekStart = formatDateLocal(weekDates[0]);
     const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
-    
+
     // Group user's shifts by date to avoid counting duplicates
     const userShiftsByDate = new Map<string, Shift[]>();
-    
+
     shifts
-      .filter(shift => 
+      .filter(shift =>
         shift.userId === user.id &&
         shift.date >= weekStart &&
         shift.date <= weekEnd
@@ -392,7 +401,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
         }
         userShiftsByDate.get(shift.date)!.push(shift);
       });
-    
+
     // Check if any date has a shift with enabled position
     return Array.from(userShiftsByDate.values()).some(shiftsForDate => {
       if (shiftsForDate.length > 1) {
@@ -568,22 +577,22 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
   // Obtener shift para un usuario en una fecha específica
   const getShiftForUserAndDay = (userId: number, date: Date): Shift | undefined => {
     const dateStr = formatDateLocal(date);
-    
+
     // If no positions are enabled, don't show any shifts
     if (enabledPositions.size === 0) {
       return undefined;
     }
-    
+
     // Get all shifts for this user on this date
-    const userShiftsForDate = shifts.filter(shift => 
+    const userShiftsForDate = shifts.filter(shift =>
       shift.userId === userId && shift.date === dateStr
     );
-    
+
     // If multiple shifts exist (data inconsistency), log warning and take the first enabled one
     if (userShiftsForDate.length > 1) {
       console.warn(`Multiple shifts found for user ${userId} on ${dateStr}:`, userShiftsForDate);
     }
-    
+
     // Return the first shift that matches enabled positions
     return userShiftsForDate.find(shift => enabledPositions.has(shift.positionId));
   };
@@ -629,10 +638,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     if (enabledPositions.size === 0) {
       return 0;
     }
-    
+
     // Group shifts by date to detect duplicates
     const shiftsByDate = new Map<string, Shift[]>();
-    
+
     shifts
       .filter(s => s.userId === userId && !s.toBeDeleted && enabledPositions.has(s.positionId))
       .forEach(shift => {
@@ -642,9 +651,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
         }
         shiftsByDate.get(date)!.push(shift);
       });
-    
+
     let totalHours = 0;
-    
+
     // For each date, only count the first shift (log if duplicates found)
     shiftsByDate.forEach((shiftsForDate, date) => {
       if (shiftsForDate.length > 1) {
@@ -654,12 +663,103 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       const shift = shiftsForDate[0];
       totalHours += calculateHours(shift.startTime, shift.endTime);
     });
-    
+
     return totalHours;
+  };
+
+  // ── Drag & Drop helpers ──
+
+  const isShiftDraggable = (shift: Shift): boolean => {
+    return shift.positionId !== 1 && !shift.unavailable;
+  };
+
+  const handleDragStart = (e: React.DragEvent, shift: Shift) => {
+    if (!isShiftDraggable(shift)) {
+      e.preventDefault();
+      return;
+    }
+    setDraggedShift(shift);
+    e.dataTransfer.effectAllowed = 'move';
+    // Use a small timeout so the browser captures the element before we style it
+    setTimeout(() => {
+      (e.target as HTMLElement).classList.add(styles.dragging);
+    }, 0);
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    (e.target as HTMLElement).classList.remove(styles.dragging);
+    setDraggedShift(null);
+    setDropTarget(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, userId: number, date: Date) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const dateStr = formatDateLocal(date);
+    if (!dropTarget || dropTarget.userId !== userId || dropTarget.dateStr !== dateStr) {
+      setDropTarget({ userId, dateStr });
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're leaving the cell (not entering a child)
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
+    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+      setDropTarget(null);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetUserId: number, targetDate: Date) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDropTarget(null);
+
+    if (!draggedShift) return;
+
+    const targetDateStr = formatDateLocal(targetDate);
+
+    // No-op if dropped on original cell
+    if (draggedShift.userId === targetUserId && draggedShift.date === targetDateStr) {
+      setDraggedShift(null);
+      return;
+    }
+
+    // Check if target cell already has a shift
+    const existing = getShiftForUserAndDay(targetUserId, targetDate);
+    if (existing) {
+      alert('Ya existe un turno en esta celda. Elimínelo primero.');
+      setDraggedShift(null);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/shifts/${draggedShift.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: targetUserId,
+          date: new Date(targetDateStr)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al mover turno');
+      }
+
+      await refreshData();
+    } catch (err: any) {
+      console.error('Failed to move shift:', err);
+      alert(`Error al mover turno: ${err.message}`);
+    } finally {
+      setDraggedShift(null);
+    }
   };
 
   // Manejar click en celda
   const handleCellClick = (userId: number, date: Date) => {
+    // Don't open modal if we just finished a drag
+    if (draggedShift) return;
+
     console.log(`Clicked on user ${userId} for date ${date.toDateString()}`);
 
     // Open modal for position selection
@@ -679,11 +779,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     if (!selectedCell) return;
 
     // Client-side validation: check for existing shifts
-    const existingShifts = shifts.filter(s => 
-      s.userId === selectedCell.userId && 
+    const existingShifts = shifts.filter(s =>
+      s.userId === selectedCell.userId &&
       s.date === formatDateLocal(selectedCell.date)
     );
-    
+
     if (existingShifts.length > 1) {
       console.error('Multiple shifts detected for this user/date. Data cleanup required.');
       alert('Error: Se detectaron múltiples turnos para este usuario en esta fecha. Se requiere limpieza de datos.');
@@ -706,20 +806,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
 
   const handleRestoreShift = async () => {
     if (!selectedCell) return;
-    
+
     // Get all shifts for this user/date
-    const allShifts = shifts.filter(s => 
-      s.userId === selectedCell.userId && 
+    const allShifts = shifts.filter(s =>
+      s.userId === selectedCell.userId &&
       s.date === formatDateLocal(selectedCell.date)
     );
-    
+
     if (allShifts.length === 0) return;
-    
+
     if (allShifts.length > 1) {
       console.warn('Multiple shifts found for restore operation:', allShifts);
       alert('Se encontraron múltiples turnos. Se restaurará el primero.');
     }
-    
+
     const shift = allShifts[0]; // Take the first one
 
     try {
@@ -746,18 +846,18 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     if (!selectedCell) return;
 
     // Get all shifts for this user/date
-    const allShifts = shifts.filter(s => 
-      s.userId === selectedCell.userId && 
+    const allShifts = shifts.filter(s =>
+      s.userId === selectedCell.userId &&
       s.date === formatDateLocal(selectedCell.date)
     );
-    
+
     if (allShifts.length === 0) return;
-    
+
     if (allShifts.length > 1) {
       console.warn('Multiple shifts found for delete operation:', allShifts);
       alert('Se encontraron múltiples turnos. Se eliminará el primero.');
     }
-    
+
     const shift = allShifts[0]; // Take the first one
 
     // If shift is published and not yet confirmed, show confirmation
@@ -916,15 +1016,23 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                 {weekDates.map((date: Date, dayIndex: number) => {
                   const shift = getShiftForUserAndDay(user.id, date);
                   const shiftTimeText = shift ? formatShiftTime(shift.startTime, shift.endTime) : "";
+                  const dateStr = formatDateLocal(date);
+                  const isDropTarget = dropTarget?.userId === user.id && dropTarget?.dateStr === dateStr;
                   return (
                     <div
                       key={`${user.id}-${dayIndex}`}
-                      className={`${styles.dayCell} ${isToday(date) ? styles.todayCell : ''}`}
+                      className={`${styles.dayCell} ${isToday(date) ? styles.todayCell : ''} ${isDropTarget ? styles.dropTargetCell : ''}`}
                       onClick={() => handleCellClick(user.id, date)}
+                      onDragOver={(e) => handleDragOver(e, user.id, date)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, user.id, date)}
                     >
                       {shift ? (
                         <div
-                          className={`${styles.shiftContent} ${!shift.published ? styles.unpublishedShift : ''} ${shift.toBeDeleted ? styles.toBeDeleted : ''}`}
+                          className={`${styles.shiftContent} ${!shift.published ? styles.unpublishedShift : ''} ${shift.toBeDeleted ? styles.toBeDeleted : ''} `}
+                          draggable={isShiftDraggable(shift)}
+                          onDragStart={(e) => handleDragStart(e, shift)}
+                          onDragEnd={handleDragEnd}
                           style={{
                             backgroundColor: shift.positionColor ?
                               `${shift.positionColor}${!shift.published ? '30' : '85'}` :
@@ -983,7 +1091,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
             const dateStr = formatDateLocal(date);
             // Group shifts by user to avoid counting duplicates
             const dailyShiftsMap = new Map<number, Shift>();
-            
+
             shifts
               .filter(s => s.date === dateStr && !s.toBeDeleted && enabledPositions.has(s.positionId))
               .forEach(shift => {
@@ -994,7 +1102,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                   console.warn(`Duplicate shift detected for user ${shift.userId} on ${dateStr}`);
                 }
               });
-            
+
             const totalHours = Array.from(dailyShiftsMap.values()).reduce((acc, shift) => {
               return acc + calculateHours(shift.startTime, shift.endTime);
             }, 0);
@@ -1028,13 +1136,13 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
               </div>
               <div className={styles.modalHeaderActions}>
                 {selectedCell && (() => {
-                  const allUserShifts = shifts.filter(s => 
-                    s.userId === selectedCell.userId && 
+                  const allUserShifts = shifts.filter(s =>
+                    s.userId === selectedCell.userId &&
                     s.date === formatDateLocal(selectedCell.date)
                   );
                   const hasMultiple = allUserShifts.length > 1;
                   const shift = allUserShifts[0];
-                  
+
                   return (
                     <div>
                       {hasMultiple && (

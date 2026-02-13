@@ -74,13 +74,29 @@ const Sidebar: React.FC<SidebarProps> = ({
             setPositions(prev => prev.map(updater));
         };
 
+        const handleEnablePosition = (event: any) => {
+            const positionId = event.detail;
+            setPositions(prev => prev.map(p => {
+                if (Number(p.id) === Number(positionId) && !p.checked) {
+                    // Also notify parent so enabledPositions set is updated
+                    if (onPositionToggle) {
+                        setTimeout(() => onPositionToggle(Number(p.id), true), 0);
+                    }
+                    return { ...p, checked: true };
+                }
+                return p;
+            }));
+        };
+
         fetchPositions();
-        
+
         // Listen for position updates from other components
         window.addEventListener('positionsUpdated', handlePositionsUpdated);
-        
+        window.addEventListener('enablePosition', handleEnablePosition);
+
         return () => {
             window.removeEventListener('positionsUpdated', handlePositionsUpdated);
+            window.removeEventListener('enablePosition', handleEnablePosition);
         };
     }, []);
 
