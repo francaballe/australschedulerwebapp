@@ -36,6 +36,12 @@ export default function CalendarPage() {
   const [enabledPositions, setEnabledPositions] = useState<Set<number>>(new Set());
 
   useEffect(() => {
+    const handleConflictCount = (e: any) => setConflictCount(e.detail || 0);
+    window.addEventListener('conflictShiftsCount', handleConflictCount);
+    return () => window.removeEventListener('conflictShiftsCount', handleConflictCount);
+  }, []);
+
+  useEffect(() => {
     if (!isLoading && !user) {
       router.push("/");
     }
@@ -68,13 +74,6 @@ export default function CalendarPage() {
   }
 
   if (!user) return null;
-
-  // Listen for conflict shifts count from CalendarComponent
-  useEffect(() => {
-    const handleConflictCount = (e: any) => setConflictCount(e.detail || 0);
-    window.addEventListener('conflictShiftsCount', handleConflictCount);
-    return () => window.removeEventListener('conflictShiftsCount', handleConflictCount);
-  }, []);
 
   // ---------- publish helpers ----------
   const openPublish = (type: 'all' | 'changes') => {
