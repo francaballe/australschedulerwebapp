@@ -858,18 +858,37 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
 
     try {
       setModalLoading(true);
-      const response = await fetch(`/api/shifts/${shift.id}`, {
-        method: 'DELETE',
-      });
 
-      if (!response.ok) {
-        throw new Error('Error al eliminar turno');
+      // Conflict shift (unavailable + real position): revert to plain unavailable
+      if (shift.unavailable && shift.positionId > 1) {
+        const response = await fetch(`/api/shifts/${shift.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            positionId: 1,
+            published: true,
+            starttime: null,
+            endtime: null,
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al revertir turno');
+        }
+      } else {
+        const response = await fetch(`/api/shifts/${shift.id}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al eliminar turno');
+        }
       }
 
       await refreshData();
       handleModalClose();
     } catch (err: any) {
-      console.error('Failed to delete shift:', err);
+      console.error('Failed to delete/revert shift:', err);
       alert('Error al eliminar turno');
     } finally {
       setModalLoading(false);
@@ -1034,6 +1053,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                             color: isFilteredOut ? 'var(--foreground-secondary, #94a3b8)' : (shift.positionColor || '#fbbf24'),
                             position: 'relative'
                           }}
+                          title={shift.unavailable && shift.positionId > 1 ? 'Conflicto: usuario no disponible con turno asignado' : undefined}
                         >
                           {shift.toBeDeleted && (
                             <div className={styles.trashIconOverlay} title="Marcado para borrar">
@@ -1042,15 +1062,6 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                                 <line x1="10" y1="11" x2="10" y2="17" />
                                 <line x1="14" y1="11" x2="14" y2="17" />
-                              </svg>
-                            </div>
-                          )}
-                          {shift.unavailable && shift.positionId <= 1 && (
-                            <div className={styles.unavailableIconOverlay} title="Usuario se marcó como no disponible">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10" />
-                                <line x1="15" y1="9" x2="9" y2="15" />
-                                <line x1="9" y1="9" x2="15" y2="15" />
                               </svg>
                             </div>
                           )}
@@ -1151,7 +1162,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                           ⚠️ Se detectaron múltiples turnos para esta fecha. Se mostrará/operará con el primero.
                         </div>
                       )}
-                      {shift && (shift.toBeDeleted ? (
+                      {shift && shift.positionId !== 1 && (shift.toBeDeleted ? (
                         <button className={`${styles.modalDeleteButton} ${styles.restoreButton}`} onClick={handleRestoreShift} title="Deshacer borrado">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M3 10h10a5 5 0 0 1 5 5v2" />

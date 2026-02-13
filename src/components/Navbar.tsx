@@ -78,7 +78,7 @@ export default function Navbar() {
                     </svg>
                 )}
                 <span className={styles.logoText}>
-                    RosterLoop <span className={styles.logoVersion}>(v1.2.12)</span>
+                    RosterLoop <span className={styles.logoVersion}>(v1.2.13)</span>
                 </span>
             </div>
 
