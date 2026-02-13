@@ -43,30 +43,22 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         let result;
         let action = '';
 
-        // 2. Conditional Logic
-        if (shift.published) {
-            // If published, mark for deletion (soft delete style)
-            // The user requested setting a boolean value corresponding to 'unavailable' (which seems to be 'toBeDeleted' based on context)
-            // but also "true su valor booleano correspondiente (unavilable...revisa el modelo en prisma por las dudas...y usa prisma dicho sea de paso)"
-            // Looking at schema: `toBeDeleted Boolean @default(false) @map("to_be_deleted")` seems the right one for "mark for deletion".
-            // The user also mentioned "unavailable", but that field is `unavailable Boolean?`.
-            // However, the requirement "se pone en true su valor booleano correspondiente (unavilable...revisa el modelo en prisma por las dudas...)" 
-            // likely refers to `toBeDeleted` as "mark to be deleted".
-            // Let's assume `toBeDeleted` is the flag for "pending deletion" that is processed on publish.
-
+        // 2. Deletion Logic
+        if (shift.positionId === 1 || !shift.published) {
+            // Hard delete if it's "Unavailable" (ID 1) or not yet published
+            console.log(`Physically deleting shift ${idNumber}`);
+            result = await prisma.shift.delete({
+                where: { id: idNumber }
+            });
+            action = 'deleted';
+        } else {
+            // Soft delete for published regular shifts
             console.log(`Marking published shift ${idNumber} for deletion`);
             result = await prisma.shift.update({
                 where: { id: idNumber },
                 data: { toBeDeleted: true }
             });
             action = 'marked_for_deletion';
-        } else {
-            // If NOT published, actually delete it
-            console.log(`Deleting unpublished shift ${idNumber}`);
-            result = await prisma.shift.delete({
-                where: { id: idNumber }
-            });
-            action = 'deleted';
         }
 
         return NextResponse.json(

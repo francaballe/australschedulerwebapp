@@ -92,12 +92,20 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     return () => window.removeEventListener('siteChanged', handler as EventListener);
   }, []);
 
+  // Helper to format date as YYYY-MM-DD in local time
+  const formatDateLocal = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const fetchShifts = async (dates: Date[]) => {
     if (dates.length === 0) return [] as Shift[];
 
     try {
-      const startDate = dates[0].toISOString().split('T')[0];
-      const endDate = dates[dates.length - 1].toISOString().split('T')[0];
+      const startDate = formatDateLocal(dates[0]);
+      const endDate = formatDateLocal(dates[dates.length - 1]);
 
       const response = await fetch(`/api/shifts?startDate=${startDate}&endDate=${endDate}`);
       if (!response.ok) {
@@ -132,7 +140,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
   // Create new shift assignment
   const createShiftAssignment = async (userId: number, date: Date, positionId: number) => {
     try {
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = formatDateLocal(date);
 
       // Check if shift already exists for this user/date
       const existingShift = getShiftForUserAndDay(userId, date);
@@ -251,8 +259,9 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
     const currentDate = new Date(date);
     const dayOfWeek = currentDate.getDay(); // 0=domingo, 1=lunes...
 
-    // Crear el domingo de esta semana
+    // Crear el domingo de esta semana (reset local time to midnight)
     const sunday = new Date(currentDate);
+    sunday.setHours(0, 0, 0, 0); // Essential for local consistency
     sunday.setDate(currentDate.getDate() - dayOfWeek);
 
     // Crear array con los días según la vista
@@ -289,7 +298,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
 
         // Only fetch confirmations for week view
         if (view === 'week' && weekDates.length > 0) {
-          const weekStartDate = weekDates[0].toISOString().split('T')[0];
+          const weekStartDate = formatDateLocal(weekDates[0]);
           await fetchUserConfirmations(weekStartDate, usersData);
         }
       } catch (err) {
@@ -321,7 +330,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
 
       // Only fetch confirmations for week view
       if (view === 'week' && weekDates.length > 0) {
-        const weekStartDate = weekDates[0].toISOString().split('T')[0];
+        const weekStartDate = formatDateLocal(weekDates[0]);
         await fetchUserConfirmations(weekStartDate, usersData);
       }
     } catch (err) {
@@ -397,7 +406,7 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
 
   // Obtener shift para un usuario en una fecha específica
   const getShiftForUserAndDay = (userId: number, date: Date): Shift | undefined => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDateLocal(date);
     return shifts.find(shift => shift.userId === userId && shift.date === dateStr);
   };
 
@@ -726,7 +735,8 @@ const CalendarComponent: React.FC<CalendarProps> = () => {
         <div className={styles.tableFooter}>
           <div className={styles.footerLabel}>Totales:</div>
           {weekDates.map((date, index) => {
-            const dailyShifts = shifts.filter(s => s.date === date.toISOString().split('T')[0] && !s.toBeDeleted);
+            const dateStr = formatDateLocal(date);
+            const dailyShifts = shifts.filter(s => s.date === dateStr && !s.toBeDeleted);
             const totalHours = dailyShifts.reduce((acc, shift) => {
               return acc + calculateHours(shift.startTime, shift.endTime);
             }, 0);
