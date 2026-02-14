@@ -59,14 +59,13 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        // Fetch availability records for the same date range
-        const availabilityRecords = await prisma.userAvailability.findMany({
+        // Fetch unavailability records for the same date range
+        const availabilityRecords = await prisma.userUnavailability.findMany({
             where: {
                 date: {
                     gte: new Date(startDate),
                     lte: new Date(endDate)
                 },
-                available: false
             },
             select: {
                 userId: true,
