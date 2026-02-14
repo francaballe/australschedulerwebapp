@@ -394,14 +394,7 @@
   bottom: 0;
   pointer-events: none;
   border-radius: 6px;
-  background:
-    linear-gradient(135deg, #000 9px, transparent 9px),
-    linear-gradient(225deg, #000 9px, transparent 9px),
-    linear-gradient(315deg, #000 9px, transparent 9px),
-    linear-gradient(45deg, #000 9px, transparent 9px);
-  background-position: top left, top right, bottom right, bottom left;
-  background-size: 16px 16px;
-  background-repeat: no-repeat;
+  background: none;
 }
 
 .unavailableWarningIcon {
@@ -409,9 +402,9 @@
   top: 50%;
   right: 5px;
   transform: translateY(-50%);
-  width: 22px;
-  height: 22px;
-  opacity: 0.75;
+  width: 28px;
+  height: 28px;
+  opacity: 0.9;
 }
 
 .shiftPosition {
