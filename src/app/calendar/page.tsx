@@ -327,7 +327,7 @@ export default function CalendarPage() {
                         height: '32px',
                         borderRadius: '4px',
                         backgroundColor: color,
-                        border: newPositionColor === color ? '3px solid #000' : '2px solid #ddd',
+                        border: newPositionColor.toLowerCase() === color.toLowerCase() ? '3px solid #000' : '2px solid #ddd',
                         cursor: 'pointer',
                         padding: 0
                       }}

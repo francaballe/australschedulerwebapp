@@ -44,8 +44,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         let action = '';
 
         // 2. Deletion Logic
-        if (shift.positionId === 1 || !shift.published) {
-            // Hard delete if it's "Unavailable" (ID 1) or not yet published
+        if (!shift.published) {
+            // Hard delete if not yet published
             console.log(`Physically deleting shift ${idNumber}`);
             result = await prisma.shift.delete({
                 where: { id: idNumber }

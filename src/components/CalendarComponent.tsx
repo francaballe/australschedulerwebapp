@@ -25,7 +25,7 @@ interface Shift {
   positionColor?: string;
   published: boolean;
   toBeDeleted?: boolean;
-  unavailable?: boolean;
+  isUserUnavailable?: boolean;
 }
 
 interface Position {
@@ -42,6 +42,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
 
   const [users, setUsers] = useState<User[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
+  const [unavailableSet, setUnavailableSet] = useState<Set<string>>(new Set());
   const [userConfirmations, setUserConfirmations] = useState<Map<number, boolean>>(new Map());
   const [loading, setLoading] = useState(true);
   const [shiftsLoading, setShiftsLoading] = useState(false);
@@ -226,12 +227,6 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
         // PATCH existing shift — include position's schedule
         const selectedPosition = positions.find(p => p.id === positionId);
         const patchData: any = { positionId, published: false };
-
-        // If the existing shift was unavailable (positionId === 1), mark as unavailable
-        if (existingShift.positionId === 1) {
-          patchData.unavailable = true;
-        }
-        // Otherwise, don't touch the unavailable field — it keeps its current value
 
         console.log(`🔄 PATCHing existing shift ${existingShift.id} for user ${userId} on ${dateStr}:`, patchData);
 
@@ -420,6 +415,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
         const filtered = shiftsData.filter(s => userIds.has(s.userId));
         setShifts(filtered);
 
+        // Fetch availability for the same date range
+        try {
+          const startDate = formatDateLocal(weekDates[0]);
+          const endDate = formatDateLocal(weekDates[weekDates.length - 1]);
+          const availResp = await fetch(`/api/availability?startDate=${startDate}&endDate=${endDate}`);
+          if (availResp.ok) {
+            const availData = await availResp.json();
+            const newSet = new Set<string>(availData.map((a: any) => `${a.userId}-${a.date}`));
+            setUnavailableSet(newSet);
+          }
+        } catch (availErr) {
+          console.error('Error fetching availability:', availErr);
+        }
+
         // Only fetch confirmations for week view
         if (view === 'week' && weekDates.length > 0) {
           const weekStartDate = formatDateLocal(weekDates[0]);
@@ -451,6 +460,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       const userIds = new Set(usersData.map(u => u.id));
       const filtered = shiftsData.filter(s => userIds.has(s.userId));
       setShifts(filtered);
+
+      // Fetch availability for the same date range
+      try {
+        const startDate = formatDateLocal(weekDates[0]);
+        const endDate = formatDateLocal(weekDates[weekDates.length - 1]);
+        const availResp = await fetch(`/api/availability?startDate=${startDate}&endDate=${endDate}`);
+        if (availResp.ok) {
+          const availData = await availResp.json();
+          const newSet = new Set<string>(availData.map((a: any) => `${a.userId}-${a.date}`));
+          setUnavailableSet(newSet);
+        }
+      } catch (availErr) {
+        console.error('Error fetching availability:', availErr);
+      }
 
       // Only fetch confirmations for week view
       if (view === 'week' && weekDates.length > 0) {
@@ -512,7 +535,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
 
   // Notify parent about conflict shifts count
   useEffect(() => {
-    const count = shifts.filter(s => s.unavailable && s.positionId > 1).length;
+    const count = shifts.filter(s => s.isUserUnavailable).length;
     try {
       window.dispatchEvent(new CustomEvent('conflictShiftsCount', { detail: count }));
     } catch { }
@@ -621,7 +644,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
 
   // Calcular horas entre dos strings "HH:mm:ss"
   const calculateHours = (startTime: string | null, endTime: string | null): number => {
-    // Si startTime o endTime son null/undefined (como en "unavailable"), retornar 0
+    // Si startTime o endTime son null/undefined, retornar 0
     if (!startTime || !endTime) {
       return 0;
     }
@@ -668,7 +691,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
   // ── Drag & Drop helpers ──
 
   const isShiftDraggable = (shift: Shift): boolean => {
-    return shift.positionId !== 1 && !shift.unavailable;
+    return !shift.isUserUnavailable;
   };
 
   const handleDragStart = (e: React.DragEvent, shift: Shift) => {
@@ -867,30 +890,13 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     try {
       setModalLoading(true);
 
-      // Conflict shift (unavailable + real position): revert to plain unavailable
-      if (shift.unavailable && shift.positionId > 1) {
-        const response = await fetch(`/api/shifts/${shift.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            positionId: 1,
-            published: true,
-            starttime: null,
-            endtime: null,
-          })
-        });
+      // Delete the shift (availability is managed separately)
+      const response = await fetch(`/api/shifts/${shift.id}`, {
+        method: 'DELETE',
+      });
 
-        if (!response.ok) {
-          throw new Error('Error al revertir turno');
-        }
-      } else {
-        const response = await fetch(`/api/shifts/${shift.id}`, {
-          method: 'DELETE',
-        });
-
-        if (!response.ok) {
-          throw new Error('Error al eliminar turno');
-        }
+      if (!response.ok) {
+        throw new Error('Error al eliminar turno');
       }
 
       await refreshData();
@@ -1061,7 +1067,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                             color: isFilteredOut ? 'var(--foreground-secondary, #94a3b8)' : (shift.positionColor || '#fbbf24'),
                             position: 'relative'
                           }}
-                          title={shift.unavailable && shift.positionId > 1 ? 'Conflicto: usuario no disponible con turno asignado' : undefined}
+                          title={shift.isUserUnavailable ? 'Conflicto: usuario no disponible con turno asignado' : undefined}
                         >
                           {shift.toBeDeleted && (
                             <div className={styles.trashIconOverlay} title="Marcado para borrar">
@@ -1073,7 +1079,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                               </svg>
                             </div>
                           )}
-                          {shift.unavailable && shift.positionId > 1 && (
+                          {shift.isUserUnavailable && (
                             <div className={styles.unavailableWarningOverlay} title="Usuario NO disponible — turno asignado por manager">
                               <svg className={styles.unavailableWarningIcon} viewBox="0 0 24 24" fill="#000">
                                 <rect x="9.5" y="2" width="5" height="14" rx="2.5" />
@@ -1091,6 +1097,19 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                               {shift.position}
                             </div>
                           )}
+                        </div>
+                      ) : unavailableSet.has(`${user.id}-${dateStr}`) ? (
+                        <div
+                          className={styles.shiftContent}
+                          style={{
+                            backgroundColor: '#9E9E9E40',
+                            borderLeftColor: '#9E9E9E',
+                            color: '#9E9E9E',
+                            position: 'relative'
+                          }}
+                          title="Usuario no disponible"
+                        >
+                          <span className={styles.positionName} style={{ color: '#9E9E9E', fontStyle: 'italic' }}>No Disponible</span>
                         </div>
                       ) : (
                         <div className={styles.emptyCell}>

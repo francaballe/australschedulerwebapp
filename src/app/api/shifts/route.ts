@@ -49,7 +49,6 @@ export async function GET(request: NextRequest) {
                 endtime: true,
                 published: true,
                 toBeDeleted: true,
-                unavailable: true,
                 positionId: true,
                 position: {
                     select: {
@@ -60,26 +59,51 @@ export async function GET(request: NextRequest) {
             }
         });
 
+        // Fetch availability records for the same date range
+        const availabilityRecords = await prisma.userAvailability.findMany({
+            where: {
+                date: {
+                    gte: new Date(startDate),
+                    lte: new Date(endDate)
+                },
+                available: false
+            },
+            select: {
+                userId: true,
+                date: true
+            }
+        });
+
+        // Build a Set of "userId-date" keys for quick lookup
+        const unavailableSet = new Set(
+            availabilityRecords.map(r => `${r.userId}-${r.date.toISOString().split('T')[0]}`)
+        );
+
         type ShiftResult = typeof shifts[0];
 
         // Transform to match frontend expectations
-        const transformedShifts = shifts.map((shift: ShiftResult) => ({
-            id: shift.id,
-            date: shift.date.toISOString().split('T')[0], // Format as YYYY-MM-DD
-            userId: shift.userId,
-            startTime: shift.starttime ?
-                `${shift.starttime.getUTCHours().toString().padStart(2, '0')}:${shift.starttime.getUTCMinutes().toString().padStart(2, '0')}:${shift.starttime.getUTCSeconds().toString().padStart(2, '0')}`
-                : null,
-            endTime: shift.endtime ?
-                `${shift.endtime.getUTCHours().toString().padStart(2, '0')}:${shift.endtime.getUTCMinutes().toString().padStart(2, '0')}:${shift.endtime.getUTCSeconds().toString().padStart(2, '0')}`
-                : null,
-            published: shift.published,
-            toBeDeleted: shift.toBeDeleted,
-            unavailable: shift.unavailable,
-            positionId: shift.positionId,
-            position: shift.position?.name || null,
-            positionColor: shift.position?.color || null
-        }));
+        const transformedShifts = shifts.map((shift: ShiftResult) => {
+            const dateStr = shift.date.toISOString().split('T')[0];
+            const isUserUnavailable = unavailableSet.has(`${shift.userId}-${dateStr}`);
+
+            return {
+                id: shift.id,
+                date: dateStr,
+                userId: shift.userId,
+                startTime: shift.starttime ?
+                    `${shift.starttime.getUTCHours().toString().padStart(2, '0')}:${shift.starttime.getUTCMinutes().toString().padStart(2, '0')}:${shift.starttime.getUTCSeconds().toString().padStart(2, '0')}`
+                    : null,
+                endTime: shift.endtime ?
+                    `${shift.endtime.getUTCHours().toString().padStart(2, '0')}:${shift.endtime.getUTCMinutes().toString().padStart(2, '0')}:${shift.endtime.getUTCSeconds().toString().padStart(2, '0')}`
+                    : null,
+                published: shift.published,
+                toBeDeleted: shift.toBeDeleted,
+                isUserUnavailable,
+                positionId: shift.positionId,
+                position: shift.position?.name || null,
+                positionColor: shift.position?.color || null
+            };
+        });
 
         return NextResponse.json(transformedShifts, { headers: corsHeaders });
 
@@ -103,7 +127,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         console.log('📝 Shift POST request body:', body);
 
-        const { userId, date, positionId, startTime, endTime, published, unavailable } = body;
+        const { userId, date, positionId, startTime, endTime, published } = body;
 
         // Basic validation
         if (userId == null || !date || positionId == null) {
@@ -157,8 +181,6 @@ export async function POST(request: NextRequest) {
             // Copy start and end times from position
             starttime: position.starttime,
             endtime: position.endtime,
-            // Include unavailable flag if provided (caso excepcional: manager assigns shift to unavailable user)
-            ...(unavailable !== undefined && { unavailable })
         };
 
         // Override with provided times if any (optional)
@@ -192,8 +214,6 @@ export async function POST(request: NextRequest) {
                     endtime: position.endtime,
                     published: published ?? false,
                     toBeDeleted: false,
-                    // Include unavailable flag if provided (caso excepcional)
-                    ...(unavailable !== undefined && { unavailable })
                 },
                 select: {
                     id: true,
@@ -216,8 +236,6 @@ export async function POST(request: NextRequest) {
                 toBeDeleted: false,
                 starttime: position.starttime,
                 endtime: position.endtime,
-                // Include unavailable flag if provided (caso excepcional)
-                ...(unavailable !== undefined && { unavailable })
             };
 
             newShift = await prisma.shift.create({
