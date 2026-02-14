@@ -127,14 +127,17 @@ export default function CalendarPage() {
   const confirmEditPosition = async () => {
     if (!editingPosition || !newPositionName.trim()) return;
 
-    // Validation for schedule times
-    if (newStartTime.trim() && newEndTime.trim()) {
-      const start = newStartTime.trim();
-      const end = newEndTime.trim();
-      if (start >= end) {
-        alert('La hora de inicio debe ser anterior a la hora de fin');
-        return;
-      }
+    // Validation for schedule times (MANDATORY)
+    if (!newStartTime.trim() || !newEndTime.trim()) {
+      alert('Los horarios de inicio y fin son obligatorios');
+      return;
+    }
+
+    const start = newStartTime.trim();
+    const end = newEndTime.trim();
+    if (start >= end) {
+      alert('La hora de inicio debe ser anterior a la hora de fin');
+      return;
     }
 
     setEditLoading(true);
@@ -144,11 +147,9 @@ export default function CalendarPage() {
         color: newPositionColor
       };
 
-      // Include schedule if both times are provided
-      if (newStartTime.trim() && newEndTime.trim()) {
-        payload.starttime = newStartTime.trim();
-        payload.endtime = newEndTime.trim();
-      }
+      // Include schedule (MANDATORY)
+      payload.starttime = newStartTime.trim();
+      payload.endtime = newEndTime.trim();
 
       console.log('Sending position update:', payload);
 
@@ -170,10 +171,8 @@ export default function CalendarPage() {
           positionId: editingPosition.id,
           name: newPositionName.trim(),
           color: newPositionColor,
-          ...(newStartTime.trim() && newEndTime.trim() && {
-            starttime: newStartTime.trim(),
-            endtime: newEndTime.trim()
-          })
+          starttime: newStartTime.trim(),
+          endtime: newEndTime.trim()
         }
       }));
 
@@ -316,8 +315,8 @@ export default function CalendarPage() {
                 </label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {[
-                    '#ef4444', '#f97316', '#f59e0b',
-                    '#22c55e', '#06b6d4', '#3b82f6',
+                    '#ef4444', '#f97316', '#f59e0b', '#FACC15',
+                    '#22c55e', '#166534', '#06b6d4', '#3b82f6',
                     '#6366f1', '#a855f7', '#ec4899',
                     '#64748b', '#475569', '#1e293b'
                   ].map(color => (
@@ -343,7 +342,7 @@ export default function CalendarPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                    Hora de inicio:
+                    Hora de inicio: *
                   </label>
                   <input
                     type="time"
@@ -361,7 +360,7 @@ export default function CalendarPage() {
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                    Hora de fin:
+                    Hora de fin: *
                   </label>
                   <input
                     type="time"
@@ -379,9 +378,7 @@ export default function CalendarPage() {
                 </div>
               </div>
 
-              <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
-                Los horarios son opcionales. Si se proporciona uno, ambos son requeridos.
-              </div>
+
 
             </div>
             <div className={modalStyles.modalFooter}>
@@ -395,7 +392,7 @@ export default function CalendarPage() {
               <button
                 className={modalStyles.primaryBtn}
                 onClick={confirmEditPosition}
-                disabled={editLoading || !newPositionName.trim()}
+                disabled={editLoading || !newPositionName.trim() || !newStartTime.trim() || !newEndTime.trim()}
               >
                 {editLoading ? 'Guardando...' : 'Guardar'}
               </button>
