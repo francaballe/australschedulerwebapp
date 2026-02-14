@@ -367,6 +367,12 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       return true;
     }
 
+    // Check if user has unavailability in current week and Unavailable filter is active
+    // We assume ID 1 is "Unavailable"
+    if (enabledPositions.has(1) && weekDates.some(d => unavailableSet.has(`${user.id}-${formatDateLocal(d)}`))) {
+      return true;
+    }
+
     // Check if user has any shift with an enabled position in the current week
     const weekStart = formatDateLocal(weekDates[0]);
     const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
@@ -1098,7 +1104,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                             </div>
                           )}
                         </div>
-                      ) : unavailableSet.has(`${user.id}-${dateStr}`) ? (
+                      ) : unavailableSet.has(`${user.id}-${dateStr}`) && (enabledPositions.has(1) || enabledPositions.size === 0) ? (
                         <div
                           className={styles.shiftContent}
                           style={{

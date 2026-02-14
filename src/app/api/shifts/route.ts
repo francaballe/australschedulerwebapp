@@ -98,9 +98,9 @@ export async function GET(request: NextRequest) {
                 published: shift.published,
                 toBeDeleted: shift.toBeDeleted,
                 isUserUnavailable,
-                positionId: shift.positionId,
-                position: shift.position?.name || null,
-                positionColor: shift.position?.color || null
+                positionId: shift.positionId ?? 0,
+                position: shift.position?.name ?? (shift.positionId === null ? 'No Position' : null),
+                positionColor: shift.position?.color ?? (shift.positionId === null ? '#FFFFFF00' : null)
             };
         });
 
@@ -139,9 +139,9 @@ export async function POST(request: NextRequest) {
 
         // Parse and validate data
         const parsedUserId = parseInt(userId);
-        const parsedPositionId = parseInt(positionId);
+        let parsedPositionId: number | null = parseInt(positionId);
 
-        if (isNaN(parsedUserId) || isNaN(parsedPositionId)) {
+        if (isNaN(parsedUserId) || isNaN(parsedPositionId!)) {
             console.error('❌ Invalid IDs:', { userId, positionId });
             return NextResponse.json(
                 { error: 'Invalid userId or positionId' },
@@ -149,37 +149,51 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Fetch position to get its start and end times
-        const position = await prisma.position.findUnique({
-            where: { id: parsedPositionId },
-            select: {
-                id: true,
-                name: true,
-                starttime: true,
-                endtime: true
-            }
-        });
-
-        if (!position) {
-            console.error('❌ Position not found:', parsedPositionId);
+        // Handle special positions
+        if (parsedPositionId === 0) {
+            parsedPositionId = null; // No Position matches null in DB
+        } else if (parsedPositionId === 1) {
             return NextResponse.json(
-                { error: `Position with ID ${parsedPositionId} not found` },
-                { status: 404, headers: corsHeaders }
+                { error: 'Unavailable status must be managed via /api/availability' },
+                { status: 400, headers: corsHeaders }
             );
         }
 
-        console.log('📍 Position found:', position);
+        let position = null;
+        if (parsedPositionId !== null) {
+            // Fetch position to get its start and end times
+            position = await prisma.position.findUnique({
+                where: { id: parsedPositionId },
+                select: {
+                    id: true,
+                    name: true,
+                    starttime: true,
+                    endtime: true
+                }
+            });
 
-        // Prepare shift data with position's time values
+            if (!position) {
+                console.error('❌ Position not found:', parsedPositionId);
+                return NextResponse.json(
+                    { error: `Position with ID ${parsedPositionId} not found` },
+                    { status: 404, headers: corsHeaders }
+                );
+            }
+            console.log('📍 Position found:', position);
+        } else {
+            console.log('📍 Assigning "No Position" (ID 0 -> NULL)');
+        }
+
+        // Prepare shift data
         const shiftData: any = {
             userId: parsedUserId,
             positionId: parsedPositionId,
             date: new Date(date),
             published: published ?? false,
             toBeDeleted: false,
-            // Copy start and end times from position
-            starttime: position.starttime,
-            endtime: position.endtime,
+            // Copy start and end times from position if exists
+            starttime: position?.starttime ?? null,
+            endtime: position?.endtime ?? null,
         };
 
         // Override with provided times if any (optional)
@@ -209,11 +223,11 @@ export async function POST(request: NextRequest) {
                 where: { id: existingShift.id },
                 data: {
                     positionId: parsedPositionId,
-                    starttime: position.starttime,
-                    endtime: position.endtime,
+                    starttime: shiftData.starttime,
+                    endtime: shiftData.endtime,
                     published: published ?? false,
                     toBeDeleted: false,
-                },
+                } as any,
                 select: {
                     id: true,
                     userId: true,
@@ -233,12 +247,12 @@ export async function POST(request: NextRequest) {
                 date: new Date(date),
                 published: published ?? false,
                 toBeDeleted: false,
-                starttime: position.starttime,
-                endtime: position.endtime,
+                starttime: shiftData.starttime,
+                endtime: shiftData.endtime,
             };
 
             newShift = await prisma.shift.create({
-                data: createData,
+                data: createData as any,
                 select: {
                     id: true,
                     userId: true,
@@ -257,7 +271,7 @@ export async function POST(request: NextRequest) {
         const response = {
             id: newShift.id,
             user_id: newShift.userId,
-            position_id: newShift.positionId,
+            position_id: newShift.positionId ?? 0, // Map null back to 0
             date: newShift.date,
             starttime: newShift.starttime,
             endtime: newShift.endtime,
