@@ -1104,11 +1104,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                             </div>
                           )}
                         </div>
-                      ) : unavailableSet.has(`${user.id}-${dateStr}`) && (enabledPositions.has(1) || enabledPositions.size === 0) ? (
+                      ) : unavailableSet.has(`${user.id}-${dateStr}`) ? (
                         <div
                           className={styles.shiftContent}
                           style={{
-                            backgroundColor: '#9E9E9E40',
+                            backgroundColor: (enabledPositions.has(1) || enabledPositions.size === 0) ? '#9E9E9E40' : 'transparent',
                             borderLeftColor: '#9E9E9E',
                             color: '#9E9E9E',
                             position: 'relative'
