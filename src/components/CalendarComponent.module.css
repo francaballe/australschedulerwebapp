@@ -800,67 +800,72 @@
   font-weight: 600;
 }
 
+/* RECONSTRUCTED MISSING PART + NEW STYLES */
+
 .deleteConfirmation p {
-  margin: 0 0 24px 0;
   color: var(--text-secondary);
   font-size: 14px;
-  max-width: 300px;
+  margin: 0 0 24px 0;
+  max-width: 400px;
 }
 
-.confirmationActions {
+.deleteConfirmationButtons {
   display: flex;
   gap: 12px;
-  width: 100%;
   justify-content: center;
+  width: 100%;
 }
 
-.cancelButton,
-.confirmDeleteButton {
+.cancelDeleteBtn,
+.confirmDeleteBtn {
   padding: 10px 20px;
   border-radius: 6px;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 14px;
+  border: 1px solid transparent;
 }
 
-.cancelButton {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-}
-
-.cancelButton:hover {
+.cancelDeleteBtn {
   background: var(--background-secondary);
   color: var(--text-primary);
+  border-color: var(--border);
 }
 
-.confirmDeleteButton {
+.cancelDeleteBtn:hover {
+  background: var(--hover-bg);
+}
+
+.confirmDeleteBtn {
   background: #ef4444;
-  border: 1px solid #ef4444;
   color: white;
 }
 
-.confirmDeleteButton:hover {
+.confirmDeleteBtn:hover {
   background: #dc2626;
-  border-color: #dc2626;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
 }
 
-/* Drag & Drop */
-.dragging {
-  opacity: 0.35;
-  transform: scale(0.95);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-  transition: opacity 0.15s, transform 0.15s;
+/* Past Days Style */
+.pastDay {
+  background-color: var(--past-day-bg);
+  /* Use variable */
+  background-image: repeating-linear-gradient(45deg,
+      transparent,
+      transparent 10px,
+      var(--past-day-pattern-color) 10px,
+      var(--past-day-pattern-color) 20px);
+  cursor: not-allowed !important;
+  opacity: 0.8;
 }
 
-.dropTargetCell {
-  background: rgba(59, 130, 246, 0.12) !important;
-  outline: 2px dashed #3b82f6;
-  outline-offset: -2px;
-  border-radius: 4px;
+.dayColumn.pastDay {
+  background-color: var(--past-day-bg);
+  color: var(--muted);
 }
 
-.filteredShift {
-  opacity: 0.45;
+.dayCell.pastDay:hover {
+  background-color: var(--past-day-bg);
+  /* Override hover */
 }
