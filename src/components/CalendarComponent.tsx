@@ -394,14 +394,26 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
         userShiftsByDate.get(shift.date)!.push(shift);
       });
 
-    // Check if any date has a shift with enabled position
-    return Array.from(userShiftsByDate.values()).some(shiftsForDate => {
+    // Strategy:
+    // 1. If user has visible shifts (matching enabled filters), SHOW.
+    // 2. If user has NO shifts, and "No Position" (0) is enabled, SHOW.
+    // 3. If user has Unavailability, and "Unavailable" (1) is enabled, SHOW (handled above, but let's ensure flow).
+
+    const hasVisibleShifts = Array.from(userShiftsByDate.values()).some(shiftsForDate => {
       if (shiftsForDate.length > 1) {
         console.warn(`Multiple shifts for user ${user.id} on date:`, shiftsForDate);
       }
-      // Check if any shift for this date has an enabled position
       return shiftsForDate.some(shift => enabledPositions.has(shift.positionId));
     });
+
+    if (hasVisibleShifts) return true;
+
+    // Special case: User has NO shifts in this week, and "No Position" (0) is enabled.
+    if (userShiftsByDate.size === 0 && enabledPositions.has(0)) {
+      return true;
+    }
+
+    return false;
   });
 
   // When currentDate, view or selectedSiteId changes, reload users and shifts
