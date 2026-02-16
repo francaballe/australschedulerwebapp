@@ -338,8 +338,9 @@
 .positionActions {
     display: flex;
     align-items: center;
-    gap: 8px;
-    justify-content: flex-end;
+    gap: 4px;
+    gap: 4px;
+    margin-left: auto;
 }
 
 .colorIndicator {
@@ -472,4 +473,65 @@
         display: none;
         /* In a real app, we'd add a toggle for mobile */
     }
+}
+
+/* Accordion Styles */
+.accordionHeader {
+    display: flex;
+    align-items: center;
+    cursor: default;
+    margin-bottom: 4px;
+    user-select: none;
+    padding: 8px;
+    /* Match positionItem padding */
+}
+
+.accordionTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--foreground-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: 0;
+    /* Was gap in wrapper, now it's next to checkbox span which expects text in normal wrapper context */
+}
+
+.chevron {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s;
+    color: var(--foreground-secondary);
+}
+
+.chevron.open {
+    transform: rotate(90deg);
+}
+
+.accordionContent {
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.masterCheckboxWrapper {
+    display: flex;
+    align-items: center;
+}
+
+.masterCheckbox {
+    /* Optional: distinct style for master checkbox if desired */
+    /* border-color: var(--primary); */
 }

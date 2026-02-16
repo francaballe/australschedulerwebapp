@@ -192,6 +192,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     const allPositionsSelected = positions.every(p => p.checked);
 
+    // Accordion state
+    const [isPositionsOpen, setIsPositionsOpen] = useState(true);
+
     return (
         <aside className={styles.sidebar}>
             <div className={styles.section}>
@@ -207,7 +210,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>Filtros</h3>
+                {/* Visual separator/grouper could go here if needed, but "Filtros" header removed as requested */}
                 <div className={styles.searchWrapper}>
                     <input
                         type="search"
@@ -233,13 +236,16 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             <div className={styles.section}>
-                <div className={styles.sectionTitle}>
-                    Posiciones
-                    <span style={{ marginLeft: '12px', fontSize: '0.75rem', color: '#888', fontWeight: 'normal' }}>
-                        <button className={styles.textBtn} onClick={handleToggleAllSelection}>
-                            {allPositionsSelected ? 'Deseleccionar Todo' : 'Seleccionar Todo'}
-                        </button>
-                    </span>
+                <div className={styles.accordionHeader} style={{ cursor: 'default' }}>
+                    <label className={styles.checkboxWrapper} title={allPositionsSelected ? "Deseleccionar todo" : "Seleccionar todo"}>
+                        <input
+                            type="checkbox"
+                            checked={allPositionsSelected}
+                            onChange={handleToggleAllSelection}
+                        />
+                        <span className={`${styles.checkbox} ${styles.masterCheckbox}`}></span>
+                        <span className={styles.accordionTitle} style={{ marginBottom: 0 }}>Posiciones</span>
+                    </label>
                 </div>
 
                 <div className={styles.positionList}>

@@ -358,13 +358,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     return weekDates;
   };
 
-  const isPastDate = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    return d.getTime() < today.getTime();
-  };
+
 
   const weekDates = getWeekDates(currentDate);
 
@@ -1024,7 +1018,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
           {weekDates.map((date: Date, index: number) => (
             <div
               key={index}
-              className={`${styles.dayColumn} ${isToday(date) ? styles.today : ''} ${isPastDate(date) ? styles.pastDay : ''}`}
+              className={`${styles.dayColumn} ${isToday(date) ? styles.today : ''}`}
             >
               <div className={styles.dayName}>{formatDate(date)}</div>
             </div>
@@ -1076,16 +1070,16 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                   return (
                     <div
                       key={`${user.id}-${dayIndex}`}
-                      className={`${styles.dayCell} ${isToday(date) ? styles.todayCell : ''} ${isPastDate(date) ? styles.pastDay : ''} ${isDropTarget ? styles.dropTargetCell : ''}`}
-                      onClick={() => !isPastDate(date) && handleCellClick(user.id, date)}
-                      onDragOver={(e) => !isPastDate(date) && handleDragOver(e, user.id, date)}
+                      className={`${styles.dayCell} ${isToday(date) ? styles.todayCell : ''} ${isDropTarget ? styles.dropTargetCell : ''}`}
+                      onClick={() => handleCellClick(user.id, date)}
+                      onDragOver={(e) => handleDragOver(e, user.id, date)}
                       onDragLeave={handleDragLeave}
-                      onDrop={(e) => !isPastDate(date) && handleDrop(e, user.id, date)}
+                      onDrop={(e) => handleDrop(e, user.id, date)}
                     >
                       {shift ? (
                         <div
                           className={`${styles.shiftContent} ${!shift.published ? styles.unpublishedShift : ''} ${shift.toBeDeleted ? styles.toBeDeleted : ''} ${isFilteredOut ? styles.filteredShift : ''}`}
-                          draggable={!isPastDate(date) && isShiftDraggable(shift)}
+                          draggable={isShiftDraggable(shift)}
                           onDragStart={(e) => handleDragStart(e, shift)}
                           onDragEnd={handleDragEnd}
                           style={{
@@ -1157,7 +1151,16 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
 
         {/* Footer de totales (Sticky) */}
         <div className={styles.tableFooter}>
-          <div className={styles.footerLabel}>Horas Totales:</div>
+          <div className={styles.footerLabel}>
+            <span>Horas Totales</span>
+            <span>
+              {(() => {
+                // Calculate grand total of all visible shifts for enabled users
+                const total = filteredUsers.reduce((acc, user) => acc + getUserTotalHours(user.id), 0);
+                return total > 0 ? total.toFixed(1) : '';
+              })()}
+            </span>
+          </div>
           {weekDates.map((date, index) => {
             const dateStr = formatDateLocal(date);
             // Group shifts by user to avoid counting duplicates

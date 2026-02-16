@@ -331,7 +331,7 @@
   flex-direction: column;
   justify-content: center;
   background: rgba(59, 130, 246, 0.1);
-  border-left: 3px solid var(--primary);
+  border-left: 6px solid var(--primary);
   border-right: 1px solid var(--border);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
@@ -522,6 +522,7 @@
   color: white;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   border-right: 1px solid var(--border);
 }
 
