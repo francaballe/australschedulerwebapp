@@ -712,7 +712,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
   // ── Drag & Drop helpers ──
 
   const isShiftDraggable = (shift: Shift): boolean => {
-    return !shift.isUserUnavailable;
+    // Allow dragging conflicts (isUserUnavailable=true) if it's a real position.
+    // Prevent dragging only if it's a "pure" unavailability record (Position ID 1).
+    if (shift.positionId === 1) return false;
+    return true;
   };
 
   const handleDragStart = (e: React.DragEvent, shift: Shift) => {
@@ -780,7 +783,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: targetUserId,
-          date: new Date(targetDateStr)
+          date: new Date(targetDateStr),
+          published: false // Explicitly unpublish when moving
         })
       });
 
