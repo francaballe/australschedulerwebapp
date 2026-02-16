@@ -620,10 +620,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
   const getShiftForUserAndDay = (userId: number, date: Date): Shift | undefined => {
     const dateStr = formatDateLocal(date);
 
-    // If no positions are enabled, don't show any shifts
-    if (enabledPositions.size === 0) {
-      return undefined;
-    }
+
 
     // Get all shifts for this user on this date
     const userShiftsForDate = shifts.filter(shift =>
@@ -1088,7 +1085,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                           onDragEnd={handleDragEnd}
                           style={{
                             backgroundColor: isFilteredOut
-                              ? 'transparent'
+                              ? '#f3f4f6' // Light gray for filtered/ghost items
                               : (shift.positionColor ?
                                 `${shift.positionColor}${!shift.published ? '30' : '85'}` :
                                 (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)')),
