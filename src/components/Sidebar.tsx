@@ -210,6 +210,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             <div className={styles.section}>
+                <hr className={styles.separator} />
                 {/* Visual separator/grouper could go here if needed, but "Filtros" header removed as requested */}
                 <div className={styles.searchWrapper}>
                     <input
@@ -236,16 +237,13 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             <div className={styles.section}>
-                <div className={styles.accordionHeader} style={{ cursor: 'default' }}>
-                    <label className={styles.checkboxWrapper} title={allPositionsSelected ? "Deseleccionar todo" : "Seleccionar todo"}>
-                        <input
-                            type="checkbox"
-                            checked={allPositionsSelected}
-                            onChange={handleToggleAllSelection}
-                        />
-                        <span className={`${styles.checkbox} ${styles.masterCheckbox}`}></span>
-                        <span className={styles.accordionTitle} style={{ marginBottom: 0 }}>Posiciones</span>
-                    </label>
+                <div className={styles.selectionControls}>
+                    <button
+                        onClick={handleToggleAllSelection}
+                        className={styles.selectAllBtn}
+                    >
+                        {allPositionsSelected ? "Deseleccionar todo" : "Seleccionar todo"}
+                    </button>
                 </div>
 
                 <div className={styles.positionList}>

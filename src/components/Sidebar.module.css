@@ -13,525 +13,536 @@
     z-index: 10;
 }
 
-.section {
-    margin-bottom: 32px;
-}
-
-/* Reduce vertical space after the first section (Publish buttons) */
-.sidebar>.section:first-of-type {
-    margin-bottom: 16px;
-}
-
-.sectionTitle {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--foreground-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.titleActions {
-    display: flex;
-    gap: 8px;
-}
-
-.textBtn {
-    background: none;
-    border: none;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--primary);
-    cursor: pointer;
-    padding: 2px 6px;
-    border-radius: 4px;
-    transition: background 0.2s;
-}
-
-.textBtn:hover {
-    background: var(--hover-bg);
-}
-
-.actions {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.primaryBtn {
-    padding: 10px;
-    background: #0f172a;
-    /* Darker blue/black from screenshot */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    /* More squared off from screenshot */
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 0.05em;
-}
-
-.primaryBtn:hover {
-    background: #1e293b;
-    transform: translateY(-1px);
-}
-
-.secondaryBtn {
-    padding: 10px;
-    background: #60a5fa;
-    /* Light blue from screenshot */
-    color: white;
-    border: none;
-    /* Removed border */
-    border-radius: 4px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 0.05em;
-}
-
-.secondaryBtn:hover {
-    background: #3b82f6;
-}
-
-.searchWrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    margin-bottom: 0px;
-}
-
-.searchIcon {
-    position: absolute;
-    right: 12px;
-    /* Screenshot has icon on right sometimes, but standard is left. Let's keep right if it's a search action, or left for input icon. Screenshot shows icon on right? Standard is usually left or right action. Keeping simple left for now, or right for "Go". Let's stick to standard search input style. */
-    width: 16px;
-    height: 16px;
-    color: var(--muted);
-    right: 10px;
-}
-
-.searchInput {
-    width: 100%;
-    padding: 10px 36px 10px 12px;
-    /* Icon on right */
-    background: var(--input-bg);
-    /* Use slight dark/gray background */
-    border: 1px solid transparent;
-    border-radius: 4px;
-    color: var(--foreground);
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-    background-color: #333333;
-    /* Dark background from screenshot area */
-    color: #fff;
-}
-
-.searchInput::placeholder {
-    color: #888;
-}
-
-.searchInput:focus {
-    outline: none;
-    border-color: var(--primary);
-    background-color: #404040;
-}
-
-/* Toggle Switch */
-.toggleWrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 12px;
-    cursor: pointer;
-}
-
-.toggleSwitch {
-    position: relative;
-    width: 36px;
-    height: 20px;
-    background-color: #4b5563;
-    border-radius: 20px;
-    transition: background-color 0.2s;
-}
-
-.toggleWrapper input {
-    display: none;
-}
-
-.toggleWrapper input:checked+.toggleSwitch {
-    background-color: var(--primary);
-}
-
-.toggleSlider {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    background-color: white;
-    border-radius: 50%;
-    transition: transform 0.2s;
-}
-
-.toggleWrapper input:checked+.toggleSwitch .toggleSlider {
-    transform: translateX(16px);
-}
-
-.toggleLabel {
-    font-size: 0.85rem;
-    color: var(--foreground-secondary);
-}
-
-.headerWithAction {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.headerWithAction .sectionTitle {
-    margin-bottom: 0;
-}
-
-.iconBtn {
-    background: #0f172a;
-    /* Dark button from screenshot */
-    border: none;
-    color: white;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-    width: 24px;
-    height: 24px;
-}
-
-.iconBtn:hover {
-    background: var(--primary);
-}
-
-.iconBtn svg {
-    width: 16px;
-    height: 16px;
-}
-
-.loadingState,
-.errorState,
-.emptyState {
-    padding: 12px;
-    text-align: center;
-    font-size: 0.85rem;
-    color: var(--foreground-secondary);
-    background: var(--card-bg);
-    border-radius: 4px;
-}
-
-.errorState {
-    color: #ef4444;
-}
-
-.positionList {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.positionItem {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    padding: 8px;
-    background-color: var(--card-bg);
-    /* Or transparent */
-    border-radius: 4px;
-    transition: background-color 0.2s;
-    border: 1px solid transparent;
-}
-
-.positionItem .checkboxWrapper {
-    flex: 1;
-}
-
-.positionItem .positionActions {
-    margin-left: auto;
-}
-
-.positionItem:hover {
-    background-color: var(--hover-bg);
-    border-color: var(--border);
-}
-
-.checkboxWrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    user-select: none;
-    flex: 1;
-}
-
-.checkboxWrapper input {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
+.separator {
     height: 0;
-    width: 0;
-}
-
-/* Custom Checkbox based on screenshot (green checkmark) */
-.checkbox {
-    height: 18px;
-    width: 18px;
-    background-color: transparent;
-    border: 2px solid #555;
-    border-radius: 3px;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.checkboxWrapper:hover input~.checkbox {
-    border-color: #777;
-}
-
-.checkboxWrapper input:checked~.checkbox {
-    background-color: #64748b;
-    /* Matching action buttons color */
-    border-color: #64748b;
-}
-
-.checkbox:after {
-    content: "";
-    display: none;
-    width: 5px;
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-    margin-bottom: 2px;
-}
-
-.checkboxWrapper input:checked~.checkbox:after {
-    display: block;
-}
-
-.positionName {
-    font-size: 0.9rem;
-    color: var(--foreground);
-    font-weight: 500;
-    flex: 1;
-}
-
-.positionActions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    gap: 4px;
-    margin-left: auto;
-}
-
-.colorIndicator {
-    width: 18px;
-    height: 18px;
-    border-radius: 3px;
-    margin-right: 4px;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.colorIndicator:hover {
-    transform: scale(1.1);
-}
-
-.colorSelectorWrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.colorPickerPopover {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    margin-top: 8px;
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 8px;
-    padding: 12px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-    z-index: 100;
-    width: 160px;
-}
-
-.colorGrid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-}
-
-.colorOption {
-    width: 28px;
-    height: 28px;
-    border-radius: 4px;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: all 0.2s;
-    padding: 0;
-}
-
-.colorOption:hover {
-    transform: scale(1.1);
-}
-
-.colorOption.activeColor {
-    border-color: #fff;
-    box-shadow: 0 0 0 1px #3b82f6;
-}
-
-.actionIconBtn {
-    background: none;
-    border: none;
-    color: #64748b;
-    /* Muted color */
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.actionIconBtn:hover {
-    color: var(--foreground);
-    background: var(--hover-bg);
-}
-
-.actionIconBtn.delete:hover {
-    color: #ef4444;
-    background: rgba(239, 68, 68, 0.1);
-}
-
-.actionIconBtn svg {
-    width: 18px;
-    height: 18px;
-}
-
-.addPositionBtn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: var(--background);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--foreground-secondary);
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: all 0.2s;
-    margin-top: 12px;
+    border-top: 1px solid #4b5563;
+    /* Dark gray */
+    margin: 24px 0 24px 0;
     width: 100%;
-    justify-content: center;
+    opacity: 1;
 }
 
-.addPositionBtn:hover {
-    background: var(--hover-bg);
-    border-color: var(--primary);
-    color: var(--foreground);
-}
+.section {
 
-.addPositionBtn svg {
-    width: 16px;
-    height: 16px;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-    .sidebar {
-        width: 300px;
-        /* scaled down proportionally from 350px */
-        padding: 16px;
+    .section {
+        margin-bottom: 32px;
     }
-}
 
-@media (max-width: 768px) {
-    .sidebar {
+    /* Reduce vertical space after the first section (Publish buttons) */
+    .sidebar>.section:first-of-type {
+        margin-bottom: 16px;
+    }
+
+    .sectionTitle {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--foreground-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .titleActions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .textBtn {
+        background: none;
+        border: none;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--primary);
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+
+    .textBtn:hover {
+        background: var(--hover-bg);
+    }
+
+    .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .primaryBtn {
+        padding: 10px;
+        background: #0f172a;
+        /* Darker blue/black from screenshot */
+        color: white;
+        border: none;
+        border-radius: 4px;
+        /* More squared off from screenshot */
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+    }
+
+    .primaryBtn:hover {
+        background: #1e293b;
+        transform: translateY(-1px);
+    }
+
+    .secondaryBtn {
+        padding: 10px;
+        background: #60a5fa;
+        /* Light blue from screenshot */
+        color: white;
+        border: none;
+        /* Removed border */
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+    }
+
+    .secondaryBtn:hover {
+        background: #3b82f6;
+    }
+
+    .searchWrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .searchIcon {
+        position: absolute;
+        right: 12px;
+        /* Screenshot has icon on right sometimes, but standard is left. Let's keep right if it's a search action, or left for input icon. Screenshot shows icon on right? Standard is usually left or right action. Keeping simple left for now, or right for "Go". Let's stick to standard search input style. */
+        width: 16px;
+        height: 16px;
+        color: var(--muted);
+        right: 10px;
+    }
+
+    .searchInput {
+        width: 100%;
+        padding: 10px 36px 10px 12px;
+        /* Icon on right */
+        background: var(--input-bg);
+        /* Use slight dark/gray background */
+        border: 1px solid transparent;
+        border-radius: 4px;
+        color: var(--foreground);
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        background-color: #333333;
+        /* Dark background from screenshot area */
+        color: #fff;
+    }
+
+    .searchInput::placeholder {
+        color: #888;
+    }
+
+    .searchInput:focus {
+        outline: none;
+        border-color: var(--primary);
+        background-color: #404040;
+    }
+
+    /* Toggle Switch */
+    .toggleWrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+        cursor: pointer;
+    }
+
+    .toggleSwitch {
+        position: relative;
+        width: 36px;
+        height: 20px;
+        background-color: #4b5563;
+        border-radius: 20px;
+        transition: background-color 0.2s;
+    }
+
+    .toggleWrapper input {
         display: none;
-        /* In a real app, we'd add a toggle for mobile */
     }
-}
 
-/* Accordion Styles */
-.accordionHeader {
-    display: flex;
-    align-items: center;
-    cursor: default;
-    margin-bottom: 4px;
-    user-select: none;
-    padding: 8px;
-    /* Match positionItem padding */
-}
+    .toggleWrapper input:checked+.toggleSwitch {
+        background-color: var(--primary);
+    }
 
-.accordionTitle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--foreground-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-left: 0;
-    /* Was gap in wrapper, now it's next to checkbox span which expects text in normal wrapper context */
-}
+    .toggleSlider {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        background-color: white;
+        border-radius: 50%;
+        transition: transform 0.2s;
+    }
 
-.chevron {
-    width: 16px;
-    height: 16px;
-    transition: transform 0.2s;
-    color: var(--foreground-secondary);
-}
+    .toggleWrapper input:checked+.toggleSwitch .toggleSlider {
+        transform: translateX(16px);
+    }
 
-.chevron.open {
-    transform: rotate(90deg);
-}
+    .toggleLabel {
+        font-size: 0.85rem;
+        color: var(--foreground-secondary);
+    }
 
-.accordionContent {
-    animation: slideDown 0.2s ease-out;
-}
+    .headerWithAction {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
 
-@keyframes slideDown {
-    from {
+    .headerWithAction .sectionTitle {
+        margin-bottom: 0;
+    }
+
+    .iconBtn {
+        background: #0f172a;
+        /* Dark button from screenshot */
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+        width: 24px;
+        height: 24px;
+    }
+
+    .iconBtn:hover {
+        background: var(--primary);
+    }
+
+    .iconBtn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .loadingState,
+    .errorState,
+    .emptyState {
+        padding: 12px;
+        text-align: center;
+        font-size: 0.85rem;
+        color: var(--foreground-secondary);
+        background: var(--card-bg);
+        border-radius: 4px;
+    }
+
+    .errorState {
+        color: #ef4444;
+    }
+
+    .positionList {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .positionItem {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 8px;
+        background-color: var(--card-bg);
+        /* Or transparent */
+        border-radius: 4px;
+        transition: background-color 0.2s;
+        border: 1px solid transparent;
+    }
+
+    .positionItem .checkboxWrapper {
+        flex: 1;
+    }
+
+    .positionItem .positionActions {
+        margin-left: auto;
+    }
+
+    .positionItem:hover {
+        background-color: var(--hover-bg);
+        border-color: var(--border);
+    }
+
+    .checkboxWrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        user-select: none;
+        flex: 1;
+    }
+
+    .checkboxWrapper input {
+        position: absolute;
         opacity: 0;
-        transform: translateY(-5px);
+        cursor: pointer;
+        height: 0;
+        width: 0;
     }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    /* Custom Checkbox based on screenshot (green checkmark) */
+    .checkbox {
+        height: 18px;
+        width: 18px;
+        background-color: transparent;
+        border: 2px solid #555;
+        border-radius: 3px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
-}
 
-.masterCheckboxWrapper {
-    display: flex;
-    align-items: center;
-}
+    .checkboxWrapper:hover input~.checkbox {
+        border-color: #777;
+    }
 
-.masterCheckbox {
-    /* Optional: distinct style for master checkbox if desired */
-    /* border-color: var(--primary); */
-}
+    .checkboxWrapper input:checked~.checkbox {
+        background-color: #64748b;
+        /* Matching action buttons color */
+        border-color: #64748b;
+    }
+
+    .checkbox:after {
+        content: "";
+        display: none;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+        margin-bottom: 2px;
+    }
+
+    .checkboxWrapper input:checked~.checkbox:after {
+        display: block;
+    }
+
+    .positionName {
+        font-size: 0.9rem;
+        color: var(--foreground);
+        font-weight: 500;
+        flex: 1;
+    }
+
+    .positionActions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        gap: 4px;
+        margin-left: auto;
+    }
+
+    .colorIndicator {
+        width: 18px;
+        height: 18px;
+        border-radius: 3px;
+        margin-right: 4px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .colorIndicator:hover {
+        transform: scale(1.1);
+    }
+
+    .colorSelectorWrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .colorPickerPopover {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 8px;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        z-index: 100;
+        width: 160px;
+    }
+
+    .colorGrid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+
+    .colorOption {
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+        padding: 0;
+    }
+
+    .colorOption:hover {
+        transform: scale(1.1);
+    }
+
+    .colorOption.activeColor {
+        border-color: #fff;
+        box-shadow: 0 0 0 1px #3b82f6;
+    }
+
+    .actionIconBtn {
+        background: none;
+        border: none;
+        color: #64748b;
+        /* Muted color */
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .actionIconBtn:hover {
+        color: var(--foreground);
+        background: var(--hover-bg);
+    }
+
+    .actionIconBtn.delete:hover {
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
+    }
+
+    .actionIconBtn svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .selectionControls {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 8px;
+        padding-right: 4px;
+    }
+
+    .selectAllBtn {
+        background: none;
+        border: none;
+        color: #3b82f6;
+        /* Blue link color */
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        padding: 0;
+    }
+
+    .selectAllBtn:hover {
+        text-decoration: underline;
+    }
+
+    .addPositionBtn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: var(--background);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--foreground-secondary);
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        margin-top: 12px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .addPositionBtn:hover {
+        background: var(--hover-bg);
+        border-color: var(--primary);
+        color: var(--foreground);
+    }
+
+    .addPositionBtn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .sidebar {
+            width: 300px;
+            /* scaled down proportionally from 350px */
+            padding: 16px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .sidebar {
+            display: none;
+            /* In a real app, we'd add a toggle for mobile */
+        }
+    }
+
+    /* Accordion Styles */
+    .accordionHeader {
+        display: flex;
+        align-items: center;
+        cursor: default;
+        margin-bottom: 4px;
+        user-select: none;
+        padding: 8px;
+        /* Match positionItem padding */
+    }
+
+
+    .accordionContent {
+        animation: slideDown 0.2s ease-out;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .masterCheckboxWrapper {
+        display: flex;
+        align-items: center;
+    }
+
+    .masterCheckbox {
+        /* Optional: distinct style for master checkbox if desired */
+        /* border-color: var(--primary); */
+    }
