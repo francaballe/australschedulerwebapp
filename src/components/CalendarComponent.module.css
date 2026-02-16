@@ -277,14 +277,18 @@
 }
 
 .confirmationIndicator {
-  font-size: 16px;
-  line-height: 1;
+  width: 20px;
+  height: 20px;
+  background-color: #22c55e;
+  /* Green */
+  border-radius: 50%;
+  /* Round */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-left: auto;
   flex-shrink: 0;
-}
-
-.confirmationIndicator:after {
-  content: "👍";
+  color: white;
 }
 
 .userHours {
@@ -399,11 +403,11 @@
 
 .unavailableWarningIcon {
   position: absolute;
-  top: 50%;
-  right: 5px;
-  transform: translateY(-50%);
-  width: 28px;
-  height: 28px;
+  top: 7px;
+  right: 4px;
+  /* transform: translateY(-50%); Removed to align with top */
+  width: 21px;
+  height: 21px;
   opacity: 0.9;
 }
 

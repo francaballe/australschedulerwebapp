@@ -1054,7 +1054,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                   <div className={styles.userName}>
                     {user.firstName} {user.lastName}
                     {view === 'week' && userConfirmations.get(user.id) && (
-                      <div className={styles.confirmationIndicator} title="Programación confirmada"></div>
+                      <div className={styles.confirmationIndicator} title="Programación confirmada">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: '14px', height: '14px' }}>
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
                     )}
                   </div>
                   <div className={styles.userHours}>
@@ -1108,9 +1112,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                           )}
                           {shift.isUserUnavailable && (
                             <div className={styles.unavailableWarningOverlay} title="Usuario NO disponible — turno asignado por manager">
-                              <svg className={styles.unavailableWarningIcon} viewBox="0 0 24 24" fill="#000">
-                                <rect x="9.5" y="2" width="5" height="14" rx="2.5" />
-                                <circle cx="12" cy="20.5" r="2.5" />
+                              <svg className={styles.unavailableWarningIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2L2 22H22L12 2Z" fill="#FBBF24" stroke="black" strokeWidth="2" strokeLinejoin="round" />
+                                <path d="M12 9V14" stroke="black" strokeWidth="3" strokeLinecap="round" />
+                                <circle cx="12" cy="19" r="1.5" fill="black" />
                               </svg>
                             </div>
                           )}
@@ -1152,7 +1157,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
 
         {/* Footer de totales (Sticky) */}
         <div className={styles.tableFooter}>
-          <div className={styles.footerLabel}>Totales:</div>
+          <div className={styles.footerLabel}>Horas Totales:</div>
           {weekDates.map((date, index) => {
             const dateStr = formatDateLocal(date);
             // Group shifts by user to avoid counting duplicates

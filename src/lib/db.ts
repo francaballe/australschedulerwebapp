@@ -10,7 +10,7 @@ const getConnectionString = () => {
     }
 
     // Neon connection string format
-    return `postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}?sslmode=require`;
+    return `postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}?sslmode=require&options=-c%20search_path%3Dapp`;
 };
 
 const connectionString = getConnectionString();

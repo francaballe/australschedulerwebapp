@@ -202,11 +202,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <button className={styles.secondaryBtn} onClick={onPublishChanges}>
                         PUBLICAR SÓLO CAMBIOS
                     </button>
-                    {conflictCount > 0 && (
-                        <div style={{ color: '#f59e0b', fontSize: '0.8em', marginTop: '6px', textAlign: 'center' }}>
-                            ⚠️ {conflictCount} turno{conflictCount > 1 ? 's' : ''} con conflicto
-                        </div>
-                    )}
+
                 </div>
             </div>
 
@@ -241,7 +237,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     Posiciones
                     <span style={{ marginLeft: '12px', fontSize: '0.75rem', color: '#888', fontWeight: 'normal' }}>
                         <button className={styles.textBtn} onClick={handleToggleAllSelection}>
-                            {allPositionsSelected ? 'NADA' : 'TODO'}
+                            {allPositionsSelected ? 'Deseleccionar Todo' : 'Seleccionar Todo'}
                         </button>
                     </span>
                 </div>

@@ -308,9 +308,9 @@
 }
 
 .checkboxWrapper input:checked~.checkbox {
-    background-color: #22c55e;
-    /* Green color */
-    border-color: #22c55e;
+    background-color: #64748b;
+    /* Matching action buttons color */
+    border-color: #64748b;
 }
 
 .checkbox:after {
