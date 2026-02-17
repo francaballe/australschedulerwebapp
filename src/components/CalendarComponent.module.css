@@ -417,8 +417,18 @@
 
 .emptyCell:hover {
   opacity: 1;
-  background: rgba(59, 130, 246, 0.05);
+  background: rgba(59, 130, 246, 0.1);
   border-radius: 4px;
+}
+
+.emptyCell:hover::after {
+  content: "+";
+  font-size: 40px;
+  font-weight: 300;
+  color: white;
+  line-height: 1;
+  display: block;
+  transform: translateY(-2px);
 }
 
 /* Responsive */

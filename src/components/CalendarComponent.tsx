@@ -1151,6 +1151,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
             <span>
               {(() => {
                 // Calculate grand total of all visible shifts for enabled users
+                if (view === 'day') return null;
                 const total = filteredUsers.reduce((acc, user) => acc + getUserTotalHours(user.id), 0);
                 return total > 0 ? total.toFixed(1) : '';
               })()}
