@@ -24,7 +24,6 @@ interface Shift {
   position?: string;
   positionColor?: string;
   published: boolean;
-  toBeDeleted?: boolean;
   isUserUnavailable?: boolean;
 }
 
@@ -54,6 +53,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [notifyUserOnDelete, setNotifyUserOnDelete] = useState(false);
 
   // Drag & drop states
   const [draggedShift, setDraggedShift] = useState<Shift | null>(null);
@@ -682,7 +682,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     const shiftsByDate = new Map<string, Shift[]>();
 
     shifts
-      .filter(s => s.userId === userId && !s.toBeDeleted)
+      .filter(s => s.userId === userId)
       .forEach(shift => {
         const date = shift.date;
         if (!shiftsByDate.has(date)) {
@@ -833,13 +833,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       return;
     }
 
-    // Check if there is an existing shift marked for deletion
-    const existingShift = existingShifts[0];
-    if (existingShift?.toBeDeleted) {
-      if (!confirm('Este turno está marcado para borrar. ¿Deseas restaurarlo antes de cambiar la posición?')) {
-        return;
-      }
-    }
+
 
     const success = await createShiftAssignment(selectedCell.userId, selectedCell.date, positionId);
     if (success) {
@@ -847,43 +841,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
     }
   };
 
-  const handleRestoreShift = async () => {
-    if (!selectedCell) return;
 
-    // Get all shifts for this user/date
-    const allShifts = shifts.filter(s =>
-      s.userId === selectedCell.userId &&
-      s.date === formatDateLocal(selectedCell.date)
-    );
-
-    if (allShifts.length === 0) return;
-
-    if (allShifts.length > 1) {
-      console.warn('Multiple shifts found for restore operation:', allShifts);
-      alert('Se encontraron múltiples turnos. Se restaurará el primero.');
-    }
-
-    const shift = allShifts[0]; // Take the first one
-
-    try {
-      setModalLoading(true);
-      const response = await fetch(`/api/shifts/${shift.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toBeDeleted: false })
-      });
-
-      if (!response.ok) throw new Error('Error al restaurar turno');
-
-      await refreshData();
-      handleModalClose();
-    } catch (err) {
-      console.error('Failed to restore shift:', err);
-      alert('Error al restaurar turno');
-    } finally {
-      setModalLoading(false);
-    }
-  };
 
   const handleDeleteShift = async (confirmed: boolean = false) => {
     if (!selectedCell) return;
@@ -913,7 +871,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       setModalLoading(true);
 
       // Delete the shift (availability is managed separately)
-      const response = await fetch(`/api/shifts/${shift.id}`, {
+      // Pass notification preference if confirmed (for published shifts)
+      const queryParams = confirmed && notifyUserOnDelete ? '?notify=true' : '';
+      const response = await fetch(`/api/shifts/${shift.id}${queryParams}`, {
         method: 'DELETE',
       });
 
@@ -1079,7 +1039,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                     >
                       {shift ? (
                         <div
-                          className={`${styles.shiftContent} ${!shift.published ? styles.unpublishedShift : ''} ${shift.toBeDeleted ? styles.toBeDeleted : ''} ${isFilteredOut ? styles.filteredShift : ''}`}
+                          className={`${styles.shiftContent} ${!shift.published ? styles.unpublishedShift : ''} ${isFilteredOut ? styles.filteredShift : ''}`}
                           draggable={isShiftDraggable(shift)}
                           onDragStart={(e) => handleDragStart(e, shift)}
                           onDragEnd={handleDragEnd}
@@ -1095,16 +1055,6 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                           }}
                           title={shift.isUserUnavailable ? 'Conflicto: usuario no disponible con turno asignado' : undefined}
                         >
-                          {shift.toBeDeleted && (
-                            <div className={styles.trashIconOverlay} title="Marcado para borrar">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M3 6h18" />
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                <line x1="10" y1="11" x2="10" y2="17" />
-                                <line x1="14" y1="11" x2="14" y2="17" />
-                              </svg>
-                            </div>
-                          )}
                           {shift.isUserUnavailable && (
                             <div className={styles.unavailableWarningOverlay} title="Usuario NO disponible — turno asignado por manager">
                               <svg className={styles.unavailableWarningIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1168,7 +1118,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
             const dailyShiftsMap = new Map<number, Shift>();
 
             shifts
-              .filter(s => s.date === dateStr && !s.toBeDeleted)
+              .filter(s => s.date === dateStr)
               .forEach(shift => {
                 // Only keep one shift per user per day
                 if (!dailyShiftsMap.has(shift.userId)) {
@@ -1225,15 +1175,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                           ⚠️ Se detectaron múltiples turnos para esta fecha. Se mostrará/operará con el primero.
                         </div>
                       )}
-                      {shift && shift.positionId !== 1 && (shift.toBeDeleted ? (
-                        <button className={`${styles.modalDeleteButton} ${styles.restoreButton}`} onClick={handleRestoreShift} title="Deshacer borrado">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M3 10h10a5 5 0 0 1 5 5v2" />
-                            <line x1="3" y1="10" x2="9" y2="4" />
-                            <line x1="3" y1="10" x2="9" y2="16" />
-                          </svg>
-                        </button>
-                      ) : (
+                      {shift && shift.positionId !== 1 && (
                         <button className={styles.modalDeleteButton} onClick={() => handleDeleteShift()} title="Borrar">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M3 6h18" />
@@ -1242,7 +1184,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
                             <line x1="14" y1="11" x2="14" y2="17" />
                           </svg>
                         </button>
-                      ))}
+                      )}
                     </div>
                   );
                 })()}
@@ -1256,26 +1198,39 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
               {showDeleteConfirmation ? (
                 <div className={styles.deleteConfirmation}>
                   <div className={styles.deleteIconContainer}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                      <line x1="12" y1="9" x2="12" y2="13" />
-                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                      <path d="M12 9v4" />
+                      <path d="M12 17h.01" />
                     </svg>
                   </div>
                   <h4>¿Eliminar turno publicado?</h4>
-                  <p>Este turno ya fue publicado. Si continúas, se marcará para borrar pero permanecerá visible hasta la próxima publicación.</p>
-                  <div className={styles.confirmationActions}>
+                  <p>Este turno ya fue publicado. Si continúas, puedes optar por enviarle una notificación a la persona.</p>
+
+                  <div className={styles.notificationOption}>
+                    <label className={styles.checkboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={notifyUserOnDelete}
+                        onChange={(e) => setNotifyUserOnDelete(e.target.checked)}
+                      />
+                      <span className={styles.customCheckbox}></span>
+                      Notificar al usuario
+                    </label>
+                  </div>
+
+                  <div className={styles.deleteConfirmationButtons}>
                     <button
-                      className={styles.cancelButton}
+                      className={styles.cancelDeleteBtn}
                       onClick={() => setShowDeleteConfirmation(false)}
                     >
                       Cancelar
                     </button>
                     <button
-                      className={styles.confirmDeleteButton}
+                      className={styles.confirmDeleteBtn}
                       onClick={() => handleDeleteShift(true)}
                     >
-                      Marcar para borrar
+                      Eliminar Turno
                     </button>
                   </div>
                 </div>
