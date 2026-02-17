@@ -9,9 +9,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     };
 
     try {
-        // Await params in newer Next.js versions
         const resolvedParams = await params;
         const shiftId = resolvedParams.id;
+        const { searchParams } = new URL(request.url);
+        const shouldNotify = searchParams.get('notify') === 'true';
 
         if (!shiftId) {
             return NextResponse.json(
@@ -40,29 +41,38 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
             );
         }
 
-        let result;
-        let action = '';
+        // 2. Notification Logic (if published and requested)
+        if (shift.published && shouldNotify) {
+            try {
+                // Get user's latest push token
+                const tokenRecord = await prisma.userPushToken.findFirst({
+                    where: { userId: shift.userId },
+                    orderBy: { createdAt: 'desc' }
+                });
 
-        // 2. Deletion Logic
-        if (!shift.published) {
-            // Hard delete if not yet published
-            console.log(`Physically deleting shift ${idNumber}`);
-            result = await prisma.shift.delete({
-                where: { id: idNumber }
-            });
-            action = 'deleted';
-        } else {
-            // Soft delete for published regular shifts
-            console.log(`Marking published shift ${idNumber} for deletion`);
-            result = await prisma.shift.update({
-                where: { id: idNumber },
-                data: { toBeDeleted: true }
-            });
-            action = 'marked_for_deletion';
+                if (tokenRecord && tokenRecord.token) {
+                    const dateStr = new Date(shift.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+                    const title = 'Turno Eliminado';
+                    const body = `Se ha eliminado tu turno del día ${dateStr}`;
+
+                    // Send notification (don't block deletion on failure)
+                    await import('@/lib/firebase-admin').then(mod =>
+                        mod.sendPushNotification(tokenRecord.token, title, body)
+                    ).catch(err => console.error('Error sending push:', err));
+                }
+            } catch (notifyError) {
+                console.error('Error in notification process:', notifyError);
+            }
         }
 
+        // 3. HARD DELETE (Always)
+        console.log(`Physically deleting shift ${idNumber}`);
+        const result = await prisma.shift.delete({
+            where: { id: idNumber }
+        });
+
         return NextResponse.json(
-            { message: 'Shift processed successfully', id: result.id, action: action, status: result },
+            { message: 'Shift deleted successfully', id: result.id, action: 'deleted', status: result },
             { status: 200, headers: corsHeaders }
         );
 
