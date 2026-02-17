@@ -1,10 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import styles from "./CalendarComponent.module.css";
 
 interface CalendarProps {
   enabledPositions: Set<number>;
+  currentDate: Date;
+  setCurrentDate: (date: Date) => void;
+  view: 'week' | 'day' | 'twoWeeks';
+  setView: (view: 'week' | 'day' | 'twoWeeks') => void;
+  onStatsUpdate?: (stats: { unpublishedCount: number }) => void;
 }
 
 interface User {
@@ -35,9 +40,15 @@ interface Position {
   endtime: string | null;
 }
 
-const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<'week' | 'day' | 'twoWeeks'>('week');
+const CalendarComponent: React.FC<CalendarProps> = ({
+  enabledPositions,
+  currentDate,
+  setCurrentDate,
+  view,
+  setView,
+  onStatsUpdate
+}) => {
+  // Local state removed for currentDate and view (lifted)
 
   const [users, setUsers] = useState<User[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -467,30 +478,33 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
 
   // Expose a manual refresh that other UI can call
   const refreshData = async () => {
-    setShiftsLoading(true);
-
-    // Clear confirmations immediately when refreshing to prevent visual artifacts
-    if (view === 'week') {
-      setUserConfirmations(new Map());
-    }
+    // Prevent full screen loading to keep UI stable, just show small spinner if needed or nothing
+    // setShiftsLoading(true); // Maybe too aggressive if it wipes the screen
 
     try {
-      const usersData = await loadUsers(selectedSiteId);
-      setUsers(usersData); // Update users state first
+      console.log('🔄 Refreshing calendar data...');
+
+      // We don't need to reload users every time, just shifts for the current view
+      // const usersData = await loadUsers(selectedSiteId); 
+      // setUsers(usersData); 
+
+      // Use current weekDates state
       const shiftsData = await fetchShifts(weekDates);
-      const userIds = new Set(usersData.map(u => u.id));
+      const userIds = new Set(users.map(u => u.id)); // Use existing users
       const filtered = shiftsData.filter(s => userIds.has(s.userId));
       setShifts(filtered);
 
       // Fetch availability for the same date range
       try {
-        const startDate = formatDateLocal(weekDates[0]);
-        const endDate = formatDateLocal(weekDates[weekDates.length - 1]);
-        const availResp = await fetch(`/api/availability?startDate=${startDate}&endDate=${endDate}`);
-        if (availResp.ok) {
-          const availData = await availResp.json();
-          const newSet = new Set<string>(availData.map((a: any) => `${a.userId}-${a.date}`));
-          setUnavailableSet(newSet);
+        if (weekDates.length > 0) {
+          const startDate = formatDateLocal(weekDates[0]);
+          const endDate = formatDateLocal(weekDates[weekDates.length - 1]);
+          const availResp = await fetch(`/api/availability?startDate=${startDate}&endDate=${endDate}`);
+          if (availResp.ok) {
+            const availData = await availResp.json();
+            const newSet = new Set<string>(availData.map((a: any) => `${a.userId}-${a.date}`));
+            setUnavailableSet(newSet);
+          }
         }
       } catch (availErr) {
         console.error('Error fetching availability:', availErr);
@@ -499,12 +513,13 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       // Only fetch confirmations for week view
       if (view === 'week' && weekDates.length > 0) {
         const weekStartDate = formatDateLocal(weekDates[0]);
-        await fetchUserConfirmations(weekStartDate, usersData);
+        await fetchUserConfirmations(weekStartDate, users);
       }
     } catch (err) {
       console.error('Error refreshing calendar data:', err);
+      // Don't wipe data on error
     } finally {
-      setShiftsLoading(false);
+      // setShiftsLoading(false);
     }
   };
 
@@ -552,7 +567,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       window.removeEventListener('publishedShifts', handlePublish);
       window.removeEventListener('positionsUpdated', handlePositions);
     };
-  }, []);
+  }, [refreshData]);
 
   // Notify parent about conflict shifts count
   useEffect(() => {
@@ -561,6 +576,12 @@ const CalendarComponent: React.FC<CalendarProps> = ({ enabledPositions }) => {
       window.dispatchEvent(new CustomEvent('conflictShiftsCount', { detail: count }));
     } catch { }
   }, [shifts]);
+
+  // Calculate unpublished count explicitly for parent
+  useEffect(() => {
+    const unpublished = shifts.filter(s => !s.published).length;
+    onStatsUpdate?.({ unpublishedCount: unpublished });
+  }, [shifts, onStatsUpdate]);
 
   const today = new Date();
 

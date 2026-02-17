@@ -35,6 +35,11 @@ export default function CalendarPage() {
   const [editLoading, setEditLoading] = useState(false);
   const [enabledPositions, setEnabledPositions] = useState<Set<number>>(new Set());
 
+  // Lifted state from CalendarComponent
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState<'week' | 'day' | 'twoWeeks'>('week');
+  const [unpublishedCount, setUnpublishedCount] = useState(0);
+
   useEffect(() => {
     const handleConflictCount = (e: any) => setConflictCount(e.detail || 0);
     window.addEventListener('conflictShiftsCount', handleConflictCount);
@@ -76,6 +81,34 @@ export default function CalendarPage() {
   if (!user) return null;
 
   // ---------- publish helpers ----------
+  // ---------- publish helpers ----------
+  const getWeekDates = (date: Date): [Date, Date] => {
+    const day = date.getDay(); // 0 is Sunday
+    // Week starts on Sunday.
+    // If it's Sunday (0), we go back 0 days.
+    // If it's Monday (1), we go back 1 day, etc.
+    const diff = day;
+
+    // Set to last Sunday (or today if today is Sunday)
+    const sunday = new Date(date);
+    sunday.setDate(date.getDate() - diff);
+    sunday.setHours(0, 0, 0, 0);
+
+    // Saturday is sunday + 6
+    const saturday = new Date(sunday);
+    saturday.setDate(sunday.getDate() + 6);
+    saturday.setHours(23, 59, 59, 999);
+
+    return [sunday, saturday];
+  };
+
+  const getTwoWeeksDates = (date: Date): [Date, Date] => {
+    const [start] = getWeekDates(date);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 13);
+    return [start, end];
+  };
+
   const openPublish = (type: 'all' | 'changes') => {
     setPublishType(type);
     setPublishModalOpen(true);
@@ -84,19 +117,29 @@ export default function CalendarPage() {
   const confirmPublish = async () => {
     setPublishLoading(true);
     try {
-      const today = new Date();
-      const sunday = new Date(today);
-      sunday.setDate(today.getDate() - today.getDay());
-      const end = new Date(sunday);
-      end.setDate(sunday.getDate() + 6);
+      let startDateStr: string;
+      let endDateStr: string;
 
-      const startDate = sunday.toISOString().split('T')[0];
-      const endDate = end.toISOString().split('T')[0];
+      if (view === 'day') {
+        const dateStr = currentDate.toLocaleDateString('en-CA');
+        startDateStr = dateStr;
+        endDateStr = dateStr;
+      } else if (view === 'twoWeeks') {
+        const [start, end] = getTwoWeeksDates(currentDate);
+        startDateStr = start.toLocaleDateString('en-CA');
+        endDateStr = end.toLocaleDateString('en-CA');
+      } else {
+        const [start, end] = getWeekDates(currentDate);
+        startDateStr = start.toLocaleDateString('en-CA');
+        endDateStr = end.toLocaleDateString('en-CA');
+      }
+
+      console.log(`Publishing range: ${startDateStr} to ${endDateStr} (${publishType})`);
 
       const resp = await fetch('/api/shifts/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startDate, endDate, type: publishType })
+        body: JSON.stringify({ startDate: startDateStr, endDate: endDateStr, type: publishType })
       });
 
       if (!resp.ok) throw new Error('Error al publicar');
@@ -244,7 +287,14 @@ export default function CalendarPage() {
             </div>
           )}
 
-          <CalendarComponent enabledPositions={enabledPositions} />
+          <CalendarComponent
+            enabledPositions={enabledPositions}
+            currentDate={currentDate}
+            setCurrentDate={setCurrentDate}
+            view={view}
+            setView={setView}
+            onStatsUpdate={(stats: { unpublishedCount: number }) => setUnpublishedCount(stats.unpublishedCount)}
+          />
         </main>
       </div>
 
@@ -259,8 +309,13 @@ export default function CalendarPage() {
             <div className={modalStyles.modalBody}>
               <p>
                 {publishType === 'all'
-                  ? 'Está seguro de que desea publicar todos los turnos?'
-                  : 'Está seguro de que desea publicar sólo los turnos que han sufrido cambios?'}
+                  ? `¿Está seguro de que desea publicar todos los turnos del ${view === 'day' ? 'DÍA' : 'periodo visible'}?`
+                  : `Vas a publicar ${unpublishedCount} cambios detectados entre ${view === 'day'
+                    ? currentDate.toLocaleDateString()
+                    : view === 'twoWeeks'
+                      ? getTwoWeeksDates(currentDate).map(d => d.toLocaleDateString()).join(' y ')
+                      : getWeekDates(currentDate).map(d => d.toLocaleDateString()).join(' y ')
+                  }. ¿Confirmar?`}
               </p>
               {conflictCount > 0 && (
                 <p style={{ color: '#f59e0b', fontSize: '0.9em', marginTop: '12px' }}>

@@ -18,6 +18,7 @@ interface SidebarProps {
     onAddPosition?: () => void;
     onEditPosition?: (position: Position) => void;
     conflictCount?: number;
+    view?: 'week' | 'day' | 'twoWeeks';
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -27,7 +28,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     onPublishChanges,
     onAddPosition,
     onEditPosition,
-    conflictCount = 0
+    conflictCount = 0,
+    view = 'week'
 }) => {
     const [positions, setPositions] = useState<Position[]>([]);
     const [loading, setLoading] = useState(true);
