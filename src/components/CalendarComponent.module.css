@@ -313,8 +313,8 @@
 }
 
 .overtimeIndicator svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .userHours {
@@ -774,6 +774,8 @@
 
 .positionCard.selected {
   border: 2px solid #000;
+  border-left-color: #000 !important;
+  /* Override inline style */
   background-color: var(--hover-bg);
 }
 
