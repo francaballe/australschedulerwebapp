@@ -348,8 +348,15 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   };
 
   // Obtener días de la semana (domingo a sábado)
+  // Obtener días de la semana (domingo a sábado)
   const getWeekDates = (date: Date) => {
     const currentDate = new Date(date);
+
+    // If view is 'day', just return that single day
+    if (view === 'day') {
+      return [currentDate];
+    }
+
     const dayOfWeek = currentDate.getDay(); // 0=domingo, 1=lunes...
 
     // Crear el domingo de esta semana (reset local time to midnight)
@@ -618,15 +625,27 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   };
 
   const goToNextWeek = () => {
-    const nextWeek = new Date(currentDate);
-    nextWeek.setDate(currentDate.getDate() + 7);
-    setCurrentDate(nextWeek);
+    const nextDate = new Date(currentDate);
+    if (view === 'day') {
+      nextDate.setDate(currentDate.getDate() + 1);
+    } else if (view === 'twoWeeks') {
+      nextDate.setDate(currentDate.getDate() + 14);
+    } else {
+      nextDate.setDate(currentDate.getDate() + 7);
+    }
+    setCurrentDate(nextDate);
   };
 
   const goToPrevWeek = () => {
-    const prevWeek = new Date(currentDate);
-    prevWeek.setDate(currentDate.getDate() - 7);
-    setCurrentDate(prevWeek);
+    const prevDate = new Date(currentDate);
+    if (view === 'day') {
+      prevDate.setDate(currentDate.getDate() - 1);
+    } else if (view === 'twoWeeks') {
+      prevDate.setDate(currentDate.getDate() - 14);
+    } else {
+      prevDate.setDate(currentDate.getDate() - 7);
+    }
+    setCurrentDate(prevDate);
   };
 
   const goToToday = () => {
