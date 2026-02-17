@@ -65,6 +65,12 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   const [modalLoading, setModalLoading] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [notifyUserOnDelete, setNotifyUserOnDelete] = useState(false);
+  const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
+  const [selectedStartTime, setSelectedStartTime] = useState<string>('');
+  const [selectedEndTime, setSelectedEndTime] = useState<string>('');
+
+  // Warning modal state
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
   // Drag & drop states
   const [draggedShift, setDraggedShift] = useState<Shift | null>(null);
@@ -227,7 +233,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   };
 
   // Create new shift assignment
-  const createShiftAssignment = async (userId: number, date: Date, positionId: number) => {
+  const createShiftAssignment = async (userId: number, date: Date, positionId: number, startTime?: string, endTime?: string) => {
     try {
       const dateStr = formatDateLocal(date);
 
@@ -237,7 +243,18 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       if (existingShift) {
         // PATCH existing shift — include position's schedule
         const selectedPosition = positions.find(p => p.id === positionId);
-        const patchData: any = { positionId, published: false };
+
+        // Use provided times or fallback to position defaults (or maintain existing if not provided, but here we expect overrides)
+        // If startTime/endTime are passed, use them.
+        const useStartTime = startTime !== undefined ? startTime : (selectedPosition?.starttime || null);
+        const useEndTime = endTime !== undefined ? endTime : (selectedPosition?.endtime || null);
+
+        const patchData: any = {
+          positionId,
+          published: false,
+          startTime: useStartTime,
+          endTime: useEndTime
+        };
 
         console.log(`🔄 PATCHing existing shift ${existingShift.id} for user ${userId} on ${dateStr}:`, patchData);
 
@@ -809,7 +826,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     // Check if target cell already has a shift
     const existing = getShiftForUserAndDay(targetUserId, targetDate);
     if (existing) {
-      alert('Ya existe un turno en esta celda. Elimínelo primero.');
+      setWarningMessage('Ya existe un turno en esta celda. Por favor, elimínelo antes de mover otro turno aquí.');
       setDraggedShift(null);
       return;
     }
@@ -832,7 +849,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       await refreshData();
     } catch (err: any) {
       console.error('Failed to move shift:', err);
-      alert(`Error al mover turno: ${err.message}`);
+      // alert(`Error al mover turno: ${err.message}`); // Optional: could use warning modal for errors too, but maybe less critical for "ugly" alerts.
+      // Let's use warning modal for consistency if desired, or leave alerts for technical errors.
+      // User asked for "drag collision" alert replacement specifically. But error handling is nicer too.
+      setWarningMessage(`No se pudo mover el turno: ${err.message}`);
     } finally {
       setDraggedShift(null);
     }
@@ -846,6 +866,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     console.log(`Clicked on user ${userId} for date ${date.toDateString()}`);
 
     // Open modal for position selection
+    const existingShift = getShiftForUserAndDay(userId, date);
+    setSelectedPositionId(existingShift ? existingShift.positionId : null);
+    setSelectedStartTime(existingShift?.startTime || '');
+    setSelectedEndTime(existingShift?.endTime || '');
+
     setSelectedCell({ userId, date });
     setIsModalOpen(true);
     fetchPositions(); // Load available positions
@@ -856,10 +881,40 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     setIsModalOpen(false);
     setSelectedCell(null);
     setShowDeleteConfirmation(false);
+    setSelectedPositionId(null);
+    setSelectedStartTime('');
+    setSelectedEndTime('');
   };
 
   const handlePositionSelect = async (positionId: number) => {
     if (!selectedCell) return;
+
+    // Check for existing shift to determine mode
+    const existingShift = shifts.find(s =>
+      s.userId === selectedCell.userId &&
+      s.date === formatDateLocal(selectedCell.date)
+    );
+
+    if (existingShift) {
+      // Editing: Manual save mode -> Just select
+      setSelectedPositionId(positionId);
+      // Update times to new position defaults if available
+      const pos = positions.find(p => p.id === positionId);
+      if (pos) {
+        setSelectedStartTime(pos.starttime || '');
+        setSelectedEndTime(pos.endtime || '');
+      }
+    } else {
+      // Creating: Auto save mode -> Save immediately
+      const success = await createShiftAssignment(selectedCell.userId, selectedCell.date, positionId);
+      if (success) {
+        handleModalClose();
+      }
+    }
+  };
+
+  const handleSaveAssignment = async () => {
+    if (!selectedCell || selectedPositionId === null) return;
 
     // Client-side validation: check for existing shifts
     const existingShifts = shifts.filter(s =>
@@ -873,9 +928,13 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       return;
     }
 
-
-
-    const success = await createShiftAssignment(selectedCell.userId, selectedCell.date, positionId);
+    const success = await createShiftAssignment(
+      selectedCell.userId,
+      selectedCell.date,
+      selectedPositionId,
+      selectedStartTime,
+      selectedEndTime
+    );
     if (success) {
       handleModalClose();
     }
@@ -1052,13 +1111,30 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 <div className={styles.userCell}>
                   <div className={styles.userName}>
                     {user.firstName} {user.lastName}
-                    {view === 'week' && userConfirmations.get(user.id) && (
-                      <div className={styles.confirmationIndicator} title="Programación confirmada">
+                    <div className={styles.userStatusIcons}>
+                      {/* Confirmation Slot - Always rendered to maintain spacing */}
+                      <div
+                        className={styles.confirmationIndicator}
+                        title={view === 'week' && userConfirmations.get(user.id) ? "Programación confirmada" : undefined}
+                        style={{
+                          visibility: (view === 'week' && userConfirmations.get(user.id)) ? 'visible' : 'hidden'
+                        }}
+                      >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: '14px', height: '14px' }}>
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
                       </div>
-                    )}
+
+                      {/* Overtime Slot */}
+                      {getUserTotalHours(user.id) > 40 && (
+                        <div className={styles.overtimeIndicator} title="Horas excedidas (>40hs)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className={styles.userHours}>
                     {getUserTotalHours(user.id).toFixed(1)}
@@ -1195,7 +1271,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <div>
-                <h3>Asignar Turno</h3>
+                <h3>
+                  {selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date))
+                    ? 'Editar Turno'
+                    : 'Asignar Turno'}
+                </h3>
                 {selectedCell && (
                   <p>
                     Usuario: {users.find(u => u.id === selectedCell.userId)?.firstName} {users.find(u => u.id === selectedCell.userId)?.lastName}
@@ -1282,33 +1362,128 @@ const CalendarComponent: React.FC<CalendarProps> = ({
               ) : modalLoading ? (
                 <div className={styles.modalLoading}>Cargando posiciones...</div>
               ) : positions.length > 0 ? (
-                <div className={styles.positionsGrid}>
-                  {positions.map((position) => (
-                    <div
-                      key={position.id}
-                      className={styles.positionCard}
-                      onClick={() => handlePositionSelect(position.id)}
-                      style={{
-                        backgroundColor: position.color ? `${position.color}20` : '#f5f5f5',
-                        borderLeftColor: position.color || '#ccc'
-                      }}
-                    >
-                      <div className={styles.positionInfo}>
-                        {position.starttime && position.endtime && (
-                          <div className={styles.shiftTime} style={{ fontWeight: 'normal', marginBottom: '4px' }}>
-                            {formatShiftTime(position.starttime, position.endtime)}
-                          </div>
-                        )}
-                        <div className={styles.shiftPosition}>
-                          {position.name}
+                <div>
+                  {selectedCell && (() => {
+                    const shift = shifts.find(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date));
+                    if (!shift) return null;
+                    return (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: 'var(--text-primary)' }}>
+                            Hora de inicio
+                          </label>
+                          <input
+                            type="time"
+                            value={selectedStartTime}
+                            onChange={(e) => setSelectedStartTime(e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: '1px solid var(--border)',
+                              borderRadius: '6px',
+                              fontSize: '14px',
+                              boxSizing: 'border-box',
+                              backgroundColor: 'var(--background)',
+                              color: 'var(--text-primary)'
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: 'var(--text-primary)' }}>
+                            Hora de fin
+                          </label>
+                          <input
+                            type="time"
+                            value={selectedEndTime}
+                            onChange={(e) => setSelectedEndTime(e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px',
+                              border: '1px solid var(--border)',
+                              borderRadius: '6px',
+                              fontSize: '14px',
+                              boxSizing: 'border-box',
+                              backgroundColor: 'var(--background)',
+                              color: 'var(--text-primary)'
+                            }}
+                          />
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })()}
+                  <div className={styles.positionsGrid}>
+                    {positions.map((position) => (
+                      <div
+                        key={position.id}
+                        className={`${styles.positionCard} ${selectedPositionId === position.id ? styles.selected : ''}`}
+                        onClick={() => handlePositionSelect(position.id)}
+                        style={{
+                          backgroundColor: position.color ? `${position.color}20` : '#f5f5f5',
+                          borderLeftColor: position.color || '#ccc'
+                        }}
+                      >
+                        <div className={styles.positionInfo}>
+                          {position.starttime && position.endtime && (
+                            <div className={styles.shiftTime} style={{ fontWeight: 'normal', marginBottom: '4px' }}>
+                              {formatShiftTime(position.starttime, position.endtime)}
+                            </div>
+                          )}
+                          <div className={styles.shiftPosition}>
+                            {position.name}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className={styles.modalError}>No hay posiciones disponibles</div>
               )}
+            </div>
+            {selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date)) && (
+              <div className={styles.modalFooter}>
+                <button
+                  className={styles.modalCancelButton}
+                  onClick={handleModalClose}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className={styles.primaryBtn}
+                  onClick={handleSaveAssignment}
+                  disabled={selectedPositionId === null || modalLoading}
+                >
+                  Guardar
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Warning Modal */}
+      {warningMessage && (
+        <div className={styles.modalOverlay} onClick={() => setWarningMessage(null)} style={{ zIndex: 1100 }}>
+          <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.deleteConfirmation}>
+              <div className={styles.warningIconContainer}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+              <h4>Atención</h4>
+              <p>{warningMessage}</p>
+              <div style={{ padding: '0 20px 20px' }}>
+                <button
+                  className={styles.primaryBtn}
+                  onClick={() => setWarningMessage(null)}
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  Entendido
+                </button>
+              </div>
             </div>
           </div>
         </div>

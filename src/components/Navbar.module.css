@@ -40,61 +40,35 @@
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--foreground-secondary);
-  -webkit-text-fill-color: var(--foreground-secondary); /* Override gradient for version */
+  -webkit-text-fill-color: var(--foreground-secondary);
+  /* Override gradient for version */
   margin-left: 6px;
 }
 
 .centerSection {
   position: absolute;
-  left: 285px; /* moved to match sidebar width 260px + 25px spacing */
+  left: 285px;
+  /* moved to match sidebar width 260px + 25px spacing */
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  pointer-events: none; /* let children decide events */
-  width: calc(100% - 285px); /* Account for logo and userSection width */
+  pointer-events: none;
+  /* let children decide events */
+  width: calc(100% - 285px);
+  /* Account for logo and userSection width */
   max-width: 720px;
 }
 
 /* Adjust centerSection when sidebar is narrower at <=1024px */
 @media (max-width: 1024px) {
   .centerSection {
-    left: 235px; /* 210px sidebar + 25px spacing - proportionally reduced */
+    left: 235px;
+    /* 210px sidebar + 25px spacing - proportionally reduced */
     width: calc(100% - 235px);
   }
 }
 
-.siteSelect {
-  pointer-events: auto;
-  min-width: 220px;
-  max-width: 420px;
-  padding: 8px 32px 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--background);
-  color: var(--foreground);
-  font-size: 0.95rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4 6l4 4 4-4' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
 
-.siteSelect:hover {
-  border-color: var(--primary);
-  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.15);
-}
-
-.siteSelect:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
 
 .backArrow {
   width: 22px;

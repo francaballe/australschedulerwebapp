@@ -106,6 +106,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         }
 
         const body = await request.json();
+        const { positionId, published, startTime, endTime, date, userId } = body;
 
         // Find existing shift
         const shift = await prisma.shift.findUnique({
@@ -116,22 +117,53 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             return NextResponse.json({ error: 'Shift not found' }, { status: 404, headers: corsHeaders });
         }
 
-        // If positionId is being updated, also update starttime/endtime from the position
-        const updateData = { ...body };
-        if (body.positionId) {
-            const position = await prisma.position.findUnique({
-                where: { id: body.positionId }
-            });
-            if (position) {
-                updateData.starttime = position.starttime;
-                updateData.endtime = position.endtime;
+        const dataToUpdate: any = {};
+
+        if (typeof published === 'boolean') {
+            dataToUpdate.published = published;
+        }
+
+        // Handle Move (Date/User change)
+        if (date) {
+            dataToUpdate.date = new Date(date);
+        }
+        if (userId) {
+            dataToUpdate.userId = Number(userId);
+        }
+
+        // Helper to create Date from "HH:mm"
+        const createDateFromTime = (timeStr: string) => {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const date = new Date(0); // 1970-01-01 epoch
+            date.setUTCHours(hours, minutes, 0, 0);
+            return date;
+        };
+
+        // 1. Handle explicit time updates from request
+        if (startTime) dataToUpdate.starttime = createDateFromTime(startTime);
+        if (endTime) dataToUpdate.endtime = createDateFromTime(endTime);
+
+        // 2. Handle Position Change
+        if (positionId) {
+            dataToUpdate.position = { connect: { id: Number(positionId) } };
+
+            // If explicit times were NOT provided, fallback to position defaults
+            if (!startTime || !endTime) {
+                const position = await prisma.position.findUnique({
+                    where: { id: Number(positionId) }
+                });
+
+                if (position) {
+                    if (!startTime) dataToUpdate.starttime = position.starttime;
+                    if (!endTime) dataToUpdate.endtime = position.endtime;
+                }
             }
         }
 
         // Update shift
         const updatedShift = await prisma.shift.update({
             where: { id: idNumber },
-            data: updateData
+            data: dataToUpdate
         });
 
         return NextResponse.json(updatedShift, { status: 200, headers: corsHeaders });

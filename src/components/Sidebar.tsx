@@ -33,6 +33,10 @@ const Sidebar: React.FC<SidebarProps> = ({
     unpublishedCount = 0,
     view = 'week'
 }) => {
+    // Site selector state
+    const [sites, setSites] = useState<{ id: number; name: string }[]>([]);
+    const [selectedSite, setSelectedSite] = useState<number | null>(null);
+
     const [positions, setPositions] = useState<Position[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -105,6 +109,41 @@ const Sidebar: React.FC<SidebarProps> = ({
             window.removeEventListener('enablePosition', handleEnablePosition);
         };
     }, []);
+
+    // Fetch sites and handle selection (Moved from Navbar)
+    useEffect(() => {
+        const fetchSites = async () => {
+            try {
+                const res = await fetch('/api/sites');
+                if (!res.ok) return;
+                const data = await res.json();
+                setSites(data);
+
+                // Initialize selected site from localStorage or default
+                const stored = window.localStorage.getItem('selectedSiteId');
+                if (stored) {
+                    setSelectedSite(Number(stored));
+                } else if (data.length > 0) {
+                    const minId = data.reduce((acc: number, s: any) => Math.min(acc, s.id), data[0].id);
+                    setSelectedSite(minId);
+                    try { window.localStorage.setItem('selectedSiteId', String(minId)); } catch { }
+                    // notify other components
+                    try { window.dispatchEvent(new CustomEvent('siteChanged', { detail: minId })); } catch { }
+                }
+            } catch (err) {
+                console.warn('Could not fetch sites', err);
+            }
+        };
+
+        fetchSites();
+    }, []);
+
+    const onSiteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const id = Number(e.target.value) || null;
+        setSelectedSite(id);
+        try { window.localStorage.setItem('selectedSiteId', String(id)); } catch { }
+        try { window.dispatchEvent(new CustomEvent('siteChanged', { detail: id })); } catch { }
+    };
 
     // Search input state + debounce (only triggers onSearchChange)
     const [searchValue, setSearchValue] = useState('');
@@ -203,6 +242,24 @@ const Sidebar: React.FC<SidebarProps> = ({
         <aside className={styles.sidebar}>
             <div className={styles.section}>
                 <div className={styles.actions}>
+                    {/* Site Selector moved here */}
+                    <div className={styles.siteSelectorWrapper}>
+                        <select
+                            className={styles.siteSelect}
+                            value={selectedSite ?? ''}
+                            onChange={onSiteChange}
+                            disabled={sites.length === 0}
+                        >
+                            {sites.length === 0 ? (
+                                <option value="">Cargando sitios...</option>
+                            ) : (
+                                sites.map(site => (
+                                    <option key={site.id} value={site.id}>{site.name}</option>
+                                ))
+                            )}
+                        </select>
+                    </div>
+
                     <button
                         className={styles.primaryBtn}
                         onClick={onPublishAll}
@@ -305,7 +362,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <span>Agregar posición</span>
                 </button>
             </div>
-        </aside>
+        </aside >
     );
 };
 

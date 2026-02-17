@@ -274,21 +274,47 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
+  line-height: 1.2;
+}
+
+.userStatusIcons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: auto;
+  align-items: center;
 }
 
 .confirmationIndicator {
   width: 20px;
   height: 20px;
   background-color: #22c55e;
-  /* Green */
   border-radius: 50%;
-  /* Round */
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: auto;
   flex-shrink: 0;
   color: white;
+}
+
+.confirmationIndicator svg {
+  width: 14px;
+  height: 14px;
+}
+
+.overtimeIndicator {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+}
+
+.overtimeIndicator svg {
+  width: 18px;
+  height: 18px;
 }
 
 .userHours {
@@ -746,6 +772,11 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.positionCard.selected {
+  border: 2px solid #000;
+  background-color: var(--hover-bg);
+}
+
 .positionName {
   font-weight: 500;
   color: var(--text-primary);
@@ -797,6 +828,23 @@
 }
 
 .deleteIconContainer svg {
+  width: 24px;
+  height: 24px;
+}
+
+.warningIconContainer {
+  background: #fef3c7;
+  color: #f59e0b;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.warningIconContainer svg {
   width: 24px;
   height: 24px;
 }
@@ -937,4 +985,51 @@
 .dayCell.pastDay:hover {
   background-color: var(--past-day-bg);
   /* Override hover */
+}
+
+/* Modal Footer Styles */
+.modalFooter {
+  padding: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.modalCancelButton {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.modalCancelButton:hover:not(:disabled) {
+  background: var(--background-secondary);
+}
+
+.primaryBtn {
+  padding: 8px 16px;
+  border: none;
+  background: #3b82f6;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.primaryBtn:disabled,
+.modalCancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

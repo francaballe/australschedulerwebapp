@@ -22,32 +22,7 @@ export default function Navbar() {
 
     const isActive = (path: string) => pathname === path;
 
-    const [sites, setSites] = useState<{ id: number; name: string }[]>([]);
-    const [selectedSite, setSelectedSite] = useState<number | null>(null);
 
-    useEffect(() => {
-        const fetchSites = async () => {
-            try {
-                const res = await fetch('/api/sites');
-                if (!res.ok) return;
-                const data = await res.json();
-                setSites(data);
-
-                // choose the site with the smallest id by default
-                if (data.length > 0) {
-                    const minId = data.reduce((acc: number, s: any) => Math.min(acc, s.id), data[0].id);
-                    setSelectedSite(minId);
-                    try { window.localStorage.setItem('selectedSiteId', String(minId)); } catch { }
-                    // notify other components
-                    try { window.dispatchEvent(new CustomEvent('siteChanged', { detail: minId })); } catch { }
-                }
-            } catch (err) {
-                console.warn('Could not fetch sites', err);
-            }
-        };
-
-        fetchSites();
-    }, []);
 
     // Handle clicks outside dropdown to close it
     useEffect(() => {
@@ -61,12 +36,16 @@ export default function Navbar() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const onSiteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const id = Number(e.target.value) || null;
-        setSelectedSite(id);
-        try { window.localStorage.setItem('selectedSiteId', String(id)); } catch { }
-        try { window.dispatchEvent(new CustomEvent('siteChanged', { detail: id })); } catch { }
-    };
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     return (
         <nav className={styles.navbar}>
@@ -78,21 +57,13 @@ export default function Navbar() {
                     </svg>
                 )}
                 <span className={styles.logoText}>
-                    RosterLoop <span className={styles.logoVersion}>(v1.3.4)</span>
+                    RosterLoop <span className={styles.logoVersion}>(v1.3.5)</span>
                 </span>
             </div>
 
             {pathname !== "/settings" && (
                 <div className={styles.centerSection}>
-                    <select className={styles.siteSelect} value={selectedSite ?? ''} onChange={onSiteChange}>
-                        {sites.length === 0 ? (
-                            <option value="">No hay sitios</option>
-                        ) : (
-                            sites.map(site => (
-                                <option key={site.id} value={site.id}>{site.name}</option>
-                            ))
-                        )}
-                    </select>
+                    {/* Site selector moved to sidebar */}
                 </div>
             )}
 
