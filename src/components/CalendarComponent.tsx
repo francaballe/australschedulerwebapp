@@ -1293,14 +1293,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                       }}
                     >
                       <div className={styles.positionInfo}>
-                        <div className={styles.shiftPosition}>
-                          {position.name}
-                        </div>
                         {position.starttime && position.endtime && (
-                          <div className={styles.shiftTime} style={{ fontWeight: 'normal' }}>
+                          <div className={styles.shiftTime} style={{ fontWeight: 'normal', marginBottom: '4px' }}>
                             {formatShiftTime(position.starttime, position.endtime)}
                           </div>
                         )}
+                        <div className={styles.shiftPosition}>
+                          {position.name}
+                        </div>
                       </div>
                     </div>
                   ))}

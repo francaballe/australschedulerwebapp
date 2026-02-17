@@ -609,10 +609,13 @@
   border-radius: 12px;
   box-shadow: var(--card-shadow);
   min-width: 400px;
-  max-width: 600px;
-  max-height: 70vh;
+  max-width: 800px;
+  width: 90vw;
+  max-height: 80vh;
   overflow: hidden;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .modalHeader {
@@ -695,8 +698,8 @@
 
 .modalBody {
   padding: 20px;
-  max-height: 400px;
   overflow-y: auto;
+  flex: 1;
 }
 
 .modalLoading {
@@ -713,8 +716,8 @@
 
 .positionsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 
 .positionCard {
@@ -740,9 +743,26 @@
 
 .positionInfo {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
   width: 100%;
+}
+
+.positionInfo .shiftTime {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #64748b;
+  /* text-secondary replacement since var might not work inside sub-rule easily if not defined, but var(--text-secondary) is used elsewhere. */
+  margin-bottom: 2px !important;
+}
+
+.positionInfo .shiftPosition {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  margin-top: 0px !important;
 }
 
 /* Delete Confirmation Styles */

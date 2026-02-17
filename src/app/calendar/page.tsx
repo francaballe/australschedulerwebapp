@@ -23,7 +23,7 @@ export default function CalendarPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
-  const [publishType, setPublishType] = useState<'all' | 'changes'>('all');
+
   const [publishLoading, setPublishLoading] = useState(false);
   const [conflictCount, setConflictCount] = useState(0);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -109,8 +109,7 @@ export default function CalendarPage() {
     return [start, end];
   };
 
-  const openPublish = (type: 'all' | 'changes') => {
-    setPublishType(type);
+  const openPublish = () => {
     setPublishModalOpen(true);
   };
 
@@ -134,12 +133,12 @@ export default function CalendarPage() {
         endDateStr = end.toLocaleDateString('en-CA');
       }
 
-      console.log(`Publishing range: ${startDateStr} to ${endDateStr} (${publishType})`);
+      console.log(`Publishing range: ${startDateStr} to ${endDateStr}`);
 
       const resp = await fetch('/api/shifts/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startDate: startDateStr, endDate: endDateStr, type: publishType })
+        body: JSON.stringify({ startDate: startDateStr, endDate: endDateStr, type: 'all' })
       });
 
       if (!resp.ok) throw new Error('Error al publicar');
@@ -269,9 +268,10 @@ export default function CalendarPage() {
       <Navbar />
       <div className={styles.content}>
         <Sidebar
-          onPublishAll={() => openPublish('all')}
-          onPublishChanges={() => openPublish('changes')}
+          onPublishAll={openPublish}
+
           conflictCount={conflictCount}
+          unpublishedCount={unpublishedCount}
           onEditPosition={handleEditPosition}
           onPositionToggle={handlePositionToggle}
           onSearchChange={(q: string) => {
@@ -303,19 +303,12 @@ export default function CalendarPage() {
         <div className={modalStyles.modalOverlay} onClick={() => setPublishModalOpen(false)}>
           <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={modalStyles.modalHeader}>
-              <h3>{publishType === 'all' ? 'Publicar Todo' : 'Publicar Sólo Cambios'}</h3>
+              <h3>Publicar Cronograma</h3>
               <button className={modalStyles.modalCloseButton} onClick={() => setPublishModalOpen(false)}>×</button>
             </div>
             <div className={modalStyles.modalBody}>
               <p>
-                {publishType === 'all'
-                  ? `¿Está seguro de que desea publicar todos los turnos del ${view === 'day' ? 'DÍA' : 'periodo visible'}?`
-                  : `Vas a publicar ${unpublishedCount} cambios detectados entre ${view === 'day'
-                    ? currentDate.toLocaleDateString()
-                    : view === 'twoWeeks'
-                      ? getTwoWeeksDates(currentDate).map(d => d.toLocaleDateString()).join(' y ')
-                      : getWeekDates(currentDate).map(d => d.toLocaleDateString()).join(' y ')
-                  }. ¿Confirmar?`}
+                ¿Está seguro de que desea publicar todos los turnos del {view === 'day' ? 'DÍA' : 'periodo visible'}?
               </p>
               {conflictCount > 0 && (
                 <p style={{ color: '#f59e0b', fontSize: '0.9em', marginTop: '12px' }}>

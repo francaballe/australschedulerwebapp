@@ -14,21 +14,23 @@ interface SidebarProps {
     onSearchChange?: (value: string) => void;
     onPositionToggle?: (positionId: string | number, checked: boolean) => void;
     onPublishAll?: () => void;
-    onPublishChanges?: () => void;
+
     onAddPosition?: () => void;
     onEditPosition?: (position: Position) => void;
     conflictCount?: number;
     view?: 'week' | 'day' | 'twoWeeks';
+    unpublishedCount?: number;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
     onSearchChange,
     onPositionToggle,
+
     onPublishAll,
-    onPublishChanges,
     onAddPosition,
     onEditPosition,
     conflictCount = 0,
+    unpublishedCount = 0,
     view = 'week'
 }) => {
     const [positions, setPositions] = useState<Position[]>([]);
@@ -201,11 +203,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         <aside className={styles.sidebar}>
             <div className={styles.section}>
                 <div className={styles.actions}>
-                    <button className={styles.primaryBtn} onClick={onPublishAll}>
-                        PUBLICAR TODO
-                    </button>
-                    <button className={styles.secondaryBtn} onClick={onPublishChanges}>
-                        PUBLICAR SÓLO CAMBIOS
+                    <button
+                        className={styles.primaryBtn}
+                        onClick={onPublishAll}
+                        disabled={unpublishedCount === 0}
+                        title={unpublishedCount === 0 ? "Todo publicado" : "Publicar cronograma"}
+                        style={unpublishedCount === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                    >
+                        PUBLICAR CRONOGRAMA
                     </button>
 
                 </div>
