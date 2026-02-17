@@ -17,9 +17,7 @@ export async function GET(request: NextRequest) {
         const siteId = searchParams.get('siteId');
 
         // Build where clause dynamically
-        const whereClause: any = {
-            toBeDeleted: false,
-        };
+        const whereClause: any = {};
 
         if (startDate && endDate) {
             whereClause.date = {
@@ -78,11 +76,11 @@ export async function GET(request: NextRequest) {
             position: shift.position?.name || null,
             positionColor: shift.position?.color || null,
             date: shift.date,
-            startTime: shift.starttime ? 
-                `${shift.starttime.getUTCHours().toString().padStart(2, '0')}:${shift.starttime.getUTCMinutes().toString().padStart(2, '0')}:${shift.starttime.getUTCSeconds().toString().padStart(2, '0')}` 
+            startTime: shift.starttime ?
+                `${shift.starttime.getUTCHours().toString().padStart(2, '0')}:${shift.starttime.getUTCMinutes().toString().padStart(2, '0')}:${shift.starttime.getUTCSeconds().toString().padStart(2, '0')}`
                 : null,
-            endTime: shift.endtime ? 
-                `${shift.endtime.getUTCHours().toString().padStart(2, '0')}:${shift.endtime.getUTCMinutes().toString().padStart(2, '0')}:${shift.endtime.getUTCSeconds().toString().padStart(2, '0')}` 
+            endTime: shift.endtime ?
+                `${shift.endtime.getUTCHours().toString().padStart(2, '0')}:${shift.endtime.getUTCMinutes().toString().padStart(2, '0')}:${shift.endtime.getUTCSeconds().toString().padStart(2, '0')}`
                 : null,
             published: shift.published
         }));
@@ -126,7 +124,6 @@ export async function POST(request: NextRequest) {
                 starttime: startTime || '00:00:00',
                 endtime: endTime || '00:00:00',
                 published: published ?? true,
-                toBeDeleted: false
             },
             include: {
                 user: {
@@ -150,7 +147,7 @@ export async function POST(request: NextRequest) {
             id: newShift.id,
             userId: newShift.userId,
             user: newShift.user,
-            positionId: newShift.positionId, 
+            positionId: newShift.positionId,
             position: newShift.position?.name,
             positionColor: newShift.position?.color,
             date: newShift.date,
