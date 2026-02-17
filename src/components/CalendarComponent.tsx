@@ -485,8 +485,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
   // Expose a manual refresh that other UI can call
   const refreshData = async () => {
-    // Prevent full screen loading to keep UI stable, just show small spinner if needed or nothing
-    // setShiftsLoading(true); // Maybe too aggressive if it wipes the screen
+    // Show full screen loading
+    setShiftsLoading(true);
 
     try {
       console.log('🔄 Refreshing calendar data...');
@@ -526,7 +526,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       console.error('Error refreshing calendar data:', err);
       // Don't wipe data on error
     } finally {
-      // setShiftsLoading(false);
+      setShiftsLoading(false);
     }
   };
 
@@ -1032,7 +1032,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         ) : shiftsLoading ? (
           <div className={styles.loadingContainer}>
             <div className={styles.loadingSpinner}></div>
-            <div>Cargando semana...</div>
+            <div>
+              {view === 'day' ? 'Cargando día...' :
+                view === 'twoWeeks' ? 'Cargando 2 semanas...' :
+                  'Cargando semana...'}
+            </div>
           </div>
         ) : error ? (
           <div className={styles.errorContainer}>{error}</div>
