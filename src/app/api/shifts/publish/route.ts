@@ -20,15 +20,7 @@ export async function POST(request: NextRequest) {
     const end = new Date(endDate);
 
     // Delete shifts marked for deletion in the range
-    const deleted = await prisma.shift.deleteMany({
-      where: {
-        toBeDeleted: true,
-        date: {
-          gte: start,
-          lte: end
-        }
-      }
-    });
+
 
     // Build update filter: if type === 'changes' update only unpublished shifts, otherwise update all
     const updateWhere: any = {
@@ -46,7 +38,7 @@ export async function POST(request: NextRequest) {
       data: { published: true }
     });
 
-    return NextResponse.json({ deleted: deleted.count, updated: updated.count }, { headers: corsHeaders });
+    return NextResponse.json({ updated: updated.count }, { headers: corsHeaders });
 
   } catch (error: any) {
     console.error('Publish shifts error:', error);

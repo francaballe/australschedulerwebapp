@@ -70,7 +70,7 @@ model Shift {
   positionId  Int?      @map("position_id")
   published   Boolean   @default(false)
   userId      Int       @map("user_id")
-  toBeDeleted Boolean   @default(false) @map("to_be_deleted")
+
   starttime   DateTime? @db.Time(6)
   endtime     DateTime? @db.Time(6)
   position    Position? @relation(fields: [positionId], references: [id])

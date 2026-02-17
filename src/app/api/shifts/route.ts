@@ -48,7 +48,6 @@ export async function GET(request: NextRequest) {
                 starttime: true,
                 endtime: true,
                 published: true,
-                toBeDeleted: true,
                 positionId: true,
                 position: {
                     select: {
@@ -96,7 +95,6 @@ export async function GET(request: NextRequest) {
                     `${shift.endtime.getUTCHours().toString().padStart(2, '0')}:${shift.endtime.getUTCMinutes().toString().padStart(2, '0')}:${shift.endtime.getUTCSeconds().toString().padStart(2, '0')}`
                     : null,
                 published: shift.published,
-                toBeDeleted: shift.toBeDeleted,
                 isUserUnavailable,
                 positionId: shift.positionId ?? 0,
                 position: shift.position?.name ?? (shift.positionId === null ? 'No Position' : null),
@@ -190,7 +188,6 @@ export async function POST(request: NextRequest) {
             positionId: parsedPositionId,
             date: new Date(date),
             published: published ?? false,
-            toBeDeleted: false,
             // Copy start and end times from position if exists
             starttime: position?.starttime ?? null,
             endtime: position?.endtime ?? null,
@@ -210,8 +207,7 @@ export async function POST(request: NextRequest) {
         const existingShift = await prisma.shift.findFirst({
             where: {
                 userId: parsedUserId,
-                date: new Date(date),
-                toBeDeleted: false
+                date: new Date(date)
             }
         });
 
@@ -226,7 +222,6 @@ export async function POST(request: NextRequest) {
                     starttime: shiftData.starttime,
                     endtime: shiftData.endtime,
                     published: published ?? false,
-                    toBeDeleted: false,
                 } as any,
                 select: {
                     id: true,
@@ -246,7 +241,6 @@ export async function POST(request: NextRequest) {
                 positionId: parsedPositionId,
                 date: new Date(date),
                 published: published ?? false,
-                toBeDeleted: false,
                 starttime: shiftData.starttime,
                 endtime: shiftData.endtime,
             };
