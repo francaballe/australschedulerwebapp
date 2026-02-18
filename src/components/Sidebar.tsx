@@ -49,7 +49,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         const fetchPositions = async () => {
             try {
                 setLoading(true);
-                const response = await fetch('/api/positions');
+                const url = selectedSite ? `/api/positions?siteId=${selectedSite}` : '/api/positions';
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error('Error al cargar posiciones');
                 }
@@ -108,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             window.removeEventListener('positionsUpdated', handlePositionsUpdated);
             window.removeEventListener('enablePosition', handleEnablePosition);
         };
-    }, []);
+    }, [selectedSite]);
 
     // Fetch sites and handle selection (Moved from Navbar)
     useEffect(() => {

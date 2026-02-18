@@ -23,10 +23,10 @@ export async function PATCH(
         }
 
         const body = await request.json();
-        const { color, name, starttime, endtime, updateUnpublishedShifts, startDate, endDate } = body;
+        const { color, name, starttime, endtime, updateUnpublishedShifts, startDate, endDate, siteid } = body;
 
         // Validation: At least one field should be provided
-        if (color === undefined && name === undefined && starttime === undefined && endtime === undefined) {
+        if (color === undefined && name === undefined && starttime === undefined && endtime === undefined && siteid === undefined) {
             return NextResponse.json(
                 { error: 'No se proporcionan campos para actualizar' },
                 { status: 400, headers: corsHeaders }
@@ -36,6 +36,7 @@ export async function PATCH(
         const updateData: any = {};
         if (color !== undefined) updateData.color = color;
         if (name !== undefined) updateData.name = name;
+        if (siteid !== undefined) updateData.siteid = siteid;
 
         // Helper to create Date from "HH:mm" string
         const createTimeDate = (timeStr: string) => {

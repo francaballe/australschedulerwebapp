@@ -43,9 +43,10 @@ model Role {
 }
 
 model Site {
-  id    Int     @id @default(autoincrement())
-  name  String?
-  users User[]
+  id        Int       @id @default(autoincrement())
+  name      String?
+  users     User[]
+  positions Position[]
 
   @@map("sites")
   @@schema("app")
@@ -58,6 +59,8 @@ model Position {
   starttime  DateTime? @db.Time(6)
   endtime    DateTime? @db.Time(6)
   eliminated Boolean?  @default(false)
+  siteid     Int?
+  site       Site?     @relation(fields: [siteid], references: [id])
   shifts     Shift[]
 
   @@map("positions")

@@ -247,7 +247,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   const fetchPositions = async () => {
     try {
       setModalLoading(true);
-      const response = await fetch('/api/positions?adminOnly=true');
+      let url = '/api/positions?adminOnly=true';
+      if (selectedSiteId) {
+        url += `&siteId=${selectedSiteId}`;
+      }
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Error al cargar posiciones');
       }
