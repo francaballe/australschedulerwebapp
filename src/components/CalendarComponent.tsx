@@ -10,6 +10,7 @@ interface CalendarProps {
   view: 'week' | 'day' | 'twoWeeks';
   setView: (view: 'week' | 'day' | 'twoWeeks') => void;
   onStatsUpdate?: (stats: { unpublishedCount: number }) => void;
+  managerName?: string;
 }
 
 interface User {
@@ -46,7 +47,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   setCurrentDate,
   view,
   setView,
-  onStatsUpdate
+  onStatsUpdate,
+  managerName
 }) => {
   // Local state removed for currentDate and view (lifted)
 
@@ -986,7 +988,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
       // Delete the shift (availability is managed separately)
       // Pass notification preference if confirmed (for published shifts)
-      const queryParams = confirmed && notifyUserOnDelete ? '?notify=true' : '';
+      let queryParams = confirmed && notifyUserOnDelete ? '?notify=true' : '?notify=false';
+      if (confirmed && notifyUserOnDelete && managerName) {
+        queryParams += `&managerName=${encodeURIComponent(managerName)}`;
+      }
+
       const response = await fetch(`/api/shifts/${shift.id}${queryParams}`, {
         method: 'DELETE',
       });

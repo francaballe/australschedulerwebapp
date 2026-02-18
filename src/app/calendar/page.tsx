@@ -337,6 +337,7 @@ export default function CalendarPage() {
             view={view}
             setView={setView}
             onStatsUpdate={(stats: { unpublishedCount: number }) => setUnpublishedCount(stats.unpublishedCount)}
+            managerName={user.firstName}
           />
         </main>
       </div>

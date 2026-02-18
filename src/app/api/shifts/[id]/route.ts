@@ -13,6 +13,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         const shiftId = resolvedParams.id;
         const { searchParams } = new URL(request.url);
         const shouldNotify = searchParams.get('notify') === 'true';
+        const managerName = searchParams.get('managerName') || 'The manager';
 
         if (!shiftId) {
             return NextResponse.json(
@@ -29,9 +30,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
             );
         }
 
-        // 1. Fetch the shift to check its status
+        // 1. Fetch the shift to check its status (include position for notification details)
         const shift = await prisma.shift.findUnique({
-            where: { id: idNumber }
+            where: { id: idNumber },
+            include: { position: true }
         });
 
         if (!shift) {
@@ -51,11 +53,54 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
                 });
 
                 if (tokenRecord && tokenRecord.token) {
-                    const dateStr = new Date(shift.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
-                    const title = 'Turno Eliminado';
-                    const body = `Se ha eliminado tu turno del día ${dateStr}`;
+                    // Format Date: "July 29, 2025"
+                    const dateObj = new Date(shift.date);
+                    // Ensure we use UTC date parts to avoid timezone shifts if stored as UTC-midnight
+                    const utcDate = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
 
-                    // Send notification (don't block deletion on failure)
+                    const formattedDate = utcDate.toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+
+                    // Format Time: "4 PM to 10:30 PM"
+                    const formatTime = (date: Date | null) => {
+                        if (!date) return '??';
+                        // Assuming date is 1970-01-01THH:mm:ss.000Z
+                        const hours = date.getUTCHours();
+                        const minutes = date.getUTCMinutes();
+
+                        const period = hours >= 12 ? 'PM' : 'AM';
+                        const h = hours % 12 || 12; // 0 -> 12
+                        const m = minutes === 0 ? '' : `:${minutes.toString().padStart(2, '0')}`;
+
+                        return `${h}${m} ${period}`;
+                    };
+
+                    const startTime = formatTime(shift.starttime);
+                    const endTime = formatTime(shift.endtime);
+                    const formattedTime = `${startTime} to ${endTime}`;
+
+                    const positionName = shift.position?.name || 'Default';
+
+                    const title = 'Shift Has Been Canceled!';
+                    const body = `The manager, ${managerName}, has canceled your shift that had the following details: ${formattedDate} from ${formattedTime} at ${positionName}. You are no longer scheduled for this shift!`;
+
+                    console.log(`Sending cancellation notification to user ${shift.userId}:`, { title, body });
+
+                    // 1. Save notification to database
+                    await prisma.message.create({
+                        data: {
+                            userId: shift.userId,
+                            title: title,
+                            body: body,
+                            read: false,
+                            createdAt: new Date()
+                        }
+                    });
+
+                    // 2. Send push notification (don't block deletion on failure)
                     await import('@/lib/firebase-admin').then(mod =>
                         mod.sendPushNotification(tokenRecord.token, title, body)
                     ).catch(err => console.error('Error sending push:', err));
