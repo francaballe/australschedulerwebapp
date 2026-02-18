@@ -34,9 +34,44 @@ export async function POST(request: NextRequest) {
       updateWhere.published = false;
     }
 
-    // 1. Fetch ALL shifts to be published, including position details
-    const shiftsToPublish = await prisma.shift.findMany({
+    // 1. Identify users who need to be notified (users with at least one UNPUBLISHED shift in range)
+    // regardless of 'type' (all or changes), we only notify if there's something new to show.
+    // If type is 'changes', updateWhere handles it. If type is 'all', we still only care about users with *unpublished* items
+    // effectively, we want to know whose schedule CHANGED/IS NEW.
+    const usersToNotify = await prisma.shift.findMany({
+      where: {
+        date: { gte: start, lte: end },
+        published: false
+      },
+      select: {
+        userId: true
+      },
+      distinct: ['userId']
+    });
+
+    const targetUserIds = usersToNotify.map(u => u.userId);
+
+    // 2. Update shifts to published
+    // If type === 'changes', updateWhere already targets unpublished.
+    // If type === 'all', updateWhere targets all.
+    // We proceed with the update as requested.
+    const updated = await prisma.shift.updateMany({
       where: updateWhere,
+      data: { published: true }
+    });
+
+    if (targetUserIds.length === 0) {
+      console.log('No users with unpublished shifts found. No notifications sent.');
+      return NextResponse.json({ updated: updated.count, notifiedUsers: 0 }, { headers: corsHeaders });
+    }
+
+    // 3. Fetch FULL schedule for the target users
+    // We want to send them the complete picture for the range, even if some parts were already published.
+    const shiftsToNotify = await prisma.shift.findMany({
+      where: {
+        userId: { in: targetUserIds },
+        date: { gte: start, lte: end }
+      },
       include: {
         position: true
       },
@@ -45,17 +80,11 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // 2. Update shifts to published (Bulk update still works efficiently)
-    const updated = await prisma.shift.updateMany({
-      where: updateWhere,
-      data: { published: true }
-    });
-
-    // 3. Group shifts by User ID
-    type ShiftWithPosition = typeof shiftsToPublish[0];
+    // 4. Group shifts by User ID
+    type ShiftWithPosition = typeof shiftsToNotify[0];
     const shiftsByUser = new Map<number, ShiftWithPosition[]>();
 
-    shiftsToPublish.forEach(shift => {
+    shiftsToNotify.forEach(shift => {
       const existing = shiftsByUser.get(shift.userId) || [];
       existing.push(shift);
       shiftsByUser.set(shift.userId, existing);
