@@ -311,12 +311,54 @@ export async function POST(request: NextRequest) {
     }
 }
 
+
+export async function DELETE(request: NextRequest) {
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+
+    const searchParams = request.nextUrl.searchParams;
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+
+    if (!startDate || !endDate) {
+        return NextResponse.json(
+            { error: 'startDate and endDate parameters are required' },
+            { status: 400, headers: corsHeaders }
+        );
+    }
+
+    try {
+        const result = await prisma.shift.deleteMany({
+            where: {
+                date: {
+                    gte: new Date(startDate),
+                    lte: new Date(endDate)
+                }
+            }
+        });
+
+        console.log(`🗑️ Deleted ${result.count} shifts between ${startDate} and ${endDate}`);
+
+        return NextResponse.json({ success: true, count: result.count }, { headers: corsHeaders });
+
+    } catch (error: any) {
+        console.error('❌ API Shifts DELETE Error:', error);
+        return NextResponse.json(
+            { error: 'Error al eliminar turnos' },
+            { status: 500, headers: corsHeaders }
+        );
+    }
+}
+
 export async function OPTIONS() {
     return new NextResponse(null, {
         status: 204,
         headers: {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         },
     });

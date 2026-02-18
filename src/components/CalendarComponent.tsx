@@ -73,6 +73,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   const [showCopyConfirmation, setShowCopyConfirmation] = useState(false);
   const [copyLoading, setCopyLoading] = useState(false);
 
+  // Delete week state
+  const [showDeleteWeekConfirmation, setShowDeleteWeekConfirmation] = useState(false);
+  const [deleteWeekLoading, setDeleteWeekLoading] = useState(false);
+  const [deleteWeekWarningType, setDeleteWeekWarningType] = useState<'published' | 'unpublished'>('unpublished');
+
   // Warning modal state
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
@@ -1048,6 +1053,59 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     }
   };
 
+  const handleDeleteWeekClick = () => {
+    // Filter shifts that are within the current week range
+    const weekStart = formatDateLocal(weekDates[0]);
+    const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
+
+    // Check if there are ANY shifts (excluding unavailable if we wanted, but "delete week" usually means clear everything)
+    // Actually, user might want to keep Unavailability?
+    // "borrar la semana" -> Delete shifts.
+    // Let's check for standard shifts.
+    const shiftsInWeek = shifts.filter(s =>
+      s.date >= weekStart && s.date <= weekEnd && s.positionId !== 1
+    );
+
+    if (shiftsInWeek.length === 0) {
+      setWarningMessage('No hay turnos para eliminar en esta semana.');
+      return;
+    }
+
+    // Check for published shifts
+    const hasPublishedShifts = shiftsInWeek.some(s => s.published);
+    setDeleteWeekWarningType(hasPublishedShifts ? 'published' : 'unpublished');
+    setShowDeleteWeekConfirmation(true);
+  };
+
+  const confirmDeleteWeek = async () => {
+    try {
+      setDeleteWeekLoading(true);
+      const weekStart = formatDateLocal(weekDates[0]);
+      const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
+
+      console.log(`🗑️ Deleting week from ${weekStart} to ${weekEnd}`);
+
+      const response = await fetch(`/api/shifts?startDate=${weekStart}&endDate=${weekEnd}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar semana');
+      }
+
+      await refreshData();
+      setShowDeleteWeekConfirmation(false);
+
+    } catch (err: any) {
+      console.error('Failed to delete week:', err);
+      // reusing warning modal for error
+      setWarningMessage(`Error al eliminar la semana: ${err.message}`);
+      setShowDeleteWeekConfirmation(false);
+    } finally {
+      setDeleteWeekLoading(false);
+    }
+  };
+
   return (
     <div className={styles.calendarContainer}>
       {/* Header del calendario */}
@@ -1107,7 +1165,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
             </button>
           )}
           {view === 'week' && (
-            <button className={`${styles.actionButton} ${styles.deleteAction}`} title="Borrar semana completa">
+            <button className={`${styles.actionButton} ${styles.deleteAction}`} title="Borrar semana completa" onClick={handleDeleteWeekClick}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 6h18" />
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -1581,6 +1639,60 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                   disabled={copyLoading}
                 >
                   {copyLoading ? 'Copiando...' : 'Confirmar Copia'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Week Confirmation Modal */}
+      {showDeleteWeekConfirmation && (
+        <div className={styles.modalOverlay} onClick={() => setShowDeleteWeekConfirmation(false)} style={{ zIndex: 1100 }}>
+          <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.deleteConfirmation}>
+              <div className={deleteWeekWarningType === 'published' ? styles.warningIconContainer : styles.deleteIconContainer}>
+                {deleteWeekWarningType === 'published' ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <line x1="10" y1="11" x2="10" y2="17" />
+                    <line x1="14" y1="11" x2="14" y2="17" />
+                  </svg>
+                )}
+              </div>
+              <h4>
+                {deleteWeekWarningType === 'published' ? '¿Eliminar semana PUBLICADA?' : '¿Eliminar semana completa?'}
+              </h4>
+              <p style={{ textAlign: 'center', marginBottom: '8px' }}>
+                {deleteWeekWarningType === 'published'
+                  ? 'Hay turnos PUBLICADOS en esta semana.'
+                  : 'Estás a punto de eliminar todos los turnos de la semana.'}
+              </p>
+              <p style={{ textAlign: 'center', fontWeight: 'bold', color: deleteWeekWarningType === 'published' ? '#d32f2f' : 'inherit' }}>
+                Esta acción no se puede deshacer. Se eliminarán TODOS los turnos{deleteWeekWarningType === 'published' ? ' (incluyendo los publicados)' : ''}.
+              </p>
+
+              <div className={styles.deleteConfirmationButtons}>
+                <button
+                  className={styles.cancelDeleteBtn}
+                  onClick={() => setShowDeleteWeekConfirmation(false)}
+                  disabled={deleteWeekLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className={styles.confirmDeleteBtn}
+                  onClick={confirmDeleteWeek}
+                  disabled={deleteWeekLoading}
+                >
+                  {deleteWeekLoading ? 'Eliminando...' : 'Eliminar Todo'}
                 </button>
               </div>
             </div>
