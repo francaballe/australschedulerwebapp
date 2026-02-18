@@ -1,6 +1,6 @@
 .sidebar {
-    width: 260px;
-    /* reduced from 350px - more compact after UI simplification */
+    width: 286px;
+    /* increased 10% from 260px */
     background: var(--background-secondary);
     border-right: 1px solid var(--border);
     height: calc(100vh - 64px);

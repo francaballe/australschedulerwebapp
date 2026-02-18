@@ -69,6 +69,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   const [selectedStartTime, setSelectedStartTime] = useState<string>('');
   const [selectedEndTime, setSelectedEndTime] = useState<string>('');
 
+  // Copy week state
+  const [showCopyConfirmation, setShowCopyConfirmation] = useState(false);
+  const [copyLoading, setCopyLoading] = useState(false);
+
   // Warning modal state
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
@@ -990,6 +994,60 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     }
   };
 
+  const handleCopyWeekClick = () => {
+    // Check if current week has any shifts
+    // Filter shifts that are within the current week range
+    const weekStart = formatDateLocal(weekDates[0]);
+    const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
+
+    const shiftsInWeek = shifts.filter(s =>
+      s.date >= weekStart && s.date <= weekEnd
+    );
+
+    if (shiftsInWeek.length > 0) {
+      setShowCopyConfirmation(true);
+    } else {
+      confirmCopyWeek();
+    }
+  };
+
+  const confirmCopyWeek = async () => {
+    try {
+      setCopyLoading(true);
+
+      const targetDate = formatDateLocal(weekDates[0]);
+
+      // Calculate source date (7 days before target)
+      const sourceDateObj = new Date(weekDates[0]);
+      sourceDateObj.setDate(sourceDateObj.getDate() - 7);
+      const sourceDate = formatDateLocal(sourceDateObj);
+
+      console.log(`📋 Copying week from ${sourceDate} to ${targetDate}`);
+
+      const response = await fetch('/api/shifts/copy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetDate, sourceDate })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al copiar semana');
+      }
+
+      const result = await response.json();
+      console.log('✅ Copy successful:', result);
+
+      await refreshData();
+      setShowCopyConfirmation(false);
+
+    } catch (err: any) {
+      console.error('Failed to copy week:', err);
+      setWarningMessage(`Error al copiar la semana anterior: ${err.message}`);
+    } finally {
+      setCopyLoading(false);
+    }
+  };
+
   return (
     <div className={styles.calendarContainer}>
       {/* Header del calendario */}
@@ -1041,7 +1099,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
             </svg>
           </button>
           {view === 'week' && (
-            <button className={styles.actionButton} title="Copiar semana anterior">
+            <button className={styles.actionButton} title="Copiar semana anterior" onClick={handleCopyWeekClick}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -1482,6 +1540,47 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                   style={{ width: '100%', justifyContent: 'center' }}
                 >
                   Entendido
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Copy Confirmation Modal */}
+      {showCopyConfirmation && (
+        <div className={styles.modalOverlay} onClick={() => setShowCopyConfirmation(false)} style={{ zIndex: 1100 }}>
+          <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.deleteConfirmation}>
+              <div className={styles.warningIconContainer}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+              <h4>¿Sobrescribir semana actual?</h4>
+              <p style={{ textAlign: 'center', marginBottom: '8px' }}>
+                Hay turnos asignados en la semana actual.
+              </p>
+              <p style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                Al copiar, se borrarán TODOS los turnos de esta semana y se reemplazarán con los de la semana anterior.
+              </p>
+
+              <div className={styles.deleteConfirmationButtons}>
+                <button
+                  className={styles.cancelDeleteBtn}
+                  onClick={() => setShowCopyConfirmation(false)}
+                  disabled={copyLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className={styles.confirmDeleteBtn}
+                  onClick={confirmCopyWeek}
+                  disabled={copyLoading}
+                >
+                  {copyLoading ? 'Copiando...' : 'Confirmar Copia'}
                 </button>
               </div>
             </div>

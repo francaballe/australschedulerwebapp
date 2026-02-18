@@ -137,6 +137,17 @@
   font-weight: 500;
 }
 
+.leftSection {
+  width: 286px;
+  /* increased to match sidebar */
+  min-width: 286px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  border-right: 1px solid var(--border);
+  height: 100%;
+}
+
 .userIcon {
   width: 20px;
   height: 20px;
