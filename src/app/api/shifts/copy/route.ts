@@ -33,8 +33,6 @@ export async function POST(request: NextRequest) {
 
         await prisma.$transaction(async (tx) => {
             // 1. Completely WIPE target week shifts
-            // We do not check for unavailability conflicts. We just clear the board for Shifts.
-            // (UserUnavailability table is untouched and ignored)
             await tx.shift.deleteMany({
                 where: {
                     date: {
@@ -44,16 +42,17 @@ export async function POST(request: NextRequest) {
                 }
             });
 
-            // 2. Fetch source week shifts
+            // 2. Fetch source week shifts WITH Position details
             const sourceShifts = await tx.shift.findMany({
                 where: {
                     date: {
                         gte: sDate,
                         lte: sourceEnd
                     },
-                    // Safety: Exclude pure "Unavailable" records if they exist in Shift table (positionId=1)
-                    // This ensures we don't copy unavailability, only actual shifts.
                     NOT: { positionId: 1 }
+                },
+                include: {
+                    position: true // Fetch position to get current default times
                 }
             });
 
@@ -64,12 +63,29 @@ export async function POST(request: NextRequest) {
                     const newDate = new Date(tDate);
                     newDate.setDate(newDate.getDate() + dayDiff);
 
+                    let finalStartTime = s.starttime;
+                    let finalEndTime = s.endtime;
+
+                    // Logic: Use Position's default times if they exist.
+                    // This "resets" any manual overrides from the previous week.
+                    // IMPORTANT: We copy the Date object directly. Application uses 1970 epoch for times.
+                    // We must NOT try to shift these times to the new date, as that breaks the standard.
+
+                    if (s.position) {
+                        if (s.position.starttime) {
+                            finalStartTime = s.position.starttime;
+                        }
+                        if (s.position.endtime) {
+                            finalEndTime = s.position.endtime;
+                        }
+                    }
+
                     return {
                         userId: s.userId,
                         positionId: s.positionId,
                         date: newDate,
-                        starttime: s.starttime,
-                        endtime: s.endtime,
+                        starttime: finalStartTime,
+                        endtime: finalEndTime,
                         published: false
                     };
                 });
