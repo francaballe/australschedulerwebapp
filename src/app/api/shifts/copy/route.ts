@@ -87,12 +87,12 @@ export async function POST(request: NextRequest) {
                         starttime: finalStartTime,
                         endtime: finalEndTime,
                         published: false,
-                        siteid: s.siteid
+                        siteid: (s as any).siteid
                     };
                 });
 
                 await tx.shift.createMany({
-                    data: newShifts
+                    data: newShifts as any
                 });
             }
         });

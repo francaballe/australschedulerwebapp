@@ -66,7 +66,6 @@ export async function GET(request: NextRequest) {
                 id: shift.user.id,
                 firstName: shift.user.firstname,
                 lastName: shift.user.lastname,
-                lastName: shift.user.lastname,
                 email: shift.user.email
             } : null,
             positionId: shift.positionId,
