@@ -898,6 +898,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     setIsModalOpen(false);
     setSelectedCell(null);
     setShowDeleteConfirmation(false);
+    setNotifyUserOnDelete(false); // Reset checkbox state
     setSelectedPositionId(null);
     setSelectedStartTime('');
     setSelectedEndTime('');
@@ -979,6 +980,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
     // If shift is published and not yet confirmed, show confirmation
     if (shift.published && !confirmed) {
+      setNotifyUserOnDelete(false);
       setShowDeleteConfirmation(true);
       return;
     }

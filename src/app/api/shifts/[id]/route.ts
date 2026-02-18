@@ -58,11 +58,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
                     // Ensure we use UTC date parts to avoid timezone shifts if stored as UTC-midnight
                     const utcDate = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
 
-                    const formattedDate = utcDate.toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric'
-                    });
+                    // Format Date: "Lun 12/02" (matching publish style)
+                    const dateStr = utcDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'numeric' });
 
                     // Format Time: "4 PM to 10:30 PM"
                     const formatTime = (date: Date | null) => {
@@ -80,21 +77,35 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
                     const startTime = formatTime(shift.starttime);
                     const endTime = formatTime(shift.endtime);
-                    const formattedTime = `${startTime} to ${endTime}`;
+                    const timeStr = `${startTime} - ${endTime}`;
 
                     const positionName = shift.position?.name || 'Default';
 
-                    const title = 'Shift Has Been Canceled!';
-                    const body = `The manager, ${managerName}, has canceled your shift that had the following details: ${formattedDate} from ${formattedTime} at ${positionName}. You are no longer scheduled for this shift!`;
+                    const title = '¡Turno Cancelado!';
+                    const introText = `El manager, ${managerName}, ha cancelado tu turno:`;
+                    // Full body for Push (fallback) - keep detailed using standardized formats
+                    const body = `${introText} ${dateStr} ${timeStr} at ${positionName}.`;
 
                     console.log(`Sending cancellation notification to user ${shift.userId}:`, { title, body });
 
-                    // 1. Save notification to database
+                    const richBody = JSON.stringify({
+                        isRich: true,
+                        type: 'cancellation',
+                        text: introText,
+                        shifts: [{
+                            dateStr: dateStr,
+                            timeStr: timeStr,
+                            positionName: positionName,
+                            color: shift.position?.color || '#ef5350' // Use position color, fallback to red
+                        }]
+                    });
+
+                    // 1. Save notification to database (Rich JSON)
                     await prisma.message.create({
                         data: {
                             userId: shift.userId,
                             title: title,
-                            body: body,
+                            body: richBody,
                             read: false,
                             createdAt: new Date()
                         }
