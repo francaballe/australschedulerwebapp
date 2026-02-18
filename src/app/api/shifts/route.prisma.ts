@@ -27,9 +27,7 @@ export async function GET(request: NextRequest) {
         }
 
         if (siteId) {
-            whereClause.user = {
-                siteid: parseInt(siteId)
-            };
+            whereClause.siteid = parseInt(siteId);
         }
 
         // Using Prisma with relations instead of manual JOINs
@@ -45,8 +43,7 @@ export async function GET(request: NextRequest) {
                         id: true,
                         firstname: true,
                         lastname: true,
-                        email: true,
-                        siteid: true
+                        email: true
                     }
                 },
                 position: {
@@ -69,8 +66,8 @@ export async function GET(request: NextRequest) {
                 id: shift.user.id,
                 firstName: shift.user.firstname,
                 lastName: shift.user.lastname,
-                email: shift.user.email,
-                siteId: shift.user.siteid
+                lastName: shift.user.lastname,
+                email: shift.user.email
             } : null,
             positionId: shift.positionId,
             position: shift.position?.name || null,
