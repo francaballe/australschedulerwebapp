@@ -1226,34 +1226,32 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 {/* Columna de usuario */}
                 <div className={styles.userCell}>
                   <div className={styles.userName}>
-                    {user.firstName} {user.lastName}
-                    <div className={styles.userStatusIcons}>
-                      {/* Confirmation Slot - Always rendered to maintain spacing */}
-                      <div
-                        className={styles.confirmationIndicator}
-                        title={view === 'week' && userConfirmations.get(user.id) ? "Programación confirmada" : undefined}
-                        style={{
-                          visibility: (view === 'week' && userConfirmations.get(user.id)) ? 'visible' : 'hidden'
-                        }}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: '14px', height: '14px' }}>
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-
-                      {/* Overtime Slot */}
-                      {getUserTotalHours(user.id) > 40 && (
-                        <div className={styles.overtimeIndicator} title="Horas excedidas (>40hs)">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                          </svg>
-                        </div>
-                      )}
+                    <span>{user.firstName} {user.lastName}</span>
+                    {/* Confirmation Slot - Always rendered to maintain spacing/alignment if needed, 
+                        but effectively only visible when confirmed */}
+                    <div
+                      className={styles.confirmationIndicator}
+                      title={view === 'week' && userConfirmations.get(user.id) ? "Programación confirmada" : undefined}
+                      style={{
+                        visibility: (view === 'week' && userConfirmations.get(user.id)) ? 'visible' : 'hidden'
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: '14px', height: '14px' }}>
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                     </div>
                   </div>
                   <div className={styles.userHours}>
-                    {getUserTotalHours(user.id).toFixed(1)}
+                    <span>{getUserTotalHours(user.id).toFixed(1)}</span>
+                    {/* Overtime Slot - Now aligned with hours */}
+                    {getUserTotalHours(user.id) > 40 && (
+                      <div className={styles.overtimeIndicator} title="Horas excedidas (>40hs)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
                 </div>
 

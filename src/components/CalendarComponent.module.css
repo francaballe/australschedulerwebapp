@@ -275,16 +275,12 @@
   align-items: center;
   gap: 8px;
   position: relative;
-  line-height: 1.2;
+  line-height: normal;
+  justify-content: space-between;
+  width: 100%;
 }
 
-.userStatusIcons {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-left: auto;
-  align-items: center;
-}
+/* .userStatusIcons removed */
 
 .confirmationIndicator {
   width: 20px;
@@ -321,6 +317,11 @@
   font-size: 12px;
   color: #64748b;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 4px;
 }
 
 .dayCell {
