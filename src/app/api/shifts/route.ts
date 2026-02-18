@@ -337,6 +337,7 @@ export async function DELETE(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const siteId = searchParams.get('siteId');
 
     if (!startDate || !endDate) {
         return NextResponse.json(
@@ -346,13 +347,19 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-        const result = await prisma.shift.deleteMany({
-            where: {
-                date: {
-                    gte: new Date(startDate),
-                    lte: new Date(endDate)
-                }
+        const whereClause: any = {
+            date: {
+                gte: new Date(startDate),
+                lte: new Date(endDate)
             }
+        };
+
+        if (siteId) {
+            whereClause.siteid = parseInt(siteId);
+        }
+
+        const result = await prisma.shift.deleteMany({
+            where: whereClause
         });
 
         console.log(`🗑️ Deleted ${result.count} shifts between ${startDate} and ${endDate}`);

@@ -1143,7 +1143,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     // "borrar la semana" -> Delete shifts.
     // Let's check for standard shifts.
     const shiftsInWeek = shifts.filter(s =>
-      s.date >= weekStart && s.date <= weekEnd && s.positionId !== 1
+      s.date >= weekStart &&
+      s.date <= weekEnd &&
+      s.positionId !== 1 &&
+      (!selectedSiteId || s.siteId === selectedSiteId)
     );
 
     if (shiftsInWeek.length === 0) {
@@ -1165,7 +1168,12 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
       console.log(`🗑️ Deleting week from ${weekStart} to ${weekEnd}`);
 
-      const response = await fetch(`/api/shifts?startDate=${weekStart}&endDate=${weekEnd}`, {
+      let url = `/api/shifts?startDate=${weekStart}&endDate=${weekEnd}`;
+      if (selectedSiteId) {
+        url += `&siteId=${selectedSiteId}`;
+      }
+
+      const response = await fetch(url, {
         method: 'DELETE',
       });
 
