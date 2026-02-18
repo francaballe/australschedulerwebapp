@@ -193,6 +193,49 @@ export default function CalendarPage() {
       payload.starttime = newStartTime.trim();
       payload.endtime = newEndTime.trim();
 
+      // NEW: Include current view range to update unpublished shifts
+      // We need to calculate the start/end date of the CURRENT VIEW
+      let viewStartDateStr: string = '';
+      let viewEndDateStr: string = '';
+
+      // Re-using logic from confirmPublish (or lifting it to a helper would be better, but inline for now)
+      const getWeekDates = (date: Date): [Date, Date] => {
+        const day = date.getDay();
+        const diff = day;
+        const sunday = new Date(date);
+        sunday.setDate(date.getDate() - diff);
+        sunday.setHours(0, 0, 0, 0);
+        const saturday = new Date(sunday);
+        saturday.setDate(sunday.getDate() + 6);
+        saturday.setHours(23, 59, 59, 999);
+        return [sunday, saturday];
+      };
+
+      const getTwoWeeksDates = (date: Date): [Date, Date] => {
+        const [start] = getWeekDates(date);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 13);
+        return [start, end];
+      };
+
+      if (view === 'day') {
+        const dateStr = currentDate.toLocaleDateString('en-CA');
+        viewStartDateStr = dateStr;
+        viewEndDateStr = dateStr;
+      } else if (view === 'twoWeeks') {
+        const [start, end] = getTwoWeeksDates(currentDate);
+        viewStartDateStr = start.toLocaleDateString('en-CA');
+        viewEndDateStr = end.toLocaleDateString('en-CA');
+      } else {
+        const [start, end] = getWeekDates(currentDate);
+        viewStartDateStr = start.toLocaleDateString('en-CA');
+        viewEndDateStr = end.toLocaleDateString('en-CA');
+      }
+
+      payload.updateUnpublishedShifts = true;
+      payload.startDate = viewStartDateStr;
+      payload.endDate = viewEndDateStr;
+
       console.log('Sending position update:', payload);
 
       const response = await fetch(`/api/positions/${editingPosition.id}`, {

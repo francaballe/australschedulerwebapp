@@ -567,12 +567,18 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       const { positionId, color, name, starttime, endtime } = e.detail;
 
       // Update shifts locally
+      // Update shifts locally
       setShifts(prev => prev.map(s => {
         if (s.positionId === positionId) {
+          // Only update name/color for all shifts
+          // BUT update startTime/endTime ONLY for unpublished shifts (as per feature requirement)
           return {
             ...s,
             ...(color !== undefined && { positionColor: color }),
-            ...(name !== undefined && { position: name })
+            ...(name !== undefined && { position: name }),
+            // If unpublished, update times too
+            ...(!s.published && starttime !== undefined && { startTime: starttime }), // Note: property is 'startTime' in Shift, 'starttime' in detail
+            ...(!s.published && endtime !== undefined && { endTime: endtime })
           };
         }
         return s;
