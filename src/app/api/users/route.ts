@@ -10,8 +10,7 @@ export async function GET(request: NextRequest) {
     };
 
     try {
-        // Get optional siteId and search query from query params
-        const siteIdParam = request.nextUrl.searchParams.get('siteId');
+        // Get search query from query params
         const q = request.nextUrl.searchParams.get('q');
 
         // Build where clause dynamically

@@ -55,6 +55,11 @@ export async function GET(request: NextRequest) {
                         name: true,
                         color: true
                     }
+                },
+                site: {
+                    select: {
+                        name: true
+                    }
                 }
             }
         });
@@ -99,6 +104,7 @@ export async function GET(request: NextRequest) {
                 isUserUnavailable,
                 positionId: shift.positionId ?? 0,
                 siteId: shift.siteid,
+                siteName: shift.site?.name,
                 position: shift.position?.name ?? (shift.positionId === null ? 'No Position' : null),
                 positionColor: shift.position?.color ?? (shift.positionId === null ? '#FFFFFF00' : null)
             };

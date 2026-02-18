@@ -31,6 +31,7 @@ interface Shift {
   published: boolean;
   isUserUnavailable?: boolean;
   siteId?: number | null;
+  siteName?: string | null;
 }
 
 interface Position {
@@ -1353,7 +1354,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     >
                       {shift ? (
                         <div
-                          className={`${styles.shiftContent} ${!shift.published ? styles.unpublishedShift : ''} ${isFilteredOut ? styles.filteredShift : ''}`}
+                          className={`${styles.shiftContent} ${(!shift.published && !isOtherSite) ? styles.unpublishedShift : ''} ${isFilteredOut ? styles.filteredShift : ''}`}
                           draggable={isShiftDraggable(shift)}
                           onDragStart={(e) => handleDragStart(e, shift)}
                           onDragEnd={handleDragEnd}
@@ -1371,7 +1372,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                             opacity: isOtherSite ? 0.8 : 1,
                             ...(isOtherSite && { cursor: 'not-allowed' })
                           }}
-                          title={shift.isUserUnavailable ? 'Conflicto: usuario no disponible con turno asignado' : undefined}
+                          title={
+                            isOtherSite
+                              ? `Turno de otro sitio: ${shift.siteName || 'Desconocido'}`
+                              : (shift.isUserUnavailable ? 'Conflicto: usuario no disponible con turno asignado' : undefined)
+                          }
                         >
                           {shift.isUserUnavailable && (
                             <div className={styles.unavailableWarningOverlay} title="Usuario NO disponible — turno asignado por manager">
@@ -1448,6 +1453,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({
               });
 
             const totalHours = Array.from(dailyShiftsMap.values()).reduce((acc, shift) => {
+              // Only sum shifts that belong to the current site (if a site is selected)
+              if (selectedSiteId && shift.siteId && shift.siteId !== selectedSiteId) {
+                return acc;
+              }
               return acc + calculateHours(shift.startTime, shift.endTime);
             }, 0);
 
