@@ -87,6 +87,24 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   const [draggedShift, setDraggedShift] = useState<Shift | null>(null);
   const [dropTarget, setDropTarget] = useState<{ userId: number; dateStr: string } | null>(null);
 
+  // Copy/Paste Logic State
+  const [copiedShift, setCopiedShift] = useState<{ positionId: number; startTime: string | null; endTime: string | null } | null>(null);
+
+  // Clear clipboard when Control is released
+  useEffect(() => {
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Control') {
+        setCopiedShift(null);
+        console.log('🧹 Clipboard cleared (Control released)');
+      }
+    };
+
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
   // Load users (optionally filtered by siteId)
   const loadUsers = async (siteId?: number | null) => {
     try {
@@ -876,14 +894,34 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   };
 
   // Manejar click en celda
-  const handleCellClick = (userId: number, date: Date) => {
+  const handleCellClick = (userId: number, date: Date, e?: React.MouseEvent) => {
     // Don't open modal if we just finished a drag
     if (draggedShift) return;
+
+    // Check for "Quick Paste" (Ctrl + Click on empty cell)
+    const existingShift = getShiftForUserAndDay(userId, date);
+
+    if (!existingShift && e?.ctrlKey && copiedShift) {
+      console.log('📋 Quick Pasting shift (Ctrl):', copiedShift);
+      createShiftAssignment(
+        userId,
+        date,
+        copiedShift.positionId,
+        copiedShift.startTime || undefined,
+        copiedShift.endTime || undefined
+      );
+      return;
+    }
+
+    // New Guard: If Control is pressed but cell is NOT empty, do nothing.
+    if (existingShift && e?.ctrlKey) {
+      return;
+    }
 
     console.log(`Clicked on user ${userId} for date ${date.toDateString()}`);
 
     // Open modal for position selection
-    const existingShift = getShiftForUserAndDay(userId, date);
+    // existingShift is already defined above
     setSelectedPositionId(existingShift ? existingShift.positionId : null);
     setSelectedStartTime(existingShift?.startTime || '');
     setSelectedEndTime(existingShift?.endTime || '');
@@ -904,8 +942,22 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     setSelectedEndTime('');
   };
 
-  const handlePositionSelect = async (positionId: number) => {
+  const handlePositionSelect = async (positionId: number, e?: React.MouseEvent) => {
     if (!selectedCell) return;
+
+    // Check for "Quick Copy" (Ctrl + Click on position)
+    if (e?.ctrlKey) {
+      const pos = positions.find(p => p.id === positionId);
+      if (pos) {
+        setCopiedShift({
+          positionId: pos.id,
+          startTime: pos.starttime,
+          endTime: pos.endtime
+        });
+        console.log('📌 Shift Copied to clipboard (Ctrl):', { positionId: pos.id, name: pos.name });
+        // Optional: User feedback could go here (toast, etc.)
+      }
+    }
 
     // Check for existing shift to determine mode
     const existingShift = shifts.find(s =>
@@ -1280,7 +1332,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     <div
                       key={`${user.id}-${dayIndex}`}
                       className={`${styles.dayCell} ${isToday(date) ? styles.todayCell : ''} ${isDropTarget ? styles.dropTargetCell : ''}`}
-                      onClick={() => handleCellClick(user.id, date)}
+                      onClick={(e) => handleCellClick(user.id, date, e)}
                       onDragOver={(e) => handleDragOver(e, user.id, date)}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, user.id, date)}
@@ -1544,7 +1596,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                       <div
                         key={position.id}
                         className={`${styles.positionCard} ${selectedPositionId === position.id ? styles.selected : ''}`}
-                        onClick={() => handlePositionSelect(position.id)}
+                        onClick={(e) => handlePositionSelect(position.id, e)}
                         style={{
                           backgroundColor: position.color ? `${position.color}20` : '#f5f5f5',
                           borderLeftColor: position.color || '#ccc'
@@ -1587,131 +1639,138 @@ const CalendarComponent: React.FC<CalendarProps> = ({
             )}
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* Warning Modal */}
-      {warningMessage && (
-        <div className={styles.modalOverlay} onClick={() => setWarningMessage(null)} style={{ zIndex: 1100 }}>
-          <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.deleteConfirmation}>
-              <div className={styles.warningIconContainer}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-              </div>
-              <h4>Atención</h4>
-              <p>{warningMessage}</p>
-              <div style={{ padding: '0 20px 20px' }}>
-                <button
-                  className={styles.primaryBtn}
-                  onClick={() => setWarningMessage(null)}
-                  style={{ width: '100%', justifyContent: 'center' }}
-                >
-                  Entendido
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Copy Confirmation Modal */}
-      {showCopyConfirmation && (
-        <div className={styles.modalOverlay} onClick={() => setShowCopyConfirmation(false)} style={{ zIndex: 1100 }}>
-          <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.deleteConfirmation}>
-              <div className={styles.warningIconContainer}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-              </div>
-              <h4>¿Sobrescribir semana actual?</h4>
-              <p style={{ textAlign: 'center', marginBottom: '8px' }}>
-                Hay turnos asignados en la semana actual.
-              </p>
-              <p style={{ textAlign: 'center', fontWeight: 'bold' }}>
-                Al copiar, se borrarán TODOS los turnos de esta semana y se reemplazarán con los de la semana anterior.
-              </p>
-
-              <div className={styles.deleteConfirmationButtons}>
-                <button
-                  className={styles.cancelDeleteBtn}
-                  onClick={() => setShowCopyConfirmation(false)}
-                  disabled={copyLoading}
-                >
-                  Cancelar
-                </button>
-                <button
-                  className={styles.confirmDeleteBtn}
-                  onClick={confirmCopyWeek}
-                  disabled={copyLoading}
-                >
-                  {copyLoading ? 'Copiando...' : 'Confirmar Copia'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Week Confirmation Modal */}
-      {showDeleteWeekConfirmation && (
-        <div className={styles.modalOverlay} onClick={() => setShowDeleteWeekConfirmation(false)} style={{ zIndex: 1100 }}>
-          <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.deleteConfirmation}>
-              <div className={deleteWeekWarningType === 'published' ? styles.warningIconContainer : styles.deleteIconContainer}>
-                {deleteWeekWarningType === 'published' ? (
+      {
+        warningMessage && (
+          <div className={styles.modalOverlay} onClick={() => setWarningMessage(null)} style={{ zIndex: 1100 }}>
+            <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.deleteConfirmation}>
+                <div className={styles.warningIconContainer}>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                     <line x1="12" y1="9" x2="12" y2="13" />
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    <line x1="10" y1="11" x2="10" y2="17" />
-                    <line x1="14" y1="11" x2="14" y2="17" />
-                  </svg>
-                )}
-              </div>
-              <h4>
-                {deleteWeekWarningType === 'published' ? '¿Eliminar semana PUBLICADA?' : '¿Eliminar semana completa?'}
-              </h4>
-              <p style={{ textAlign: 'center', marginBottom: '8px' }}>
-                {deleteWeekWarningType === 'published'
-                  ? 'Hay turnos PUBLICADOS en esta semana.'
-                  : 'Estás a punto de eliminar todos los turnos de la semana.'}
-              </p>
-              <p style={{ textAlign: 'center', fontWeight: 'bold', color: deleteWeekWarningType === 'published' ? '#d32f2f' : 'inherit' }}>
-                Esta acción no se puede deshacer. Se eliminarán TODOS los turnos{deleteWeekWarningType === 'published' ? ' (incluyendo los publicados)' : ''}.
-              </p>
-
-              <div className={styles.deleteConfirmationButtons}>
-                <button
-                  className={styles.cancelDeleteBtn}
-                  onClick={() => setShowDeleteWeekConfirmation(false)}
-                  disabled={deleteWeekLoading}
-                >
-                  Cancelar
-                </button>
-                <button
-                  className={styles.confirmDeleteBtn}
-                  onClick={confirmDeleteWeek}
-                  disabled={deleteWeekLoading}
-                >
-                  {deleteWeekLoading ? 'Eliminando...' : 'Eliminar Todo'}
-                </button>
+                </div>
+                <h4>Atención</h4>
+                <p>{warningMessage}</p>
+                <div style={{ padding: '0 20px 20px' }}>
+                  <button
+                    className={styles.primaryBtn}
+                    onClick={() => setWarningMessage(null)}
+                    style={{ width: '100%', justifyContent: 'center' }}
+                  >
+                    Entendido
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+
+      {/* Copy Confirmation Modal */}
+      {
+        showCopyConfirmation && (
+          <div className={styles.modalOverlay} onClick={() => setShowCopyConfirmation(false)} style={{ zIndex: 1100 }}>
+            <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.deleteConfirmation}>
+                <div className={styles.warningIconContainer}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </div>
+                <h4>¿Sobrescribir semana actual?</h4>
+                <p style={{ textAlign: 'center', marginBottom: '8px' }}>
+                  Hay turnos asignados en la semana actual.
+                </p>
+                <p style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                  Al copiar, se borrarán TODOS los turnos de esta semana y se reemplazarán con los de la semana anterior.
+                </p>
+
+                <div className={styles.deleteConfirmationButtons}>
+                  <button
+                    className={styles.cancelDeleteBtn}
+                    onClick={() => setShowCopyConfirmation(false)}
+                    disabled={copyLoading}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className={styles.confirmDeleteBtn}
+                    onClick={confirmCopyWeek}
+                    disabled={copyLoading}
+                  >
+                    {copyLoading ? 'Copiando...' : 'Confirmar Copia'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Delete Week Confirmation Modal */}
+      {
+        showDeleteWeekConfirmation && (
+          <div className={styles.modalOverlay} onClick={() => setShowDeleteWeekConfirmation(false)} style={{ zIndex: 1100 }}>
+            <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.deleteConfirmation}>
+                <div className={deleteWeekWarningType === 'published' ? styles.warningIconContainer : styles.deleteIconContainer}>
+                  {deleteWeekWarningType === 'published' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                      <line x1="12" y1="9" x2="12" y2="13" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      <line x1="10" y1="11" x2="10" y2="17" />
+                      <line x1="14" y1="11" x2="14" y2="17" />
+                    </svg>
+                  )}
+                </div>
+                <h4>
+                  {deleteWeekWarningType === 'published' ? '¿Eliminar semana PUBLICADA?' : '¿Eliminar semana completa?'}
+                </h4>
+                <p style={{ textAlign: 'center', marginBottom: '8px' }}>
+                  {deleteWeekWarningType === 'published'
+                    ? 'Hay turnos PUBLICADOS en esta semana.'
+                    : 'Estás a punto de eliminar todos los turnos de la semana.'}
+                </p>
+                <p style={{ textAlign: 'center', fontWeight: 'bold', color: deleteWeekWarningType === 'published' ? '#d32f2f' : 'inherit' }}>
+                  Esta acción no se puede deshacer. Se eliminarán TODOS los turnos{deleteWeekWarningType === 'published' ? ' (incluyendo los publicados)' : ''}.
+                </p>
+
+                <div className={styles.deleteConfirmationButtons}>
+                  <button
+                    className={styles.cancelDeleteBtn}
+                    onClick={() => setShowDeleteWeekConfirmation(false)}
+                    disabled={deleteWeekLoading}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className={styles.confirmDeleteBtn}
+                    onClick={confirmDeleteWeek}
+                    disabled={deleteWeekLoading}
+                  >
+                    {deleteWeekLoading ? 'Eliminando...' : 'Eliminar Todo'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   );
 };
 
