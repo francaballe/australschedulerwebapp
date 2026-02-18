@@ -17,7 +17,6 @@ interface User {
   id: number;
   firstName: string;
   lastName: string;
-  siteId?: number | null;
 }
 
 interface Shift {
@@ -31,6 +30,7 @@ interface Shift {
   positionColor?: string;
   published: boolean;
   isUserUnavailable?: boolean;
+  siteId?: number | null;
 }
 
 interface Position {
@@ -105,11 +105,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     };
   }, []);
 
-  // Load users (optionally filtered by siteId)
-  const loadUsers = async (siteId?: number | null) => {
+  // Load users (fetch all)
+  const loadUsers = async () => {
     try {
       setLoading(true);
-      const url = siteId ? `/api/users?siteId=${siteId}` : '/api/users';
+      const url = '/api/users';
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Error al cargar usuarios');
@@ -315,6 +315,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
           date: dateStr,
           positionId,
           published: false,
+          siteId: selectedSiteId
         };
 
         console.log('📤 Creating new shift:', requestData);
@@ -497,7 +498,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       }
 
       try {
-        const usersData = await loadUsers(selectedSiteId);
+        const usersData = await loadUsers(); // Load ALL users regardless of site
         setUsers(usersData); // Update users state first
         const shiftsData = await fetchShifts(weekDates);
         const userIds = new Set(usersData.map(u => u.id));
@@ -808,6 +809,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     // Allow dragging conflicts (isUserUnavailable=true) if it's a real position.
     // Prevent dragging only if it's a "pure" unavailability record (Position ID 1).
     if (shift.positionId === 1) return false;
+    // Prevent dragging if shift belongs to another site
+    if (shift.siteId && selectedSiteId && shift.siteId !== selectedSiteId) return false;
     return true;
   };
 
@@ -919,6 +922,12 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
     // New Guard: If Control is pressed but cell is NOT empty, do nothing.
     if (existingShift && e?.ctrlKey) {
+      return;
+    }
+
+    // Block interaction if shift belongs to another site
+    if (existingShift && existingShift.siteId && selectedSiteId && existingShift.siteId !== selectedSiteId) {
+      console.log('🔒 Shift belongs to another site, interaction blocked');
       return;
     }
 
@@ -1288,9 +1297,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         ) : users.length === 0 ? (
           <div className={styles.emptyContainer}>No se encontraron usuarios</div>
         ) : (
-          // filter users by selected site if available
+          // Show all users
+          // filter users by selected site if available -> REMOVED per requirement
           filteredUsers
-            .filter((u: User) => selectedSiteId == null ? true : u.siteId === selectedSiteId)
             .map((user: User) => (
               <div key={user.id} className={styles.userRow}>
                 {/* Columna de usuario */}
@@ -1330,6 +1339,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                   const shift = getShiftForUserAndDay(user.id, date);
                   const shiftTimeText = shift ? formatShiftTime(shift.startTime, shift.endTime) : "";
                   const isFilteredOut = shift ? !enabledPositions.has(shift.positionId) : false;
+                  const isOtherSite = shift && shift.siteId && selectedSiteId && shift.siteId !== selectedSiteId;
                   const dateStr = formatDateLocal(date);
                   const isDropTarget = dropTarget?.userId === user.id && dropTarget?.dateStr === dateStr;
                   return (
@@ -1348,14 +1358,18 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           onDragStart={(e) => handleDragStart(e, shift)}
                           onDragEnd={handleDragEnd}
                           style={{
-                            backgroundColor: isFilteredOut
-                              ? '#f3f4f6' // Light gray for filtered/ghost items
-                              : (shift.positionColor ?
-                                `${shift.positionColor}${!shift.published ? '30' : '85'}` :
-                                (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)')),
-                            borderLeftColor: shift.positionColor || '#3b82f6',
-                            color: isFilteredOut ? 'var(--foreground-secondary, #94a3b8)' : (shift.positionColor || '#fbbf24'),
-                            position: 'relative'
+                            backgroundColor: isOtherSite
+                              ? 'repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 10px, #e5e7eb 10px, #e5e7eb 20px)' // Striped gray for other sites
+                              : isFilteredOut
+                                ? '#f3f4f6' // Light gray for filtered/ghost items
+                                : (shift.positionColor ?
+                                  `${shift.positionColor}${!shift.published ? '30' : '85'}` :
+                                  (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)')),
+                            borderLeftColor: isOtherSite ? '#9ca3af' : (shift.positionColor || '#3b82f6'),
+                            color: isOtherSite ? '#6b7280' : (isFilteredOut ? 'var(--foreground-secondary, #94a3b8)' : (shift.positionColor || '#fbbf24')),
+                            position: 'relative',
+                            opacity: isOtherSite ? 0.8 : 1,
+                            ...(isOtherSite && { cursor: 'not-allowed' })
                           }}
                           title={shift.isUserUnavailable ? 'Conflicto: usuario no disponible con turno asignado' : undefined}
                         >

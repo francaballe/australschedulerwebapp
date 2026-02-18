@@ -86,7 +86,8 @@ export async function POST(request: NextRequest) {
                         date: newDate,
                         starttime: finalStartTime,
                         endtime: finalEndTime,
-                        published: false
+                        published: false,
+                        siteid: s.siteid
                     };
                 });
 

@@ -13,15 +13,11 @@ export async function GET(request: NextRequest) {
         // Get optional siteId and search query from query params
         const siteIdParam = request.nextUrl.searchParams.get('siteId');
         const q = request.nextUrl.searchParams.get('q');
-        
+
         // Build where clause dynamically
         const whereClause: any = {
             isblocked: false
         };
-
-        if (siteIdParam) {
-            whereClause.siteid = Number(siteIdParam);
-        }
 
         // If a search query is provided, add OR conditions for firstname/lastname/email
         if (q && q.trim()) {
@@ -45,8 +41,7 @@ export async function GET(request: NextRequest) {
                 email: true,
                 firstname: true,
                 lastname: true,
-                userroleid: true,
-                siteid: true
+                userroleid: true
             }
         });
 
@@ -58,8 +53,7 @@ export async function GET(request: NextRequest) {
             email: user.email,
             firstName: user.firstname,
             lastName: user.lastname,
-            roleId: user.userroleid,
-            siteId: user.siteid
+            roleId: user.userroleid
         }));
 
         return NextResponse.json(formattedUsers, { headers: corsHeaders });

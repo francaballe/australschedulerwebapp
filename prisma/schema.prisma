@@ -20,13 +20,13 @@ model User {
   isblocked      Boolean?             @default(false)
   userroleid     Int?
   phone          String?
-  siteid         Int?                 @default(1)
+  siteid         Int?                 @default(1) // Marked for removal, but keeping temporarily for safety/migration if needed? User said they deleted it.
   confirmedWeeks ConfirmedWeek[]
   messages       Message[]
   shifts         Shift[]
   pushTokens     UserPushToken[]
   unavailability UserUnavailability[]
-  site           Site?                @relation(fields: [siteid], references: [id])
+  // site           Site?                @relation(fields: [siteid], references: [id]) // Relation likely invalid if constraints dropped
   role           Role?                @relation(fields: [userroleid], references: [id])
 
   @@map("users")
@@ -76,6 +76,7 @@ model Shift {
 
   starttime   DateTime? @db.Time(6)
   endtime     DateTime? @db.Time(6)
+  siteid      Int?
   position    Position? @relation(fields: [positionId], references: [id])
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 

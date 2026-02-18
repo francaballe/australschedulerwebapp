@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
                 endtime: true,
                 published: true,
                 positionId: true,
+                siteid: true,
                 position: {
                     select: {
                         name: true,
@@ -97,6 +98,7 @@ export async function GET(request: NextRequest) {
                 published: shift.published,
                 isUserUnavailable,
                 positionId: shift.positionId ?? 0,
+                siteId: shift.siteid,
                 position: shift.position?.name ?? (shift.positionId === null ? 'No Position' : null),
                 positionColor: shift.position?.color ?? (shift.positionId === null ? '#FFFFFF00' : null)
             };
@@ -124,7 +126,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         console.log('📝 Shift POST request body:', body);
 
-        const { userId, date, positionId, startTime, endTime, published } = body;
+        const { userId, date, positionId, startTime, endTime, published, siteId } = body;
 
         // Basic validation
         if (userId == null || !date || positionId == null) {
@@ -138,6 +140,7 @@ export async function POST(request: NextRequest) {
         // Parse and validate data
         const parsedUserId = parseInt(userId);
         let parsedPositionId: number | null = parseInt(positionId);
+        const parsedSiteId: number | null = siteId ? parseInt(siteId) : null;
 
         if (isNaN(parsedUserId) || isNaN(parsedPositionId!)) {
             console.error('❌ Invalid IDs:', { userId, positionId });
@@ -188,6 +191,7 @@ export async function POST(request: NextRequest) {
             positionId: parsedPositionId,
             date: new Date(date),
             published: published ?? false,
+            siteid: parsedSiteId,
             // Copy start and end times from position if exists
             starttime: position?.starttime ?? null,
             endtime: position?.endtime ?? null,
@@ -222,6 +226,7 @@ export async function POST(request: NextRequest) {
                     starttime: shiftData.starttime,
                     endtime: shiftData.endtime,
                     published: published ?? false,
+                    siteid: parsedSiteId
                 } as any,
                 select: {
                     id: true,
@@ -230,7 +235,8 @@ export async function POST(request: NextRequest) {
                     date: true,
                     starttime: true,
                     endtime: true,
-                    published: true
+                    published: true,
+                    siteid: true
                 }
             });
         } else {
@@ -243,6 +249,7 @@ export async function POST(request: NextRequest) {
                 published: published ?? false,
                 starttime: shiftData.starttime,
                 endtime: shiftData.endtime,
+                siteid: parsedSiteId
             };
 
             newShift = await prisma.shift.create({
@@ -254,7 +261,8 @@ export async function POST(request: NextRequest) {
                     date: true,
                     starttime: true,
                     endtime: true,
-                    published: true
+                    published: true,
+                    siteid: true
                 }
             });
         }
@@ -269,7 +277,8 @@ export async function POST(request: NextRequest) {
             date: newShift.date,
             starttime: newShift.starttime,
             endtime: newShift.endtime,
-            published: newShift.published
+            published: newShift.published,
+            siteId: newShift.siteid
         };
 
         return NextResponse.json(response, { status: 201, headers: corsHeaders });
