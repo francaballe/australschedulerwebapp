@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
                         name: true
                     }
                 }
-            }
-        });
+            } as any
+        }) as any[];
 
         // Fetch unavailability records for the same date range
         const availabilityRecords = await prisma.userUnavailability.findMany({
@@ -103,8 +103,8 @@ export async function GET(request: NextRequest) {
                 published: shift.published,
                 isUserUnavailable,
                 positionId: shift.positionId ?? 0,
-                siteId: shift.siteid,
-                siteName: shift.site?.name,
+                siteId: (shift as any).siteid,
+                siteName: (shift as any).site?.name,
                 position: shift.position?.name ?? (shift.positionId === null ? 'No Position' : null),
                 positionColor: shift.position?.color ?? (shift.positionId === null ? '#FFFFFF00' : null)
             };
@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
             // Copy start and end times from position if exists
             starttime: position?.starttime ?? null,
             endtime: position?.endtime ?? null,
-        };
+        } as any;
 
         // Override with provided times if any (optional)
         if (startTime) {
@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
                     endtime: true,
                     published: true,
                     siteid: true
-                }
+                } as any
             });
         } else {
             console.log('📝 No existing shift found, creating new one');
@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
                     endtime: true,
                     published: true,
                     siteid: true
-                }
+                } as any
             });
         }
 
@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
             starttime: newShift.starttime,
             endtime: newShift.endtime,
             published: newShift.published,
-            siteId: newShift.siteid
+            siteId: (newShift as any).siteid
         };
 
         return NextResponse.json(response, { status: 201, headers: corsHeaders });

@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
                     }
                 }
             }
-        });
+        }) as any[];
 
         type ShiftResult = typeof shifts[0];
 
