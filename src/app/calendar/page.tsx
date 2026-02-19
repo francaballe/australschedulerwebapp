@@ -176,7 +176,11 @@ export default function CalendarPage() {
   };
 
   const confirmEditPosition = async () => {
-    if (!editingPosition || !newPositionName.trim()) return;
+    // BUG FIX: Allow editingPosition to be null (creation mode)
+    if (!newPositionName.trim()) {
+      alert('El nombre es obligatorio');
+      return;
+    }
 
     // Validation for schedule times (MANDATORY)
     if (!newStartTime.trim() || !newEndTime.trim()) {
@@ -275,7 +279,12 @@ export default function CalendarPage() {
       } else {
         // CREATE new position
         const siteId = localStorage.getItem('selectedSiteId');
-        if (!siteId) throw new Error('No site selected');
+        console.log('Creating position for siteId:', siteId);
+
+        if (!siteId) {
+          alert('Error: No hay un sitio seleccionado. Por favor recarga la página.');
+          throw new Error('No site selected in localStorage');
+        }
 
         const payload = {
           name: newPositionName.trim(),
@@ -291,19 +300,15 @@ export default function CalendarPage() {
           body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error('Error al crear la posición');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Error al crear la posición');
+        }
 
-        // Refresh positions list (Sidebar handles this via polling/effect on selectedSite, 
-        // but we can trigger a refresh if we had a mechanism. 
-        // Actually, Sidebar listens to 'siteChanged', maybe we can just trigger a reload?
-        // Or better, let's just reload the page or trigger a re-fetch.
-        // Sidebar re-fetches on 'positionsUpdated' only updates existing map. 
-        // We need to force a re-fetch. 
-        // The easiest way for now is to dispatch 'siteChanged' with same ID or just reload.
-        // Let's try dispatching 'siteChanged' with current ID to force re-fetch in Sidebar.
-        window.dispatchEvent(new CustomEvent('siteChanged', { detail: Number(siteId) }));
+        const newPosition = await response.json();
 
-        // Also add logic to enable this new position? Sidebar re-fetch should handle it.
+        // Notify sidebar to add the new position to the list
+        window.dispatchEvent(new CustomEvent('positionCreated', { detail: newPosition }));
       }
 
       setEditModalOpen(false);
@@ -312,9 +317,9 @@ export default function CalendarPage() {
       setNewPositionColor('');
       setNewStartTime('');
       setNewEndTime('');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Save position failed', err);
-      alert('Error al guardar la posición. Revisa la consola.');
+      alert(`Error al guardar: ${err.message}`);
     } finally {
       setEditLoading(false);
     }

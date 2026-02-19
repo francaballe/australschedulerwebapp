@@ -85,6 +85,30 @@ const Sidebar: React.FC<SidebarProps> = ({
             setPositions(prev => prev.map(updater));
         };
 
+        const handlePositionCreated = (event: any) => {
+            const newPosition = event.detail;
+            // Only add if it matches current site (or we are in a mode where we show all? 
+            // The API handles saving siteId. The current list is filtered by selectedSite.
+            // If newPosition.siteid matches selectedSite, add it.
+            // Note: API returns 'siteid' (lowercase) or 'siteId'? Prisma returns 'siteid'.
+            // Let's check both or cast.
+
+            const currentSiteId = Number(selectedSite);
+            const posSiteId = Number(newPosition.siteid);
+
+            if (!currentSiteId || posSiteId === currentSiteId) {
+                const formattedPosition: Position = {
+                    id: newPosition.id,
+                    name: newPosition.name,
+                    color: newPosition.color,
+                    checked: true, // Default checked
+                    starttime: newPosition.starttime ? newPosition.starttime.slice(11, 16) : null,
+                    endtime: newPosition.endtime ? newPosition.endtime.slice(11, 16) : null
+                };
+                setPositions(prev => [...prev, formattedPosition]);
+            }
+        };
+
         const handleEnablePosition = (event: any) => {
             const positionId = event.detail;
             setPositions(prev => prev.map(p => {
@@ -103,10 +127,12 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         // Listen for position updates from other components
         window.addEventListener('positionsUpdated', handlePositionsUpdated);
+        window.addEventListener('positionCreated', handlePositionCreated);
         window.addEventListener('enablePosition', handleEnablePosition);
 
         return () => {
             window.removeEventListener('positionsUpdated', handlePositionsUpdated);
+            window.removeEventListener('positionCreated', handlePositionCreated);
             window.removeEventListener('enablePosition', handleEnablePosition);
         };
     }, [selectedSite]);
