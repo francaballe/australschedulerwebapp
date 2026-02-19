@@ -166,6 +166,15 @@ export default function CalendarPage() {
     setEditModalOpen(true);
   };
 
+  const handleAddPosition = () => {
+    setEditingPosition(null);
+    setNewPositionName('');
+    setNewPositionColor('#94a3b8');
+    setNewStartTime('');
+    setNewEndTime('');
+    setEditModalOpen(true);
+  };
+
   const confirmEditPosition = async () => {
     if (!editingPosition || !newPositionName.trim()) return;
 
@@ -184,82 +193,118 @@ export default function CalendarPage() {
 
     setEditLoading(true);
     try {
-      const payload: any = {
-        name: newPositionName.trim(),
-        color: newPositionColor
-      };
+      if (editingPosition) {
+        // UPDATE existing position
+        const payload: any = {
+          name: newPositionName.trim(),
+          color: newPositionColor
+        };
 
-      // Include schedule (MANDATORY)
-      payload.starttime = newStartTime.trim();
-      payload.endtime = newEndTime.trim();
+        // Include schedule (MANDATORY)
+        payload.starttime = newStartTime.trim();
+        payload.endtime = newEndTime.trim();
 
-      // NEW: Include current view range to update unpublished shifts
-      // We need to calculate the start/end date of the CURRENT VIEW
-      let viewStartDateStr: string = '';
-      let viewEndDateStr: string = '';
+        // NEW: Include current view range to update unpublished shifts
+        // We need to calculate the start/end date of the CURRENT VIEW
+        let viewStartDateStr: string = '';
+        let viewEndDateStr: string = '';
 
-      // Re-using logic from confirmPublish (or lifting it to a helper would be better, but inline for now)
-      const getWeekDates = (date: Date): [Date, Date] => {
-        const day = date.getDay();
-        const diff = day;
-        const sunday = new Date(date);
-        sunday.setDate(date.getDate() - diff);
-        sunday.setHours(0, 0, 0, 0);
-        const saturday = new Date(sunday);
-        saturday.setDate(sunday.getDate() + 6);
-        saturday.setHours(23, 59, 59, 999);
-        return [sunday, saturday];
-      };
+        // Re-using logic from confirmPublish (or lifting it to a helper would be better, but inline for now)
+        const getWeekDates = (date: Date): [Date, Date] => {
+          const day = date.getDay();
+          const diff = day;
+          const sunday = new Date(date);
+          sunday.setDate(date.getDate() - diff);
+          sunday.setHours(0, 0, 0, 0);
+          const saturday = new Date(sunday);
+          saturday.setDate(sunday.getDate() + 6);
+          saturday.setHours(23, 59, 59, 999);
+          return [sunday, saturday];
+        };
 
-      const getTwoWeeksDates = (date: Date): [Date, Date] => {
-        const [start] = getWeekDates(date);
-        const end = new Date(start);
-        end.setDate(start.getDate() + 13);
-        return [start, end];
-      };
+        const getTwoWeeksDates = (date: Date): [Date, Date] => {
+          const [start] = getWeekDates(date);
+          const end = new Date(start);
+          end.setDate(start.getDate() + 13);
+          return [start, end];
+        };
 
-      if (view === 'day') {
-        const dateStr = currentDate.toLocaleDateString('en-CA');
-        viewStartDateStr = dateStr;
-        viewEndDateStr = dateStr;
-      } else if (view === 'twoWeeks') {
-        const [start, end] = getTwoWeeksDates(currentDate);
-        viewStartDateStr = start.toLocaleDateString('en-CA');
-        viewEndDateStr = end.toLocaleDateString('en-CA');
+        if (view === 'day') {
+          const dateStr = currentDate.toLocaleDateString('en-CA');
+          viewStartDateStr = dateStr;
+          viewEndDateStr = dateStr;
+        } else if (view === 'twoWeeks') {
+          const [start, end] = getTwoWeeksDates(currentDate);
+          viewStartDateStr = start.toLocaleDateString('en-CA');
+          viewEndDateStr = end.toLocaleDateString('en-CA');
+        } else {
+          const [start, end] = getWeekDates(currentDate);
+          viewStartDateStr = start.toLocaleDateString('en-CA');
+          viewEndDateStr = end.toLocaleDateString('en-CA');
+        }
+
+        payload.updateUnpublishedShifts = true;
+        payload.startDate = viewStartDateStr;
+        payload.endDate = viewEndDateStr;
+
+        console.log('Sending position update:', payload);
+
+        const response = await fetch(`/api/positions/${editingPosition.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al actualizar la posición');
+        }
+
+        // Notify sidebar to refresh positions list and calendar
+        window.dispatchEvent(new CustomEvent('positionsUpdated', {
+          detail: {
+            positionId: editingPosition.id,
+            name: newPositionName.trim(),
+            color: newPositionColor,
+            starttime: newStartTime.trim(),
+            endtime: newEndTime.trim()
+          }
+        }));
+
       } else {
-        const [start, end] = getWeekDates(currentDate);
-        viewStartDateStr = start.toLocaleDateString('en-CA');
-        viewEndDateStr = end.toLocaleDateString('en-CA');
-      }
+        // CREATE new position
+        const siteId = localStorage.getItem('selectedSiteId');
+        if (!siteId) throw new Error('No site selected');
 
-      payload.updateUnpublishedShifts = true;
-      payload.startDate = viewStartDateStr;
-      payload.endDate = viewEndDateStr;
-
-      console.log('Sending position update:', payload);
-
-      const response = await fetch(`/api/positions/${editingPosition.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al actualizar la posición');
-      }
-
-      // Notify sidebar to refresh positions list and calendar
-      window.dispatchEvent(new CustomEvent('positionsUpdated', {
-        detail: {
-          positionId: editingPosition.id,
+        const payload = {
           name: newPositionName.trim(),
           color: newPositionColor,
           starttime: newStartTime.trim(),
-          endtime: newEndTime.trim()
-        }
-      }));
+          endtime: newEndTime.trim(),
+          siteId: siteId
+        };
+
+        const response = await fetch('/api/positions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error('Error al crear la posición');
+
+        // Refresh positions list (Sidebar handles this via polling/effect on selectedSite, 
+        // but we can trigger a refresh if we had a mechanism. 
+        // Actually, Sidebar listens to 'siteChanged', maybe we can just trigger a reload?
+        // Or better, let's just reload the page or trigger a re-fetch.
+        // Sidebar re-fetches on 'positionsUpdated' only updates existing map. 
+        // We need to force a re-fetch. 
+        // The easiest way for now is to dispatch 'siteChanged' with same ID or just reload.
+        // Let's try dispatching 'siteChanged' with current ID to force re-fetch in Sidebar.
+        window.dispatchEvent(new CustomEvent('siteChanged', { detail: Number(siteId) }));
+
+        // Also add logic to enable this new position? Sidebar re-fetch should handle it.
+      }
 
       setEditModalOpen(false);
       setEditingPosition(null);
@@ -268,8 +313,8 @@ export default function CalendarPage() {
       setNewStartTime('');
       setNewEndTime('');
     } catch (err) {
-      console.error('Edit position failed', err);
-      alert('Error al actualizar la posición. Revisa la consola.');
+      console.error('Save position failed', err);
+      alert('Error al guardar la posición. Revisa la consola.');
     } finally {
       setEditLoading(false);
     }
@@ -312,7 +357,7 @@ export default function CalendarPage() {
       <div className={styles.content}>
         <Sidebar
           onPublishAll={openPublish}
-
+          onAddPosition={handleAddPosition}
           conflictCount={conflictCount}
           unpublishedCount={unpublishedCount}
           onEditPosition={handleEditPosition}
@@ -369,11 +414,11 @@ export default function CalendarPage() {
       )}
 
       {/* Edit Position modal (unified: name, color, schedule) */}
-      {editModalOpen && editingPosition && (
+      {editModalOpen && (
         <div className={modalStyles.modalOverlay} onClick={closeEditModal}>
           <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={modalStyles.modalHeader}>
-              <h3>Editar Posición</h3>
+              <h3>{editingPosition ? 'Editar Posición' : 'Crear Posición'}</h3>
               <button className={modalStyles.modalCloseButton} onClick={closeEditModal}>×</button>
             </div>
             <div className={modalStyles.modalBody}>

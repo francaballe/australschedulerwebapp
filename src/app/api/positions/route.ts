@@ -77,8 +77,63 @@ export async function OPTIONS() {
         status: 204,
         headers: {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         },
     });
+}
+
+export async function POST(request: NextRequest) {
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+
+    try {
+        const body = await request.json();
+        const { name, color, starttime, endtime, siteId } = body;
+
+        if (!name || !siteId) {
+            return NextResponse.json(
+                { error: 'Name and Site ID are required' },
+                { status: 400, headers: corsHeaders }
+            );
+        }
+
+        // Parse times if provided
+        let startDateTime = null;
+        let endDateTime = null;
+
+        // Helper to create date objects from HH:MM strings (using arbitrary date)
+        const timeToDate = (timeStr: string) => {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const date = new Date();
+            date.setHours(hours, minutes, 0, 0);
+            return date;
+        };
+
+        if (starttime) startDateTime = timeToDate(starttime);
+        if (endtime) endDateTime = timeToDate(endtime);
+
+        const newPosition = await prisma.position.create({
+            data: {
+                name,
+                color: color || '#94a3b8', // Default color if not provided
+                starttime: startDateTime,
+                endtime: endDateTime,
+                siteid: Number(siteId),
+                eliminated: false
+            }
+        });
+
+        return NextResponse.json(newPosition, { status: 201, headers: corsHeaders });
+
+    } catch (error: any) {
+        console.error('Create Position Error:', error);
+        return NextResponse.json(
+            { error: 'Error al crear la posición' },
+            { status: 500, headers: corsHeaders }
+        );
+    }
 }
