@@ -80,6 +80,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   const [showDeleteWeekConfirmation, setShowDeleteWeekConfirmation] = useState(false);
   const [deleteWeekLoading, setDeleteWeekLoading] = useState(false);
   const [deleteWeekWarningType, setDeleteWeekWarningType] = useState<'published' | 'unpublished'>('unpublished');
+  const [notifyUsersOnWeekDelete, setNotifyUsersOnWeekDelete] = useState(false);
 
   // Warning modal state
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
@@ -1157,6 +1158,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     // Check for published shifts
     const hasPublishedShifts = shiftsInWeek.some(s => s.published);
     setDeleteWeekWarningType(hasPublishedShifts ? 'published' : 'unpublished');
+    setNotifyUsersOnWeekDelete(false); // Default unchecked
     setShowDeleteWeekConfirmation(true);
   };
 
@@ -1171,6 +1173,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       let url = `/api/shifts?startDate=${weekStart}&endDate=${weekEnd}`;
       if (selectedSiteId) {
         url += `&siteId=${selectedSiteId}`;
+      }
+      if (notifyUsersOnWeekDelete) {
+        url += `&notify=true`;
       }
 
       const response = await fetch(url, {
@@ -1783,6 +1788,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 <p style={{ textAlign: 'center', fontWeight: 'bold', color: deleteWeekWarningType === 'published' ? '#d32f2f' : 'inherit' }}>
                   Esta acción no se puede deshacer. Se eliminarán TODOS los turnos{deleteWeekWarningType === 'published' ? ' (incluyendo los publicados)' : ''}.
                 </p>
+
+                {deleteWeekWarningType === 'published' && (
+                  <div className={styles.notificationOption} style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
+                    <label className={styles.checkboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={notifyUsersOnWeekDelete}
+                        onChange={(e) => setNotifyUsersOnWeekDelete(e.target.checked)}
+                      />
+                      <span className={styles.customCheckbox}></span>
+                      Notificar a los usuarios
+                    </label>
+                  </div>
+                )}
 
                 <div className={styles.deleteConfirmationButtons}>
                   <button

@@ -358,6 +358,133 @@ export async function DELETE(request: NextRequest) {
             whereClause.siteid = parseInt(siteId);
         }
 
+        // --- Notification Logic ---
+        const shouldNotify = searchParams.get('notify') === 'true';
+
+        if (shouldNotify) {
+            try {
+                // 1. Find all PUBLISHED shifts that are about to be deleted
+                const shiftsToDelete = await prisma.shift.findMany({
+                    where: {
+                        ...whereClause,
+                        published: true
+                    },
+                    include: {
+                        position: true
+                    }
+                });
+
+                if (shiftsToDelete.length > 0) {
+                    console.log(`📢 Found ${shiftsToDelete.length} published shifts to notify about.`);
+
+                    // 2. Group shifts by userId
+                    const shiftsByUser = new Map<number, typeof shiftsToDelete>();
+                    shiftsToDelete.forEach(shift => {
+                        const existing = shiftsByUser.get(shift.userId) || [];
+                        existing.push(shift);
+                        shiftsByUser.set(shift.userId, existing);
+                    });
+
+                    // 3. Process each user
+                    for (const [userId, userShifts] of shiftsByUser) {
+                        try {
+                            // Get user's latest push token
+                            const tokenRecord = await prisma.userPushToken.findFirst({
+                                where: { userId: userId },
+                                orderBy: { createdAt: 'desc' }
+                            });
+
+                            if (tokenRecord && tokenRecord.token) {
+                                console.log(`📱 Found push token for user ${userId}:`, tokenRecord.token.substring(0, 10) + '...');
+
+                                // Sort shifts chronologically
+                                userShifts.sort((a, b) => {
+                                    const dateA = new Date(a.date).getTime();
+                                    const dateB = new Date(b.date).getTime();
+                                    if (dateA !== dateB) return dateA - dateB;
+
+                                    // If same date, sort by start time
+                                    const timeA = a.starttime ? new Date(a.starttime).getTime() : 0;
+                                    const timeB = b.starttime ? new Date(b.starttime).getTime() : 0;
+                                    return timeA - timeB;
+                                });
+
+                                // Format shifts for the message
+                                const formattedShifts = userShifts.map(shift => {
+                                    const dateObj = new Date(shift.date);
+                                    // Ensure UTC date parts
+                                    const utcDate = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
+                                    const dateStr = utcDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'numeric' });
+
+                                    const formatTime = (date: Date | null) => {
+                                        if (!date) return '??';
+                                        const hours = date.getUTCHours();
+                                        const minutes = date.getUTCMinutes();
+                                        const period = hours >= 12 ? 'PM' : 'AM';
+                                        // Fix: 12 PM should be 12, not 0
+                                        let h = hours % 12;
+                                        h = h ? h : 12;
+                                        const m = minutes === 0 ? '' : `:${minutes.toString().padStart(2, '0')}`;
+                                        return `${h}${m} ${period}`;
+                                    };
+
+                                    const timeStr = `${formatTime(shift.starttime)} - ${formatTime(shift.endtime)}`;
+                                    const positionName = shift.position?.name || 'Default';
+
+                                    return {
+                                        dateStr,
+                                        timeStr,
+                                        positionName,
+                                        color: shift.position?.color || '#ef5350'
+                                    };
+                                });
+
+                                // Sort by date/time for the message
+                                formattedShifts.sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+
+                                const innerTitle = userShifts.length > 1 ? 'Turnos Cancelados' : 'Turno Cancelado';
+                                const title = `¡${innerTitle}!`; // Use same logic for outer title
+
+                                const introText = `Se han cancelado ${userShifts.length} turnos de tu cronograma.`;
+                                const body = `${introText} Revisa la app para más detalles.`;
+
+                                const richBody = JSON.stringify({
+                                    isRich: true,
+                                    type: 'cancellation', // Red Alert style
+                                    title: innerTitle, // Try to override the default title
+                                    text: introText,
+                                    shifts: formattedShifts
+                                });
+
+                                // Save to DB
+                                await prisma.message.create({
+                                    data: {
+                                        userId: userId,
+                                        title: title,
+                                        body: richBody, // Use richBody for in-app view
+                                        read: false,
+                                        createdAt: new Date()
+                                    }
+                                });
+
+                                // Send Push
+                                await import('@/lib/firebase-admin').then(mod =>
+                                    mod.sendPushNotification(tokenRecord.token, title, body)
+                                ).catch(err => console.error('Error sending push:', err));
+
+                                console.log(`✅ Notification sent to user ${userId} for ${userShifts.length} shifts.`);
+                            }
+                        } catch (userError) {
+                            console.error(`❌ Error notifying user ${userId}:`, userError);
+                        }
+                    }
+                }
+            } catch (notifyError) {
+                console.error('❌ Error in bulk notification process:', notifyError);
+                // Don't block deletion on notification failure
+            }
+        }
+
         const result = await prisma.shift.deleteMany({
             where: whereClause
         });
