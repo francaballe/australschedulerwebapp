@@ -1087,7 +1087,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
 
     const shiftsInWeek = shifts.filter(s =>
-      s.date >= weekStart && s.date <= weekEnd
+      s.date >= weekStart &&
+      s.date <= weekEnd &&
+      (!selectedSiteId || s.siteId === selectedSiteId)
     );
 
     if (shiftsInWeek.length > 0) {
