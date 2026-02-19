@@ -1112,7 +1112,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       const response = await fetch('/api/shifts/copy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetDate, sourceDate })
+        body: JSON.stringify({ targetDate, sourceDate, siteId: selectedSiteId })
       });
 
       if (!response.ok) {

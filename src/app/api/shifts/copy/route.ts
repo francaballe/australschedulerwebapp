@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { targetDate, sourceDate } = body;
+        const { targetDate, sourceDate, siteId } = body;
 
         if (!targetDate || !sourceDate) {
             return NextResponse.json(
@@ -31,26 +31,36 @@ export async function POST(request: NextRequest) {
         sourceEnd.setDate(sourceEnd.getDate() + 6);
         sourceEnd.setHours(23, 59, 59, 999);
 
+        const deleteWhere: any = {
+            date: {
+                gte: tDate,
+                lte: targetEnd
+            }
+        };
+
+        const sourceWhere: any = {
+            date: {
+                gte: sDate,
+                lte: sourceEnd
+            },
+            NOT: { positionId: 1 }
+        };
+
+        if (siteId) {
+            const parsedSiteId = parseInt(siteId);
+            deleteWhere.siteid = parsedSiteId;
+            sourceWhere.siteid = parsedSiteId;
+        }
+
         await prisma.$transaction(async (tx) => {
-            // 1. Completely WIPE target week shifts
+            // 1. Completely WIPE target week shifts (for specific site if provided)
             await tx.shift.deleteMany({
-                where: {
-                    date: {
-                        gte: tDate,
-                        lte: targetEnd
-                    }
-                }
+                where: deleteWhere
             });
 
-            // 2. Fetch source week shifts WITH Position details
+            // 2. Fetch source week shifts WITH Position details (for specific site if provided)
             const sourceShifts = await tx.shift.findMany({
-                where: {
-                    date: {
-                        gte: sDate,
-                        lte: sourceEnd
-                    },
-                    NOT: { positionId: 1 }
-                },
+                where: sourceWhere,
                 include: {
                     position: true // Fetch position to get current default times
                 }
