@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useDraggable } from "@/hooks/useDraggable";
 import styles from "./CalendarComponent.module.css";
 
 interface CalendarProps {
@@ -91,6 +92,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
   // Copy/Paste Logic State
   const [copiedShift, setCopiedShift] = useState<{ positionId: number; startTime: string | null; endTime: string | null } | null>(null);
+
+  // Draggable Modal State
+  const { position: modalPos, handleMouseDown: handleModalDrag, resetPosition: resetModalPos } = useDraggable();
+
+  // Reset position when modal opens
+  useEffect(() => {
+    if (isModalOpen) resetModalPos();
+  }, [isModalOpen]);
 
   // Clear clipboard when Control is released
   useEffect(() => {
@@ -589,11 +598,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       console.log('🔄 Detected published shifts - refreshing calendar');
       refreshData();
     };
-    const handlePositions = (e: any) => {
+    const handlePosUpdate = (e: any) => {
       console.log('🔄 Detected position changes - updating local state:', e.detail);
       const { positionId, color, name, starttime, endtime } = e.detail;
 
-      // Update shifts locally
       // Update shifts locally
       setShifts(prev => prev.map(s => {
         if (s.positionId === positionId) {
@@ -626,12 +634,30 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       }));
     };
 
+    const handlePosCreate = (e: any) => {
+      const newPos = e.detail;
+
+      // Need to format to match Position interface (specifically times if they come as ISO strings)
+      // The API POST returns the raw object where starttime/endtime are likely ISO strings
+      const formattedPos: Position = {
+        id: Number(newPos.id),
+        name: newPos.name,
+        color: newPos.color,
+        starttime: newPos.starttime ? (typeof newPos.starttime === 'string' && newPos.starttime.includes('T') ? newPos.starttime.slice(11, 16) : newPos.starttime) : null,
+        endtime: newPos.endtime ? (typeof newPos.endtime === 'string' && newPos.endtime.includes('T') ? newPos.endtime.slice(11, 16) : newPos.endtime) : null
+      };
+
+      setPositions(prev => [...prev, formattedPos]);
+    };
+
     window.addEventListener('publishedShifts', handlePublish);
-    window.addEventListener('positionsUpdated', handlePositions);
+    window.addEventListener('positionsUpdated', handlePosUpdate);
+    window.addEventListener('positionCreated', handlePosCreate);
 
     return () => {
       window.removeEventListener('publishedShifts', handlePublish);
-      window.removeEventListener('positionsUpdated', handlePositions);
+      window.removeEventListener('positionsUpdated', handlePosUpdate);
+      window.removeEventListener('positionCreated', handlePosCreate);
     };
   }, [refreshData]);
 
@@ -1354,7 +1380,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 {weekDates.map((date: Date, dayIndex: number) => {
                   const shift = getShiftForUserAndDay(user.id, date);
                   const shiftTimeText = shift ? formatShiftTime(shift.startTime, shift.endTime) : "";
-                  const isFilteredOut = shift ? !enabledPositions.has(shift.positionId) : false;
+                  const isFilteredOut = shift ? !enabledPositions.has(Number(shift.positionId)) : false;
                   const isOtherSite = shift && shift.siteId && selectedSiteId && shift.siteId !== selectedSiteId;
                   const dateStr = formatDateLocal(date);
                   const isDropTarget = dropTarget?.userId === user.id && dropTarget?.dateStr === dateStr;
@@ -1490,8 +1516,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       {/* Modal for Position Selection */}
       {isModalOpen && (
         <div className={styles.modalOverlay} onClick={handleModalClose}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
+          <div
+            className={styles.modalContent}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              transform: `translate(${modalPos.x}px, ${modalPos.y}px)`,
+              cursor: 'default'
+            }}
+          >
+            <div
+              className={styles.modalHeader}
+              onMouseDown={handleModalDrag}
+              style={{ cursor: 'grab', userSelect: 'none' }}
+            >
+
               <div>
                 <h3>
                   {selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date))

@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
         const users = await prisma.user.findMany({
             where: whereClause,
             orderBy: [
-                { lastname: 'asc' },
-                { firstname: 'asc' }
+                { firstname: 'asc' },
+                { lastname: 'asc' }
             ],
             select: {
                 id: true,

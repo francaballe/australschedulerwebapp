@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useDraggable } from "@/hooks/useDraggable";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import CalendarComponent from "@/components/CalendarComponent";
@@ -39,6 +40,14 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'week' | 'day' | 'twoWeeks'>('week');
   const [unpublishedCount, setUnpublishedCount] = useState(0);
+
+  // Draggable Modal State
+  const { position: modalPos, handleMouseDown: handleModalDrag, resetPosition: resetModalPos } = useDraggable();
+
+  // Reset position when modal opens
+  useEffect(() => {
+    if (editModalOpen) resetModalPos();
+  }, [editModalOpen]);
 
   useEffect(() => {
     const handleConflictCount = (e: any) => setConflictCount(e.detail || 0);
@@ -309,6 +318,13 @@ export default function CalendarPage() {
 
         // Notify sidebar to add the new position to the list
         window.dispatchEvent(new CustomEvent('positionCreated', { detail: newPosition }));
+
+        // Enable the new position immediately so it shows up in calendar
+        setEnabledPositions(prev => {
+          const next = new Set(prev);
+          next.add(Number(newPosition.id));
+          return next;
+        });
       }
 
       setEditModalOpen(false);
@@ -355,6 +371,8 @@ export default function CalendarPage() {
       return next;
     });
   };
+
+
 
   return (
     <div className={styles.wrapper}>
@@ -421,8 +439,19 @@ export default function CalendarPage() {
       {/* Edit Position modal (unified: name, color, schedule) */}
       {editModalOpen && (
         <div className={modalStyles.modalOverlay} onClick={closeEditModal}>
-          <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div className={modalStyles.modalHeader}>
+          <div
+            className={modalStyles.modalContent}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              transform: `translate(${modalPos.x}px, ${modalPos.y}px)`,
+              cursor: 'default'
+            }}
+          >
+            <div
+              className={modalStyles.modalHeader}
+              onMouseDown={handleModalDrag}
+              style={{ cursor: 'grab', userSelect: 'none' }}
+            >
               <h3>{editingPosition ? 'Editar Posición' : 'Crear Posición'}</h3>
               <button className={modalStyles.modalCloseButton} onClick={closeEditModal}>×</button>
             </div>
