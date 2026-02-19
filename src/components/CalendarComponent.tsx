@@ -1540,7 +1540,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                   <p>
                     Usuario: {users.find(u => u.id === selectedCell.userId)?.firstName} {users.find(u => u.id === selectedCell.userId)?.lastName}
                     <br />
-                    Fecha: {selectedCell.date.toLocaleDateString()}
+                    Fecha: {selectedCell.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                   </p>
                 )}
               </div>
