@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import type { Prisma } from '@prisma/client';
+
 
 export async function GET(request: NextRequest) {
     const corsHeaders = {
@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
                 position: {
                     select: {
                         name: true,
-                        color: true
+                        color: true,
+                        deleted: true
                     }
                 },
                 site: {
@@ -106,16 +107,18 @@ export async function GET(request: NextRequest) {
                 siteId: (shift as any).siteid,
                 siteName: (shift as any).site?.name,
                 position: shift.position?.name ?? (shift.positionId === null ? 'No Position' : null),
-                positionColor: shift.position?.color ?? (shift.positionId === null ? '#FFFFFF00' : null)
+                positionColor: shift.position?.color ?? (shift.positionId === null ? '#FFFFFF00' : null),
+                positionDeleted: shift.position?.deleted ?? false
             };
         });
 
         return NextResponse.json(transformedShifts, { headers: corsHeaders });
 
-    } catch (error: any) {
-        console.error('API Shifts Error:', error);
+    } catch (error) {
+        console.error('API Shifts Error RAW:', error);
+        const errMsg = error instanceof Error ? error.message : String(error);
         return NextResponse.json(
-            { error: 'Error al obtener turnos' },
+            { error: 'Error al obtener turnos', details: errMsg },
             { status: 500, headers: corsHeaders }
         );
     }
@@ -289,36 +292,30 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(response, { status: 201, headers: corsHeaders });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('❌ API Shifts POST Error:', error);
-        console.error('❌ Error details:', {
-            message: error?.message,
-            code: error?.code,
-            stack: error?.stack,
-            name: error?.name,
-            cause: error?.cause
-        });
 
         // Return more specific error message based on error type
         let errorMessage = 'Unknown error occurred';
         let statusCode = 500;
+        const prismaError = error as { code?: string; message?: string };
 
-        if (error?.code === 'P2002') {
+        if (prismaError.code === 'P2002') {
             errorMessage = 'Ya existe un turno para este usuario en esta fecha';
             statusCode = 409; // Conflict
-        } else if (error?.code === 'P2025') {
+        } else if (prismaError.code === 'P2025') {
             errorMessage = 'Registro no encontrado';
             statusCode = 404;
-        } else if (error?.code?.startsWith('P')) {
-            errorMessage = `Database error: ${error.message}`;
+        } else if (prismaError.code?.startsWith('P')) {
+            errorMessage = `Database error: ${prismaError.message}`;
         } else {
-            errorMessage = error?.message || 'Error interno del servidor';
+            errorMessage = error instanceof Error ? error.message : 'Error interno del servidor';
         }
 
         return NextResponse.json(
             {
                 error: `Error al crear turno: ${errorMessage}`,
-                details: error?.code ? `Code: ${error.code}` : 'No additional details',
+                details: prismaError.code ? `Code: ${prismaError.code}` : 'No additional details',
                 timestamp: new Date().toISOString()
             },
             { status: statusCode, headers: corsHeaders }
@@ -493,7 +490,7 @@ export async function DELETE(request: NextRequest) {
 
         return NextResponse.json({ success: true, count: result.count }, { headers: corsHeaders });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('❌ API Shifts DELETE Error:', error);
         return NextResponse.json(
             { error: 'Error al eliminar turnos' },

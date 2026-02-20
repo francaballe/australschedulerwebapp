@@ -47,28 +47,31 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     useEffect(() => {
         const fetchPositions = async () => {
+            // Wait until selectedSite is determined
+            if (selectedSite === null) return;
+
             try {
                 setLoading(true);
-                const url = selectedSite ? `/api/positions?siteId=${selectedSite}` : '/api/positions';
+                const url = `/api/positions?siteId=${selectedSite}`;
                 const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error('Error al cargar posiciones');
                 }
                 const data = await response.json();
                 // Initialize with checked: true
-                const initialized = data.map((p: any) => ({ ...p, checked: true }));
+                const initialized = data.map((p: Position) => ({ ...p, checked: true }));
                 setPositions(initialized);
                 setError(null);
-            } catch (err: any) {
+            } catch (err) {
                 console.error('Failed to fetch positions:', err);
-                setError(err.message);
+                setError(err instanceof Error ? err.message : 'Error desconocido');
             } finally {
                 setLoading(false);
             }
         };
 
-        const handlePositionsUpdated = (event: any) => {
-            const { positionId, color, name, starttime, endtime } = event.detail;
+        const handlePositionsUpdated = (event: Event) => {
+            const { positionId, color, name, starttime, endtime } = (event as CustomEvent).detail;
             const updater = (p: Position) => {
                 if (p.id === positionId) {
                     return {
@@ -85,8 +88,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             setPositions(prev => prev.map(updater));
         };
 
-        const handlePositionCreated = (event: any) => {
-            const newPosition = event.detail;
+        const handlePositionCreated = (event: Event) => {
+            const newPosition = (event as CustomEvent).detail;
             // Only add if it matches current site (or we are in a mode where we show all? 
             // The API handles saving siteId. The current list is filtered by selectedSite.
             // If newPosition.siteid matches selectedSite, add it.
@@ -109,8 +112,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             }
         };
 
-        const handleEnablePosition = (event: any) => {
-            const positionId = event.detail;
+        const handleEnablePosition = (event: Event) => {
+            const positionId = (event as CustomEvent).detail;
             setPositions(prev => prev.map(p => {
                 if (Number(p.id) === Number(positionId) && !p.checked) {
                     // Also notify parent so enabledPositions set is updated
@@ -148,7 +151,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                 // Initialize selected site to the lowest ID (ignoring localStorage)
                 if (data.length > 0) {
-                    const minId = data.reduce((acc: number, s: any) => Math.min(acc, s.id), data[0].id);
+                    const minId = data.reduce((acc: number, s: { id: number }) => Math.min(acc, s.id), data[0].id);
                     setSelectedSite(minId);
                     try { window.localStorage.setItem('selectedSiteId', String(minId)); } catch { }
                     // notify other components
@@ -171,7 +174,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     // Search input state + debounce (only triggers onSearchChange)
     const [searchValue, setSearchValue] = useState('');
-    const debounceRef = useRef<number | null>(null);
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const handleSearchChange = (value: string) => {
         setSearchValue(value);
@@ -179,8 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         if (debounceRef.current) {
             clearTimeout(debounceRef.current);
         }
-        // @ts-ignore - window.setTimeout returns number in browser
-        debounceRef.current = window.setTimeout(() => {
+        debounceRef.current = setTimeout(() => {
             onSearchChange?.(value);
             debounceRef.current = null;
         }, 300);
@@ -256,6 +258,41 @@ const Sidebar: React.FC<SidebarProps> = ({
     };
 
 
+
+    const handleDeletePosition = async (id: number, name: string) => {
+        try {
+            const url = `/api/positions/${id}`;
+            let res = await fetch(url, { method: 'DELETE' });
+
+            if (res.status === 409) {
+                const data = await res.json();
+                if (data.requireConfirmation) {
+                    const confirmMsg = `La posición "${name}" tiene ${data.futureShiftsCount} turno(s) asignado(s) desde hoy en adelante.\n\nSi procedes, la posición y todos esos turnos futuros serán ELIMINADOS.\n\n¿Estás seguro de que deseas eliminarla?`;
+                    const wantsToDelete = window.confirm(confirmMsg);
+                    if (!wantsToDelete) {
+                        return; // User cancelled
+                    }
+                    // Proceed with soft delete + shift wipe
+                    res = await fetch(`${url}?confirm=true`, { method: 'DELETE' });
+                }
+            }
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || 'Error al eliminar la posición');
+            }
+
+            // Successfully deleted (hard or soft)
+            setPositions(prev => prev.filter(p => p.id !== id));
+
+            // Notify calendar component so it can remove the shifts and refetch immediately
+            try { window.dispatchEvent(new CustomEvent('positionDeleted', { detail: id })); } catch { }
+
+        } catch (err) {
+            console.error('Failed to delete position:', err);
+            alert(err instanceof Error ? err.message : 'Error al eliminar');
+        }
+    };
 
     const allPositionsSelected = positions.every(p => p.checked);
 
@@ -363,7 +400,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         </button>
                                     )}
                                     {pos.id !== 0 && pos.id !== 1 && (
-                                        <button className={`${styles.actionIconBtn} ${styles.delete}`} title="Eliminar">
+                                        <button className={`${styles.actionIconBtn} ${styles.delete}`} title="Eliminar" onClick={() => handleDeletePosition(Number(pos.id), pos.name)}>
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M3 6h18" />
                                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />

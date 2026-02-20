@@ -15,7 +15,11 @@ export async function GET(request: NextRequest) {
 
         // Build where clause - admin only positions exclude id <= 1
         const whereClause: any = {
-            eliminated: false
+            eliminated: false,
+            OR: [
+                { deleted: false },
+                { deleted: null }
+            ]
         };
 
         if (adminOnly) {
@@ -63,7 +67,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json(positions, { headers: corsHeaders });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('API Positions Error:', error);
         return NextResponse.json(
             { error: 'Error al obtener posiciones' },
@@ -129,7 +133,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(newPosition, { status: 201, headers: corsHeaders });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('Create Position Error:', error);
         return NextResponse.json(
             { error: 'Error al crear la posición' },

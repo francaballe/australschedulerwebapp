@@ -41,8 +41,8 @@ model Role {
 }
 
 model Site {
-  id        Int       @id @default(autoincrement())
-  name      String?
+  id   Int     @id @default(autoincrement())
+  name String?
   positions Position[]
   shifts    Shift[]
 
@@ -58,26 +58,26 @@ model Position {
   endtime    DateTime? @db.Time(6)
   eliminated Boolean?  @default(false)
   siteid     Int?
-  site       Site?     @relation(fields: [siteid], references: [id])
+  deleted    Boolean?
   shifts     Shift[]
+  site       Site?     @relation(fields: [siteid], references: [id])
 
   @@map("positions")
   @@schema("app")
 }
 
 model Shift {
-  id          Int       @id @default(autoincrement())
-  date        DateTime  @db.Date
-  positionId  Int?      @map("position_id")
-  published   Boolean   @default(false)
-  userId      Int       @map("user_id")
-
-  starttime   DateTime? @db.Time(6)
-  endtime     DateTime? @db.Time(6)
-  siteid      Int?
-  position    Position? @relation(fields: [positionId], references: [id])
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  site        Site?     @relation(fields: [siteid], references: [id])
+  id         Int       @id @default(autoincrement())
+  date       DateTime  @db.Date
+  positionId Int?      @map("position_id")
+  published  Boolean   @default(false)
+  userId     Int       @map("user_id")
+  starttime  DateTime? @db.Time(6)
+  endtime    DateTime? @db.Time(6)
+  siteid     Int?
+  position   Position? @relation(fields: [positionId], references: [id])
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site       Site?     @relation(fields: [siteid], references: [id])
 
   @@map("shifts")
   @@schema("app")

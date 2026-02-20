@@ -33,7 +33,7 @@ export async function PATCH(
             );
         }
 
-        const updateData: any = {};
+        const updateData: Record<string, unknown> = {};
         if (color !== undefined) updateData.color = color;
         if (name !== undefined) updateData.name = name;
         if (siteid !== undefined) updateData.siteid = siteid;
@@ -84,32 +84,9 @@ export async function PATCH(
 
                 console.log(`Found ${shiftsToUpdate.length} shifts to update`);
 
-                for (const shift of shiftsToUpdate) {
-                    const shiftDateStr = shift.date.toISOString().split('T')[0];
-                    const newStart = starttime ? new Date(`${shiftDateStr}T${starttime}:00`) : null; // Local time construction... be careful with TZ
-                    // Actually, the app seems to treat dates as local strings (YYYY-MM-DD). 
-                    // But prisma stores as UTC. 
-                    // api/shifts/route.ts uses `new Date(date)` for shift.date.
-                    // And `new Date('1970-01-01T' + starttime)` for generic times in Post?
-                    // Wait, `shifts/route.ts` creates shifts with `starttime: position?.starttime`.
-                    // `position.starttime` is 1970-01-01 based on `api/positions`.
-                    // So Shifts MIGHT have 1970-01-01 as date component if copied from position?
-                    // Let's verify what shifts/route.ts does: 
-                    // `starttime: position?.starttime ?? null` -> This uses the Position's 1970 date.
-                    // `match frontend expectations (GET)`: `shift.starttime.getUTCHours()...` matches.
-
-                    // SO: Shifts use 1970-01-01 for time-only fields if they just inherited from Position?
-                    // OR do they use the shift's date?
-                    // In `shifts/route.ts` POST:
-                    // `if (startTime) shiftData.starttime = new Date('1970-01-01T' + startTime)`
-                    // So YES, shifts use 1970-01-01 for time fields regardless of shift date.
-
-                    // Conclusion: We can just set `starttime` and `endtime` to the same 1970 base values we prepared for the Position.
-                    // We don't need to loop! We can use `updateMany`.
-                }
 
                 if (starttime !== undefined || endtime !== undefined) {
-                    const shiftUpdateData: any = {};
+                    const shiftUpdateData: Record<string, unknown> = {};
                     if (starttime !== undefined) shiftUpdateData.starttime = updateData.starttime;
                     if (endtime !== undefined) shiftUpdateData.endtime = updateData.endtime;
 
@@ -134,10 +111,103 @@ export async function PATCH(
         console.log('Position updated successfully:', result);
         return NextResponse.json(result, { headers: corsHeaders });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('API Position Update Error:', error);
         return NextResponse.json(
             { error: 'Error al actualizar la posición' },
+            { status: 500, headers: corsHeaders }
+        );
+    }
+}
+
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'DELETE, PATCH, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+
+    try {
+        const { id } = await params;
+        const positionId = parseInt(id);
+
+        if (isNaN(positionId)) {
+            return NextResponse.json(
+                { error: 'ID de posición no válido' },
+                { status: 400, headers: corsHeaders }
+            );
+        }
+
+        const url = new URL(request.url);
+        const confirm = url.searchParams.get('confirm') === 'true';
+
+        // Check for any shifts associated with this position
+        const shiftsCount = await prisma.shift.count({
+            where: { positionId }
+        });
+
+        if (shiftsCount === 0) {
+            // HARD DELETE: No shifts ever existed
+            await prisma.position.delete({
+                where: { id: positionId }
+            });
+            return NextResponse.json({ success: true, hardDeleted: true }, { headers: corsHeaders });
+        }
+
+        // Shifts exist. We need to check if there are any from today onwards.
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const futureShiftsCount = await prisma.shift.count({
+            where: {
+                positionId,
+                date: {
+                    gte: today
+                }
+            }
+        });
+
+        if (futureShiftsCount > 0 && !confirm) {
+            // Require user confirmation before soft deleting and wiping future shifts
+            return NextResponse.json(
+                {
+                    requireConfirmation: true,
+                    futureShiftsCount
+                },
+                { status: 409, headers: corsHeaders }
+            );
+        }
+
+        // SOFT DELETE: Proceed to mark as deleted and wipe future/today shifts
+        await prisma.$transaction(async (tx) => {
+            // Soft delete the position
+            await tx.position.update({
+                where: { id: positionId },
+                data: { deleted: true }
+            });
+
+            // Delete future and today shifts
+            if (futureShiftsCount > 0) {
+                await tx.shift.deleteMany({
+                    where: {
+                        positionId,
+                        date: {
+                            gte: today
+                        }
+                    }
+                });
+            }
+        });
+
+        return NextResponse.json({ success: true, softDeleted: true }, { headers: corsHeaders });
+
+    } catch (error) {
+        console.error('API Position Delete Error:', error);
+        return NextResponse.json(
+            { error: 'Error al eliminar la posición' },
             { status: 500, headers: corsHeaders }
         );
     }
@@ -148,7 +218,7 @@ export async function OPTIONS() {
         status: 204,
         headers: {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'PATCH, OPTIONS',
+            'Access-Control-Allow-Methods': 'DELETE, PATCH, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         },
     });
