@@ -323,131 +323,149 @@ const Sidebar: React.FC<SidebarProps> = ({
     // Accordion state
     const [isPositionsOpen, setIsPositionsOpen] = useState(true);
 
+    // Collapse state
+    const [isCollapsed, setIsCollapsed] = useState(false);
+
     return (
         <>
-            <aside className={styles.sidebar}>
-                <div className={styles.section}>
-                    <div className={styles.actions}>
-                        {/* Site Selector moved here */}
-                        <div className={styles.siteSelectorWrapper}>
-                            <select
-                                className={styles.siteSelect}
-                                value={selectedSite ?? ''}
-                                onChange={onSiteChange}
-                                disabled={sites.length === 0}
-                            >
-                                {sites.length === 0 ? (
-                                    <option value="">Cargando sitios...</option>
-                                ) : (
-                                    sites.map(site => (
-                                        <option key={site.id} value={site.id}>{site.name}</option>
-                                    ))
-                                )}
-                            </select>
+            <aside className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}>
+                {/* Collapse toggle tab */}
+                <button
+                    className={styles.collapseTab}
+                    onClick={() => setIsCollapsed(prev => !prev)}
+                    title={isCollapsed ? 'Expandir panel' : 'Colapsar panel'}
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: isCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}>
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                </button>
+
+                <div className={styles.sidebarScrollArea}>
+                    <div className={styles.sidebarInner}>
+                        <div className={styles.section}>
+                            <div className={styles.actions}>
+                                {/* Site Selector moved here */}
+                                <div className={styles.siteSelectorWrapper}>
+                                    <select
+                                        className={styles.siteSelect}
+                                        value={selectedSite ?? ''}
+                                        onChange={onSiteChange}
+                                        disabled={sites.length === 0}
+                                    >
+                                        {sites.length === 0 ? (
+                                            <option value="">Cargando sitios...</option>
+                                        ) : (
+                                            sites.map(site => (
+                                                <option key={site.id} value={site.id}>{site.name}</option>
+                                            ))
+                                        )}
+                                    </select>
+                                </div>
+
+                                <button
+                                    className={styles.primaryBtn}
+                                    onClick={onPublishAll}
+                                    disabled={unpublishedCount === 0}
+                                    title={unpublishedCount === 0 ? "Todo publicado" : "Publicar cronograma"}
+                                    style={unpublishedCount === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                >
+                                    PUBLICAR CRONOGRAMA
+                                </button>
+
+                            </div>
                         </div>
 
-                        <button
-                            className={styles.primaryBtn}
-                            onClick={onPublishAll}
-                            disabled={unpublishedCount === 0}
-                            title={unpublishedCount === 0 ? "Todo publicado" : "Publicar cronograma"}
-                            style={unpublishedCount === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                        >
-                            PUBLICAR CRONOGRAMA
-                        </button>
+                        <div className={styles.section}>
+                            <hr className={styles.separator} />
+                            {/* Visual separator/grouper could go here if needed, but "Filtros" header removed as requested */}
+                            <div className={styles.searchWrapper}>
+                                <input
+                                    type="search"
+                                    name="search-filter"
+                                    placeholder="Buscar usuario"
+                                    className={styles.searchInput}
+                                    value={searchValue}
+                                    onChange={(e) => handleSearchChange(e.target.value)}
+                                    autoComplete="off"
+                                    autoCorrect="off"
+                                    autoCapitalize="off"
+                                    spellCheck="false"
+                                    data-lpignore="true"
+                                    data-lastpass-ignore="true"
+                                    data-1p-ignore="true"
+                                    data-bwignore="true"
+                                />
+                                <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                </svg>
+                            </div>
+                        </div>
 
-                    </div>
-                </div>
+                        <div className={styles.section}>
+                            <div className={styles.selectionControls}>
+                                <button
+                                    onClick={handleToggleAllSelection}
+                                    className={styles.selectAllBtn}
+                                >
+                                    {allPositionsSelected ? "Deseleccionar todo" : "Seleccionar todo"}
+                                </button>
+                            </div>
 
-                <div className={styles.section}>
-                    <hr className={styles.separator} />
-                    {/* Visual separator/grouper could go here if needed, but "Filtros" header removed as requested */}
-                    <div className={styles.searchWrapper}>
-                        <input
-                            type="search"
-                            name="search-filter"
-                            placeholder="Buscar usuario"
-                            className={styles.searchInput}
-                            value={searchValue}
-                            onChange={(e) => handleSearchChange(e.target.value)}
-                            autoComplete="off"
-                            autoCorrect="off"
-                            autoCapitalize="off"
-                            spellCheck="false"
-                            data-lpignore="true"
-                            data-lastpass-ignore="true"
-                            data-1p-ignore="true"
-                            data-bwignore="true"
-                        />
-                        <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="11" cy="11" r="8" />
-                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                        </svg>
-                    </div>
-                </div>
+                            <div className={styles.positionList}>
+                                {loading ? (
+                                    <div className={styles.loadingState}>Cargando posiciones...</div>
+                                ) : error ? (
+                                    <div className={styles.errorState}>{error}</div>
+                                ) : positions.length === 0 ? (
+                                    <div className={styles.emptyState}>No hay posiciones</div>
+                                ) : (
+                                    positions.map((pos) => (
+                                        <div key={pos.id} className={styles.positionItem}>
+                                            <label className={styles.checkboxWrapper}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={pos.checked}
+                                                    onChange={() => handleTogglePosition(pos.id)}
+                                                />
+                                                <span className={styles.checkbox}></span>
+                                                <span className={styles.positionName}>{pos.name}</span>
+                                            </label>
+                                            <div className={styles.positionActions}>
+                                                {pos.id !== 0 && pos.id !== 1 && (
+                                                    <button className={styles.actionIconBtn} title="Editar posición" onClick={() => onEditPosition?.(pos)}>
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                                {pos.id !== 0 && pos.id !== 1 && (
+                                                    <button className={`${styles.actionIconBtn} ${styles.delete}`} title="Eliminar" onClick={() => handleDeletePosition(Number(pos.id), pos.name)}>
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M3 6h18" />
+                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                            <line x1="10" y1="11" x2="10" y2="17" />
+                                                            <line x1="14" y1="11" x2="14" y2="17" />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
 
-                <div className={styles.section}>
-                    <div className={styles.selectionControls}>
-                        <button
-                            onClick={handleToggleAllSelection}
-                            className={styles.selectAllBtn}
-                        >
-                            {allPositionsSelected ? "Deseleccionar todo" : "Seleccionar todo"}
-                        </button>
-                    </div>
-
-                    <div className={styles.positionList}>
-                        {loading ? (
-                            <div className={styles.loadingState}>Cargando posiciones...</div>
-                        ) : error ? (
-                            <div className={styles.errorState}>{error}</div>
-                        ) : positions.length === 0 ? (
-                            <div className={styles.emptyState}>No hay posiciones</div>
-                        ) : (
-                            positions.map((pos) => (
-                                <div key={pos.id} className={styles.positionItem}>
-                                    <label className={styles.checkboxWrapper}>
-                                        <input
-                                            type="checkbox"
-                                            checked={pos.checked}
-                                            onChange={() => handleTogglePosition(pos.id)}
-                                        />
-                                        <span className={styles.checkbox}></span>
-                                        <span className={styles.positionName}>{pos.name}</span>
-                                    </label>
-                                    <div className={styles.positionActions}>
-                                        {pos.id !== 0 && pos.id !== 1 && (
-                                            <button className={styles.actionIconBtn} title="Editar posición" onClick={() => onEditPosition?.(pos)}>
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                                </svg>
-                                            </button>
-                                        )}
-                                        {pos.id !== 0 && pos.id !== 1 && (
-                                            <button className={`${styles.actionIconBtn} ${styles.delete}`} title="Eliminar" onClick={() => handleDeletePosition(Number(pos.id), pos.name)}>
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M3 6h18" />
-                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                                    <line x1="10" y1="11" x2="10" y2="17" />
-                                                    <line x1="14" y1="11" x2="14" y2="17" />
-                                                </svg>
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-
-                    <button className={styles.addPositionBtn} onClick={onAddPosition}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                        <span>Agregar posición</span>
-                    </button>
-                </div>
+                            <button className={styles.addPositionBtn} onClick={onAddPosition}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                                <span>Agregar posición</span>
+                            </button>
+                        </div>
+                    </div>{/* /sidebarInner */}
+                </div>{/* /sidebarScrollArea */}
             </aside>
 
             {/* Delete Position Confirmation Modal */}
