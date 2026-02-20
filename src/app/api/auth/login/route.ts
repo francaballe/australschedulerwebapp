@@ -74,6 +74,14 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Regular users (roleId=2) can only use the mobile app
+        if (user.userroleid === 2) {
+            return NextResponse.json(
+                { error: 'Esta plataforma es solo para administradores. Por favor, usá la aplicación móvil.' },
+                { status: 403, headers: corsHeaders }
+            );
+        }
+
         // Update last login using Prisma
         try {
             await prisma.user.update({

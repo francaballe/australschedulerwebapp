@@ -415,12 +415,14 @@
 .unavailableWarningIcon {
   position: absolute;
   top: 7px;
-  right: 4px;
-  /* transform: translateY(-50%); Removed to align with top */
+  right: 9px;
   width: 21px;
   height: 21px;
   opacity: 0.9;
 }
+
+
+
 
 .shiftPosition {
   font-size: 11px;

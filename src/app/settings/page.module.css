@@ -347,6 +347,535 @@
   }
 }
 
+/* ============ User Management Styles ============ */
+
+.userCounterCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--background);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.userCounterInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.userCounterLabel {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--foreground);
+}
+
+.userCounterDescription {
+  font-size: 13px;
+  color: var(--foreground-secondary);
+}
+
+.userCounterBadge {
+  background: var(--primary);
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+  min-width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  letter-spacing: -0.5px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+
+.searchInput {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--input-bg);
+  color: var(--foreground);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.searchInput::placeholder {
+  color: var(--muted);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.createButton {
+  padding: 10px 20px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.createButton:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.usersTableWrapper {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.usersTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.usersTable thead {
+  background: var(--background);
+}
+
+.usersTable th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--foreground-secondary);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.usersTable td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  vertical-align: middle;
+}
+
+.usersTable tbody tr {
+  transition: background 0.15s;
+}
+
+.usersTable tbody tr:hover {
+  background: var(--hover-bg);
+}
+
+.usersTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.userName {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.userEmail {
+  font-size: 13px;
+  color: var(--foreground-secondary);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badgeActive {
+  background: rgba(5, 150, 105, 0.12);
+  color: var(--success);
+}
+
+.badgeBlocked {
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--error);
+}
+
+.badgeAdmin {
+  background: rgba(124, 58, 237, 0.12);
+  color: var(--secondary);
+}
+
+.badgeEmployee {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--primary);
+}
+
+.actionsCell {
+  display: flex;
+  gap: 6px;
+}
+
+.editButton {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--foreground-secondary);
+  transition: all 0.15s;
+}
+
+.editButton:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.blockButton {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--foreground-secondary);
+  transition: all 0.15s;
+}
+
+.blockButton:hover {
+  border-color: var(--warning);
+  color: var(--warning);
+  background: rgba(217, 119, 6, 0.06);
+}
+
+.unblockButton {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--foreground-secondary);
+  transition: all 0.15s;
+}
+
+.unblockButton:hover {
+  border-color: var(--success);
+  color: var(--success);
+  background: rgba(5, 150, 105, 0.06);
+}
+
+/* Modal styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.modalContent {
+  background: var(--background-secondary);
+  border-radius: 16px;
+  padding: 28px;
+  width: 90%;
+  max-width: 520px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  animation: slideUp 0.2s ease;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--foreground);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modalFormRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.modalField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.modalField label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground-secondary);
+}
+
+.modalField input,
+.modalField select {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--input-bg);
+  color: var(--foreground);
+  transition: border-color 0.2s;
+}
+
+.modalField input:focus,
+.modalField select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.modalCancelButton {
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground-secondary);
+  transition: all 0.15s;
+}
+
+.modalCancelButton:hover {
+  background: var(--hover-bg);
+  color: var(--foreground);
+}
+
+.modalSaveButton {
+  padding: 10px 24px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.modalSaveButton:hover {
+  background: var(--primary-hover);
+}
+
+.modalSaveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Confirm modal styles */
+.confirmModal {
+  text-align: center;
+  padding: 32px;
+  max-width: 400px;
+}
+
+.confirmIcon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.confirmTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--foreground);
+  margin-bottom: 8px;
+}
+
+.confirmMessage {
+  font-size: 14px;
+  color: var(--foreground-secondary);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.confirmDangerButton {
+  padding: 10px 24px;
+  background: var(--error);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.confirmDangerButton:hover {
+  opacity: 0.9;
+}
+
+.confirmSuccessButton {
+  padding: 10px 24px;
+  background: var(--success);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.confirmSuccessButton:hover {
+  opacity: 0.9;
+}
+
+/* Feedback */
+.feedbackMessage {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: fadeIn 0.2s ease;
+}
+
+.feedbackSuccess {
+  background: rgba(5, 150, 105, 0.1);
+  color: var(--success);
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.feedbackError {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--error);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+/* Empty state */
+.emptyState {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--foreground-secondary);
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.emptyTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--foreground);
+}
+
+.emptyDescription {
+  font-size: 14px;
+}
+
+/* Loading state */
+.loadingTable {
+  display: flex;
+  justify-content: center;
+  padding: 48px 20px;
+}
+
+.lastLoginText {
+  font-size: 13px;
+  color: var(--foreground-secondary);
+}
+
+.userCount {
+  font-size: 13px;
+  color: var(--foreground-secondary);
+  margin-bottom: 12px;
+}
+
+.modalError {
+  font-size: 13px;
+  color: var(--error);
+  background: rgba(220, 38, 38, 0.08);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(220, 38, 38, 0.15);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .main {

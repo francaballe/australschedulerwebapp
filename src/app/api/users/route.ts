@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import type { Prisma } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
 
 export async function GET(request: NextRequest) {
-    const corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    };
-
     try {
-        // Get search query from query params
         const q = request.nextUrl.searchParams.get('q');
+        const includeBlocked = request.nextUrl.searchParams.get('includeBlocked') === 'true';
 
-        // Build where clause dynamically
-        const whereClause: any = {
-            isblocked: false
-        };
+        const whereClause: any = {};
 
-        // If a search query is provided, add OR conditions for firstname/lastname/email
+        if (!includeBlocked) {
+            whereClause.isblocked = false;
+        }
+
         if (q && q.trim()) {
             const term = q.trim();
             whereClause.OR = [
@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
             ];
         }
 
-        // Using Prisma ORM with conditional filtering
         const users = await prisma.user.findMany({
             where: whereClause,
             orderBy: [
@@ -40,27 +39,247 @@ export async function GET(request: NextRequest) {
                 email: true,
                 firstname: true,
                 lastname: true,
-                userroleid: true
+                userroleid: true,
+                phone: true,
+                isblocked: true,
+                lastlogin: true,
+                createddate: true,
+                role: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
             }
         });
 
-        type UserResult = typeof users[0];
-
-        // Transform to match frontend expectations (camelCase)
-        const formattedUsers = users.map((user: UserResult) => ({
+        const formattedUsers = users.map((user) => ({
             id: user.id,
             email: user.email,
             firstName: user.firstname,
             lastName: user.lastname,
-            roleId: user.userroleid
+            roleId: user.userroleid,
+            phone: user.phone,
+            isBlocked: user.isblocked,
+            lastLogin: user.lastlogin,
+            createdDate: user.createddate,
+            roleName: user.role?.name || null
         }));
 
         return NextResponse.json(formattedUsers, { headers: corsHeaders });
 
     } catch (error: any) {
-        console.error('API Users Error:', error);
+        console.error('API Users GET Error:', error);
         return NextResponse.json(
             { error: 'Error al obtener usuarios' },
+            { status: 500, headers: corsHeaders }
+        );
+    }
+}
+
+export async function POST(request: NextRequest) {
+    try {
+        const body = await request.json();
+        const { email, password, firstName, lastName, phone, roleId } = body;
+
+        if (!email || !password || !firstName || !lastName) {
+            return NextResponse.json(
+                { error: 'Email, contraseña, nombre y apellido son requeridos' },
+                { status: 400, headers: corsHeaders }
+            );
+        }
+
+        // Check if email already exists
+        const existing = await prisma.user.findFirst({
+            where: { email: email.toLowerCase().trim() }
+        });
+
+        if (existing) {
+            return NextResponse.json(
+                { error: 'Ya existe un usuario con ese email' },
+                { status: 409, headers: corsHeaders }
+            );
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newUser = await prisma.user.create({
+            data: {
+                email: email.toLowerCase().trim(),
+                password: hashedPassword,
+                firstname: firstName.trim(),
+                lastname: lastName.trim(),
+                phone: phone?.trim() || null,
+                userroleid: roleId || 2,
+                isblocked: false,
+                createddate: new Date()
+            },
+            select: {
+                id: true,
+                email: true,
+                firstname: true,
+                lastname: true,
+                userroleid: true,
+                phone: true,
+                isblocked: true,
+                lastlogin: true,
+                createddate: true,
+                role: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
+            }
+        });
+
+        return NextResponse.json({
+            id: newUser.id,
+            email: newUser.email,
+            firstName: newUser.firstname,
+            lastName: newUser.lastname,
+            roleId: newUser.userroleid,
+            phone: newUser.phone,
+            isBlocked: newUser.isblocked,
+            lastLogin: newUser.lastlogin,
+            createdDate: newUser.createddate,
+            roleName: newUser.role?.name || null
+        }, { status: 201, headers: corsHeaders });
+
+    } catch (error: any) {
+        console.error('API Users POST Error:', error);
+        return NextResponse.json(
+            { error: 'Error al crear usuario' },
+            { status: 500, headers: corsHeaders }
+        );
+    }
+}
+
+export async function PUT(request: NextRequest) {
+    try {
+        const body = await request.json();
+        const { id, email, password, firstName, lastName, phone, roleId, isBlocked } = body;
+
+        if (!id) {
+            return NextResponse.json(
+                { error: 'ID de usuario requerido' },
+                { status: 400, headers: corsHeaders }
+            );
+        }
+
+        // Check if user exists
+        const existingUser = await prisma.user.findUnique({
+            where: { id }
+        });
+
+        if (!existingUser) {
+            return NextResponse.json(
+                { error: 'Usuario no encontrado' },
+                { status: 404, headers: corsHeaders }
+            );
+        }
+
+        // If email is changing, check uniqueness
+        if (email && email.toLowerCase().trim() !== existingUser.email) {
+            const emailTaken = await prisma.user.findFirst({
+                where: {
+                    email: email.toLowerCase().trim(),
+                    id: { not: id }
+                }
+            });
+            if (emailTaken) {
+                return NextResponse.json(
+                    { error: 'Ya existe otro usuario con ese email' },
+                    { status: 409, headers: corsHeaders }
+                );
+            }
+        }
+
+        const updateData: any = {};
+        if (firstName !== undefined) updateData.firstname = firstName.trim();
+        if (lastName !== undefined) updateData.lastname = lastName.trim();
+        if (email !== undefined) updateData.email = email.toLowerCase().trim();
+        if (phone !== undefined) updateData.phone = phone?.trim() || null;
+        if (isBlocked !== undefined) updateData.isblocked = isBlocked;
+        if (password) {
+            updateData.password = await bcrypt.hash(password, 10);
+        }
+
+        // Server-side role guard:
+        // Caller's identity comes from the request body (callerUserId).
+        // We look up their real role from the DB — not from a client header — to prevent spoofing.
+        const { callerUserId } = body;
+        if (callerUserId) {
+            const caller = await prisma.user.findUnique({ where: { id: callerUserId }, select: { userroleid: true } });
+            const callerRole = caller?.userroleid ?? 99;
+
+            // Admins (roleId=1) can only modify regular users (roleId=2), but can always self-edit
+            if (callerRole === 1 && existingUser.userroleid !== 2 && id !== callerUserId) {
+                return NextResponse.json(
+                    { error: 'Sin permisos: solo podés modificar usuarios regulares.' },
+                    { status: 403, headers: corsHeaders }
+                );
+            }
+
+            // Nobody except owner can assign a role of 0 (owner) or 1 (admin) if they're not owner
+            if (roleId !== undefined && callerRole !== 0 && roleId < 2) {
+                return NextResponse.json(
+                    { error: 'Sin permisos: no podés asignar ese rol.' },
+                    { status: 403, headers: corsHeaders }
+                );
+            }
+
+            // Nobody can change the owner's role
+            if (roleId !== undefined && existingUser.userroleid === 0 && id !== callerUserId) {
+                return NextResponse.json(
+                    { error: 'Sin permisos: no podés modificar el rol del owner.' },
+                    { status: 403, headers: corsHeaders }
+                );
+            }
+        }
+
+        // Only apply roleId change if explicitly included (after guard)
+        if (roleId !== undefined) updateData.userroleid = roleId;
+
+        const updatedUser = await prisma.user.update({
+            where: { id },
+            data: updateData,
+            select: {
+                id: true,
+                email: true,
+                firstname: true,
+                lastname: true,
+                userroleid: true,
+                phone: true,
+                isblocked: true,
+                lastlogin: true,
+                createddate: true,
+                role: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
+            }
+        });
+
+        return NextResponse.json({
+            id: updatedUser.id,
+            email: updatedUser.email,
+            firstName: updatedUser.firstname,
+            lastName: updatedUser.lastname,
+            roleId: updatedUser.userroleid,
+            phone: updatedUser.phone,
+            isBlocked: updatedUser.isblocked,
+            lastLogin: updatedUser.lastlogin,
+            createdDate: updatedUser.createddate,
+            roleName: updatedUser.role?.name || null
+        }, { headers: corsHeaders });
+
+    } catch (error: any) {
+        console.error('API Users PUT Error:', error);
+        return NextResponse.json(
+            { error: 'Error al actualizar usuario' },
             { status: 500, headers: corsHeaders }
         );
     }
@@ -69,10 +288,6 @@ export async function GET(request: NextRequest) {
 export async function OPTIONS() {
     return new NextResponse(null, {
         status: 204,
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        },
+        headers: corsHeaders,
     });
 }
