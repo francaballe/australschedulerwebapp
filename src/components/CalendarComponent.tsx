@@ -1429,6 +1429,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                       onDragOver={(e) => handleDragOver(e, user.id, date)}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, user.id, date)}
+                      style={{
+                        boxShadow: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime())
+                          ? 'inset 0 0 0 2px var(--primary), inset 0 0 10px rgba(59, 130, 246, 0.2)'
+                          : 'none'
+                      }}
                     >
                       {shift ? (
                         <div
