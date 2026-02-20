@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useDraggable } from "@/hooks/useDraggable";
+import DatePicker, { registerLocale } from "react-datepicker";
+import { es } from "date-fns/locale";
+import "react-datepicker/dist/react-datepicker.css";
 import styles from "./CalendarComponent.module.css";
+
+// Register Spanish locale
+registerLocale('es', es);
 
 interface CalendarProps {
   enabledPositions: Set<number>;
@@ -95,29 +101,6 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
   // Draggable Modal State
   const { position: modalPos, handleMouseDown: handleModalDrag, resetPosition: resetModalPos } = useDraggable();
-
-  // Date Picker Ref
-  const dateInputRef = useRef<HTMLInputElement>(null);
-
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value) {
-      // Create date from input value (YYYY-MM-DD) and set to local noon to avoid timezone shifts
-      const [year, month, day] = e.target.value.split('-').map(Number);
-      const newDate = new Date(year, month - 1, day, 12, 0, 0);
-      setCurrentDate(newDate);
-    }
-  };
-
-  // Sync date picker input with currentDate
-  useEffect(() => {
-    if (dateInputRef.current) {
-      // Format as YYYY-MM-DD in local time
-      const year = currentDate.getFullYear();
-      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-      const day = String(currentDate.getDate()).padStart(2, '0');
-      dateInputRef.current.value = `${year}-${month}-${day}`;
-    }
-  }, [currentDate]);
 
   // Reset position when modal opens
   useEffect(() => {
@@ -1281,20 +1264,26 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
-            <span
-              className={styles.dateRangeDisplay}
-              onClick={() => dateInputRef.current?.showPicker()}
-              style={{ cursor: 'pointer', userSelect: 'none' }}
-              title="Click para ir a una fecha específica"
-            >
-              {formatDisplayRange()}
-            </span>
-            <input
-              type="date"
-              ref={dateInputRef}
-              onChange={handleDateChange}
-              style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0 }}
-              tabIndex={-1}
+            <DatePicker
+              selected={currentDate}
+              onChange={(date: Date | null) => {
+                if (date) {
+                  // Ensure local noon to avoid time zone shifts
+                  const newDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+                  setCurrentDate(newDate);
+                }
+              }}
+              locale="es"
+              dateFormat="P"
+              customInput={
+                <span
+                  className={styles.dateRangeDisplay}
+                  style={{ cursor: 'pointer', userSelect: 'none' }}
+                  title="Click para ir a una fecha específica"
+                >
+                  {formatDisplayRange()}
+                </span>
+              }
             />
             <button onClick={goToNextWeek} className={styles.iconNavBtn} title="Siguiente">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

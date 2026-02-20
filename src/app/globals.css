@@ -109,3 +109,8 @@ input {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--foreground-secondary);
 }
+
+/* DatePicker Overrides */
+.react-datepicker-popper {
+  z-index: 100 !important;
+}
