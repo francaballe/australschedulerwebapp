@@ -146,11 +146,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                 const data = await res.json();
                 setSites(data);
 
-                // Initialize selected site from localStorage or default
-                const stored = window.localStorage.getItem('selectedSiteId');
-                if (stored) {
-                    setSelectedSite(Number(stored));
-                } else if (data.length > 0) {
+                // Initialize selected site to the lowest ID (ignoring localStorage)
+                if (data.length > 0) {
                     const minId = data.reduce((acc: number, s: any) => Math.min(acc, s.id), data[0].id);
                     setSelectedSite(minId);
                     try { window.localStorage.setItem('selectedSiteId', String(minId)); } catch { }

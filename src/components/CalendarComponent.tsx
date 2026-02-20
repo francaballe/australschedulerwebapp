@@ -148,10 +148,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
   useEffect(() => {
     const init = () => {
-      try {
-        const v = window.localStorage.getItem('selectedSiteId');
-        if (v) setSelectedSiteId(Number(v));
-      } catch { }
+      // Intentionally not reading from localStorage here.
+      // We rely on Sidebar dispatching 'siteChanged' with the lowest ID.
     };
 
     const handler = (e: any) => {
