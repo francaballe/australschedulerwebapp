@@ -655,14 +655,21 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       setPositions(prev => [...prev, formattedPos]);
     };
 
+    const handlePosDelete = () => {
+      console.log('🔄 Detected position deleted - refreshing calendar');
+      refreshData();
+    };
+
     window.addEventListener('publishedShifts', handlePublish);
     window.addEventListener('positionsUpdated', handlePosUpdate);
     window.addEventListener('positionCreated', handlePosCreate);
+    window.addEventListener('positionDeleted', handlePosDelete);
 
     return () => {
       window.removeEventListener('publishedShifts', handlePublish);
       window.removeEventListener('positionsUpdated', handlePosUpdate);
       window.removeEventListener('positionCreated', handlePosCreate);
+      window.removeEventListener('positionDeleted', handlePosDelete);
     };
   }, [refreshData]);
 

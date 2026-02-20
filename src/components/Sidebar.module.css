@@ -576,8 +576,105 @@
         align-items: center;
     }
 
-    .masterCheckbox {
-        /* Optional: distinct style for master checkbox if desired */
-        /* border-color: var(--primary); */
-    }
+}
+
+/* Delete Position Confirmation Modal */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+}
+
+.modalContent {
+    background: var(--background);
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    max-width: 400px;
+    width: 90vw;
+    overflow: hidden;
+    position: relative;
+}
+
+.deleteConfirmation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px 32px;
+}
+
+.deleteIconContainer {
+    background: #fee2e2;
+    color: #ef4444;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.deleteIconContainer svg {
+    width: 24px;
+    height: 24px;
+}
+
+.deleteConfirmation h4 {
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.deleteConfirmation p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0 0 24px 0;
+    max-width: 400px;
+}
+
+.deleteConfirmationButtons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    width: 100%;
+}
+
+.cancelDeleteBtn,
+.confirmDeleteBtn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.cancelDeleteBtn {
+    background: var(--background-secondary);
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+
+.cancelDeleteBtn:hover {
+    background: var(--hover-bg);
+}
+
+.confirmDeleteBtn {
+    background: #ef4444;
+    color: white;
+}
+
+.confirmDeleteBtn:hover {
+    background: #dc2626;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
 }
