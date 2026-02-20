@@ -1429,11 +1429,6 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                       onDragOver={(e) => handleDragOver(e, user.id, date)}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, user.id, date)}
-                      style={{
-                        boxShadow: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime())
-                          ? 'inset 0 0 0 2px var(--primary), inset 0 0 10px rgba(59, 130, 246, 0.2)'
-                          : 'none'
-                      }}
                     >
                       {shift ? (
                         <div
@@ -1453,6 +1448,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                             color: isOtherSite ? '#6b7280' : (isFilteredOut ? 'var(--foreground-secondary, #94a3b8)' : (shift.positionColor || '#fbbf24')),
                             position: 'relative',
                             opacity: isOtherSite ? 0.8 : 1,
+                            boxShadow: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime())
+                              ? '0 0 0 3px #000, 0 4px 12px rgba(0,0,0,0.15)'
+                              : 'none',
+                            zIndex: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime()) ? 5 : 'auto',
                             ...(isOtherSite && { cursor: 'not-allowed' })
                           }}
                           title={
@@ -1488,11 +1487,27 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                             backgroundColor: (enabledPositions.has(1) || enabledPositions.size === 0) ? '#9E9E9E40' : 'transparent',
                             borderLeftColor: '#9E9E9E',
                             color: '#9E9E9E',
-                            position: 'relative'
+                            position: 'relative',
+                            boxShadow: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime())
+                              ? '0 0 0 3px #000, 0 4px 12px rgba(0,0,0,0.15)'
+                              : 'none',
+                            zIndex: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime()) ? 5 : 'auto'
                           }}
                           title="Usuario no disponible"
                         >
                           <span className={styles.positionName} style={{ color: '#9E9E9E', fontStyle: 'italic' }}>No Disponible</span>
+                        </div>
+                      ) : (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime()) ? (
+                        <div
+                          className={styles.shiftContent}
+                          style={{
+                            backgroundColor: 'transparent',
+                            borderLeftColor: 'transparent',
+                            boxShadow: '0 0 0 3px #000, 0 4px 12px rgba(0,0,0,0.15)',
+                            position: 'relative',
+                            zIndex: 5
+                          }}
+                        >
                         </div>
                       ) : (
                         <div className={styles.emptyCell}>
