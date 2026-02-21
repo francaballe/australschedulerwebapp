@@ -107,7 +107,7 @@ export default function SettingsPage() {
     const fetchUsers = useCallback(async () => {
         setUsersLoading(true);
         try {
-            const response = await fetch('/api/users?includeBlocked=true');
+            const response = await fetch('/api/users?includeBlocked=true', { cache: 'no-store' });
             if (response.ok) {
                 const data = await response.json();
                 setUsers(data);
@@ -131,12 +131,8 @@ export default function SettingsPage() {
         setTimeout(() => setFeedback(null), 4000);
     };
 
-    // Filtered users based on search and blocked status
+    // Filtered users based on search (Blocked status filter only applies to the calendar grid)
     const filteredUsers = users.filter(u => {
-        // First filter by blocked status based on setting
-        if (showOnlyActiveUsers && u.isBlocked) return false;
-
-        // Then filter by search query
         if (!searchQuery.trim()) return true;
         const term = searchQuery.toLowerCase();
         return (
@@ -624,8 +620,8 @@ export default function SettingsPage() {
                                                     <td>{u.phone || '—'}</td>
                                                     <td>
                                                         <span className={`${styles.badge} ${styles.badgeEmployee}`} style={{
-                                                            background: `hsl(${(u.roleId ?? 0) * 60}, 70%, 90%)`,
-                                                            color: `hsl(${(u.roleId ?? 0) * 60}, 50%, 35%)`
+                                                            background: u.roleId === 0 ? '#F3E8FF' : u.roleId === 1 ? '#FEF3C7' : '#DBEAFE',
+                                                            color: u.roleId === 0 ? '#6B21A8' : u.roleId === 1 ? '#92400E' : '#1E40AF'
                                                         }}>
                                                             {u.roleName || `Rol ${u.roleId}`}
                                                         </span>
