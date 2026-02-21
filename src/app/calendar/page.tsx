@@ -61,22 +61,42 @@ export default function CalendarPage() {
     }
   }, [user, isLoading, router]);
 
-  // Initialize all positions as enabled on component mount
+  // Initialize and sync positions when site changes
   useEffect(() => {
-    const initPositions = async () => {
+    const fetchAndSetPositions = async (siteId?: string | number | null) => {
       try {
-        const response = await fetch('/api/positions');
+        const url = siteId ? `/api/positions?siteId=${siteId}` : '/api/positions';
+        const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
+          // When switching sites, we want to enable all positions for THAT site by default
           const allIds = new Set<number>(data.map((p: any) => Number(p.id)));
+
+          // Always ensure special positions 0 and 1 are included if they aren't already
+          // (though the API usually provides them if siteId is present or not)
+          allIds.add(0); // No Position
+          allIds.add(1); // Unavailable
+
           setEnabledPositions(allIds);
         }
       } catch (err) {
-        console.error('Failed to initialize positions:', err);
+        console.error('Failed to sync positions:', err);
       }
     };
 
-    initPositions();
+    const handleSiteChanged = (e: any) => {
+      const newSiteId = e.detail;
+      fetchAndSetPositions(newSiteId);
+    };
+
+    // Initial load
+    const savedSiteId = typeof window !== 'undefined' ? localStorage.getItem('selectedSiteId') : null;
+    fetchAndSetPositions(savedSiteId);
+
+    window.addEventListener('siteChanged', handleSiteChanged);
+    return () => {
+      window.removeEventListener('siteChanged', handleSiteChanged);
+    };
   }, []);
 
   if (isLoading) {

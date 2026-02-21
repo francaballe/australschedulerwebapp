@@ -6,6 +6,7 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import { es } from "date-fns/locale";
 import "react-datepicker/dist/react-datepicker.css";
 import styles from "./CalendarComponent.module.css";
+import { useTheme } from "@/context/ThemeContext";
 
 // Register Spanish locale
 registerLocale('es', es);
@@ -59,6 +60,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   onStatsUpdate,
   managerName
 }) => {
+  const { showOnlyActiveUsers } = useTheme();
   // Local state removed for currentDate and view (lifted)
 
   const [users, setUsers] = useState<User[]>([]);
@@ -127,7 +129,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const url = '/api/users';
+      const url = `/api/users?includeBlocked=${!showOnlyActiveUsers}`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Error al cargar usuarios');
@@ -172,7 +174,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       const q = e?.detail ?? '';
       (async () => {
         try {
-          const url = selectedSiteId ? `/api/users?siteId=${selectedSiteId}&q=${encodeURIComponent(q)}` : `/api/users?q=${encodeURIComponent(q)}`;
+          let url = `/api/users?includeBlocked=${!showOnlyActiveUsers}&q=${encodeURIComponent(q)}`;
+          if (selectedSiteId) url += `&siteId=${selectedSiteId}`;
           const resp = await fetch(url);
           if (!resp.ok) return;
           const data = await resp.json();
@@ -455,52 +458,29 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       return true;
     }
 
-    // Check if user has unavailability in current week and Unavailable filter is active
-    // We assume ID 1 is "Unavailable"
+    // Strategy:
+    // 1. If "No Position" (0) is enabled, show ALL users (except those filtered by blocked status/search).
+    // 2. If "Unavailable" (1) is enabled and user has unavailability, show.
+    // 3. If user has any shift matching an enabled position in the CURRENT site, show.
+
+    if (enabledPositions.has(0)) return true;
+
     if (enabledPositions.has(1) && weekDates.some(d => unavailableSet.has(`${user.id}-${formatDateLocal(d)}`))) {
       return true;
     }
 
-    // Check if user has any shift with an enabled position in the current week
     const weekStart = formatDateLocal(weekDates[0]);
     const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
 
-    // Group user's shifts by date to avoid counting duplicates
-    const userShiftsByDate = new Map<string, Shift[]>();
+    const hasVisibleShifts = shifts.some(shift =>
+      shift.userId === user.id &&
+      shift.date >= weekStart &&
+      shift.date <= weekEnd &&
+      Number(shift.siteId) === Number(selectedSiteId) &&
+      enabledPositions.has(Number(shift.positionId))
+    );
 
-    shifts
-      .filter(shift =>
-        shift.userId === user.id &&
-        shift.date >= weekStart &&
-        shift.date <= weekEnd
-      )
-      .forEach(shift => {
-        if (!userShiftsByDate.has(shift.date)) {
-          userShiftsByDate.set(shift.date, []);
-        }
-        userShiftsByDate.get(shift.date)!.push(shift);
-      });
-
-    // Strategy:
-    // 1. If user has visible shifts (matching enabled filters), SHOW.
-    // 2. If user has NO shifts, and "No Position" (0) is enabled, SHOW.
-    // 3. If user has Unavailability, and "Unavailable" (1) is enabled, SHOW (handled above, but let's ensure flow).
-
-    const hasVisibleShifts = Array.from(userShiftsByDate.values()).some(shiftsForDate => {
-      if (shiftsForDate.length > 1) {
-        console.warn(`Multiple shifts for user ${user.id} on date:`, shiftsForDate);
-      }
-      return shiftsForDate.some(shift => enabledPositions.has(shift.positionId));
-    });
-
-    if (hasVisibleShifts) return true;
-
-    // Special case: User has NO shifts in this week, and "No Position" (0) is enabled.
-    if (userShiftsByDate.size === 0 && enabledPositions.has(0)) {
-      return true;
-    }
-
-    return false;
+    return hasVisibleShifts;
   });
 
   // When currentDate, view or selectedSiteId changes, reload users and shifts
@@ -543,12 +523,13 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       } catch (err) {
         console.error('Error loading users and shifts:', err);
       } finally {
+        setLoading(false);
         setShiftsLoading(false);
       }
     };
 
     loadUsersAndShifts();
-  }, [currentDate, view, selectedSiteId]);
+  }, [currentDate, view, selectedSiteId, showOnlyActiveUsers]);
 
   // Expose a manual refresh that other UI can call
   const refreshData = async () => {

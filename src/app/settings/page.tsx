@@ -131,8 +131,12 @@ export default function SettingsPage() {
         setTimeout(() => setFeedback(null), 4000);
     };
 
-    // Filtered users based on search
+    // Filtered users based on search and blocked status
     const filteredUsers = users.filter(u => {
+        // First filter by blocked status based on setting
+        if (showOnlyActiveUsers && u.isBlocked) return false;
+
+        // Then filter by search query
         if (!searchQuery.trim()) return true;
         const term = searchQuery.toLowerCase();
         return (
@@ -513,7 +517,7 @@ export default function SettingsPage() {
                                                 className={`${styles.toggleOption} ${showOnlyActiveUsers ? styles.toggleActive : ''}`}
                                                 onClick={() => setShowOnlyActiveUsers(true)}
                                             >
-                                                👤 Solo usuarios activos
+                                                👤 Solo usuarios no bloqueados
                                             </button>
                                             <button
                                                 className={`${styles.toggleOption} ${!showOnlyActiveUsers ? styles.toggleActive : ''}`}
