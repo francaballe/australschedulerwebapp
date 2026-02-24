@@ -164,10 +164,17 @@ export default function CalendarPage() {
 
       console.log(`Publishing range: ${startDateStr} to ${endDateStr}`);
 
+      const siteId = localStorage.getItem('selectedSiteId');
+
       const resp = await fetch('/api/shifts/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startDate: startDateStr, endDate: endDateStr, type: 'all' })
+        body: JSON.stringify({
+          startDate: startDateStr,
+          endDate: endDateStr,
+          type: 'all',
+          siteId: siteId ? Number(siteId) : undefined
+        })
       });
 
       if (!resp.ok) throw new Error('Error al publicar');

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { startDate, endDate, type } = body;
+    const { startDate, endDate, type, siteId } = body;
 
     if (!startDate || !endDate) {
       return NextResponse.json({ error: 'startDate and endDate are required' }, { status: 400, headers: corsHeaders });
@@ -30,6 +30,9 @@ export async function POST(request: NextRequest) {
         lte: end
       }
     };
+    if (siteId !== undefined && siteId !== null) {
+      updateWhere.siteid = Number(siteId);
+    }
     if (type === 'changes') {
       updateWhere.published = false;
     }
@@ -41,7 +44,8 @@ export async function POST(request: NextRequest) {
     const usersToNotify = await prisma.shift.findMany({
       where: {
         date: { gte: start, lte: end },
-        published: false
+        published: false,
+        ...(siteId !== undefined && siteId !== null ? { siteid: Number(siteId) } : {})
       },
       select: {
         userId: true
@@ -70,7 +74,8 @@ export async function POST(request: NextRequest) {
     const shiftsToNotify = await prisma.shift.findMany({
       where: {
         userId: { in: targetUserIds },
-        date: { gte: start, lte: end }
+        date: { gte: start, lte: end },
+        ...(siteId !== undefined && siteId !== null ? { siteid: Number(siteId) } : {})
       },
       include: {
         position: true

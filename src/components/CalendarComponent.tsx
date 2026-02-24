@@ -147,20 +147,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   };
 
   // Selected site filtering: read initial value from localStorage and listen to site changes
-  const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
+  const [selectedSiteId, setSelectedSiteId] = useState<number | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = window.localStorage.getItem('selectedSiteId');
+      return stored ? Number(stored) : null;
+    }
+    return null;
+  });
 
   useEffect(() => {
-    const init = () => {
-      // Intentionally not reading from localStorage here.
-      // We rely on Sidebar dispatching 'siteChanged' with the lowest ID.
-    };
-
     const handler = (e: any) => {
       const id = e?.detail ?? null;
       setSelectedSiteId(id);
     };
 
-    init();
     window.addEventListener('siteChanged', handler as EventListener);
 
     return () => {
@@ -376,25 +376,18 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   // Fetch user confirmations for the current week
   const fetchUserConfirmations = async (weekStartDate: string, usersData: User[]) => {
     try {
-      console.log('🔍 WEB: Fetching confirmations for weekStartDate:', weekStartDate);
-      console.log('🔍 WEB: Users to check:', usersData.map(u => u.id));
-
       const confirmationsMap = new Map<number, boolean>();
 
       // Fetch all confirmations at once for better performance
       const promises = usersData.map(async (user) => {
         try {
           const url = `/api/confirm-weeks?userId=${user.id}&date=${weekStartDate}`;
-          console.log('🔍 WEB: Fetching from URL:', url);
-
           const response = await fetch(url);
           if (response.ok) {
             const confirmations = await response.json();
-            console.log(`🔍 WEB: User ${user.id} confirmations:`, confirmations);
 
             // Just check if there's any record for this user/week, don't check .confirmed field
             const isConfirmed = confirmations.length > 0;
-            console.log(`🔍 WEB: User ${user.id} isConfirmed:`, isConfirmed);
 
             return { userId: user.id, confirmed: isConfirmed };
           }
@@ -409,7 +402,6 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         confirmationsMap.set(result.userId, result.confirmed);
       });
 
-      console.log('🔍 WEB: Final confirmationsMap:', confirmationsMap);
       setUserConfirmations(confirmationsMap);
     } catch (error) {
       console.error('Failed to fetch user confirmations:', error);
@@ -656,17 +648,27 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
   // Notify parent about conflict shifts count
   useEffect(() => {
-    const count = shifts.filter(s => s.isUserUnavailable).length;
+    const count = shifts.filter(s => {
+      if (!s.isUserUnavailable) return false;
+      if (!selectedSiteId) return false;
+      return Number(s.siteId) === Number(selectedSiteId);
+    }).length;
+
     try {
       window.dispatchEvent(new CustomEvent('conflictShiftsCount', { detail: count }));
     } catch { }
-  }, [shifts]);
+  }, [shifts, selectedSiteId]);
 
   // Calculate unpublished count explicitly for parent
   useEffect(() => {
-    const unpublished = shifts.filter(s => !s.published).length;
-    onStatsUpdate?.({ unpublishedCount: unpublished });
-  }, [shifts, onStatsUpdate]);
+    const unpublished = shifts.filter(s => {
+      if (s.published) return false;
+      if (!selectedSiteId) return false;
+      return Number(s.siteId) === Number(selectedSiteId);
+    });
+
+    onStatsUpdate?.({ unpublishedCount: unpublished.length });
+  }, [shifts, selectedSiteId, onStatsUpdate]);
 
   const today = new Date();
 
