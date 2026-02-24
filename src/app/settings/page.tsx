@@ -25,6 +25,11 @@ interface ManagedUser {
     roleName: string | null;
 }
 
+interface ManagedSite {
+    id: number;
+    name: string | null;
+}
+
 interface UserFormData {
     firstName: string;
     lastName: string;
@@ -58,6 +63,17 @@ export default function SettingsPage() {
     const [roles, setRoles] = useState<Role[]>([]);
     const [usersLoading, setUsersLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+
+    // Sites management state
+    const [sites, setSites] = useState<ManagedSite[]>([]);
+    const [sitesLoading, setSitesLoading] = useState(false);
+    const [showSiteModal, setShowSiteModal] = useState(false);
+    const [editingSite, setEditingSite] = useState<ManagedSite | null>(null);
+    const [siteName, setSiteName] = useState("");
+    const [siteError, setSiteError] = useState<string | null>(null);
+    const [siteSaving, setSiteSaving] = useState(false);
+    const [confirmDeleteSite, setConfirmDeleteSite] = useState<ManagedSite | null>(null);
+
     const [showUserModal, setShowUserModal] = useState(false);
     const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
     const [formData, setFormData] = useState<UserFormData>(emptyForm);
@@ -119,12 +135,30 @@ export default function SettingsPage() {
         }
     }, []);
 
+    // Fetch sites for management
+    const fetchSites = useCallback(async () => {
+        setSitesLoading(true);
+        try {
+            const response = await fetch('/api/sites', { cache: 'no-store' });
+            if (response.ok) {
+                const data = await response.json();
+                setSites(data);
+            }
+        } catch (error) {
+            console.error('Error fetching sites:', error);
+        } finally {
+            setSitesLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         if (activeTab === 'users') {
             fetchUsers();
             if (roles.length === 0) fetchRoles();
+        } else if (activeTab === 'sites') {
+            fetchSites();
         }
-    }, [activeTab, fetchUsers, fetchRoles, roles.length]);
+    }, [activeTab, fetchUsers, fetchRoles, roles.length, fetchSites]);
 
     const showFeedback = (type: 'success' | 'error', message: string) => {
         setFeedback({ type, message });
@@ -273,6 +307,84 @@ export default function SettingsPage() {
             showFeedback('error', 'Error de conexión');
         } finally {
             setConfirmAction(null);
+        }
+    };
+
+    // Open create site modal
+    const handleCreateSite = () => {
+        setEditingSite(null);
+        setSiteName("");
+        setSiteError(null);
+        setShowSiteModal(true);
+    };
+
+    // Open edit site modal
+    const handleEditSite = (s: ManagedSite) => {
+        setEditingSite(s);
+        setSiteName(s.name || "");
+        setSiteError(null);
+        setShowSiteModal(true);
+    };
+
+    // Save site (create or update)
+    const handleSaveSite = async () => {
+        if (!siteName.trim()) {
+            setSiteError("El nombre del sitio es requerido");
+            return;
+        }
+
+        setSiteSaving(true);
+        setSiteError(null);
+
+        try {
+            const isEdit = !!editingSite;
+            const payload: any = { name: siteName.trim() };
+
+            if (isEdit) {
+                payload.id = editingSite!.id;
+            }
+
+            const response = await fetch('/api/sites', {
+                method: isEdit ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+                setShowSiteModal(false);
+                await fetchSites();
+                showFeedback('success', isEdit ? '✅ Sitio actualizado correctamente' : '✅ Sitio creado correctamente');
+            } else {
+                const err = await response.json();
+                setSiteError(err.error || 'Error al guardar el sitio');
+            }
+        } catch (error) {
+            setSiteError('Error de conexión');
+        } finally {
+            setSiteSaving(false);
+        }
+    };
+
+    // Delete site
+    const handleDeleteSite = async () => {
+        if (!confirmDeleteSite) return;
+
+        try {
+            const response = await fetch(`/api/sites?id=${confirmDeleteSite.id}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                await fetchSites();
+                showFeedback('success', `✅ Sitio eliminado correctamente`);
+            } else {
+                const err = await response.json();
+                showFeedback('error', err.error || 'Error al eliminar el sitio');
+            }
+        } catch (error) {
+            showFeedback('error', 'Error de conexión');
+        } finally {
+            setConfirmDeleteSite(null);
         }
     };
 
@@ -795,9 +907,90 @@ export default function SettingsPage() {
                             <p className={styles.sectionDescription}>
                                 Gestión de los sitios / locations del sistema
                             </p>
-                            <div className={styles.placeholder}>
-                                <p>Herramientas para crear o editar sitios, asignar usuarios a sitios y configurar detalles específicos por ubicación.</p>
+
+                            {feedback && (
+                                <div className={`${styles.feedbackMessage} ${feedback.type === 'success' ? styles.feedbackSuccess : styles.feedbackError}`}>
+                                    {feedback.message}
+                                </div>
+                            )}
+
+                            {/* Toolbar */}
+                            <div className={styles.toolbar}>
+                                <div style={{ flex: 1 }}></div>
+                                <button
+                                    className={styles.createButton}
+                                    onClick={handleCreateSite}
+                                >
+                                    ➕ Crear Sitio
+                                </button>
                             </div>
+
+                            {/* Sites table */}
+                            {sitesLoading ? (
+                                <div className={styles.loadingTable}>
+                                    <div className={styles.spinner}></div>
+                                </div>
+                            ) : sites.length === 0 ? (
+                                <div className={styles.emptyState}>
+                                    <div className={styles.emptyIcon}>🏢</div>
+                                    <div className={styles.emptyTitle}>
+                                        No hay sitios
+                                    </div>
+                                    <div className={styles.emptyDescription}>
+                                        Crea el primer sitio con el botón de arriba
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className={styles.usersTableWrapper}>
+                                    <table className={styles.usersTable}>
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Nombre</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {sites.map((s) => (
+                                                <tr key={s.id}>
+                                                    <td>
+                                                        <span className={styles.userEmail}>#{s.id}</span>
+                                                    </td>
+                                                    <td>
+                                                        <span className={styles.userName}>
+                                                            {s.name}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div className={styles.actionsCell}>
+                                                            <button
+                                                                className={styles.editButton}
+                                                                onClick={() => handleEditSite(s)}
+                                                                title="Editar sitio"
+                                                            >
+                                                                ✏️ Editar
+                                                            </button>
+                                                            <button
+                                                                className={styles.blockButton}
+                                                                onClick={() => setConfirmDeleteSite(s)}
+                                                                title="Eliminar sitio"
+                                                            >
+                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ marginRight: '4px', verticalAlign: 'text-bottom' }}>
+                                                                    <path d="M3 6h18" />
+                                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                                    <line x1="10" y1="11" x2="10" y2="17" />
+                                                                    <line x1="14" y1="11" x2="14" y2="17" />
+                                                                </svg>
+                                                                Eliminar
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -970,6 +1163,85 @@ export default function SettingsPage() {
                                     Desbloquear
                                 </button>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Create/Edit Site Modal */}
+            {showSiteModal && (
+                <div className={styles.modalOverlay} onClick={() => setShowSiteModal(false)}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalTitle}>
+                            {editingSite ? '✏️ Editar Sitio' : '➕ Crear Sitio'}
+                        </div>
+                        <div className={styles.modalForm}>
+                            <div className={styles.modalField}>
+                                <label>Nombre del Sitio *</label>
+                                <input
+                                    type="text"
+                                    value={siteName}
+                                    onChange={(e) => setSiteName(e.target.value)}
+                                    placeholder="Ej: Sede Central"
+                                />
+                            </div>
+
+                            {siteError && (
+                                <div className={styles.modalError}>{siteError}</div>
+                            )}
+
+                            <div className={styles.modalActions}>
+                                <button
+                                    className={styles.modalCancelButton}
+                                    onClick={() => setShowSiteModal(false)}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    className={styles.modalSaveButton}
+                                    onClick={handleSaveSite}
+                                    disabled={siteSaving}
+                                >
+                                    {siteSaving ? 'Guardando...' : (editingSite ? 'Guardar Cambios' : 'Crear Sitio')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Confirm Delete Site Modal */}
+            {confirmDeleteSite && (
+                <div className={styles.modalOverlay} onClick={() => setConfirmDeleteSite(null)}>
+                    <div className={`${styles.modalContent} ${styles.confirmModal}`} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.confirmIcon}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32" style={{ color: 'var(--danger)' }}>
+                                <path d="M3 6h18" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                <line x1="10" y1="11" x2="10" y2="17" />
+                                <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                        </div>
+                        <div className={styles.confirmTitle}>
+                            ¿Eliminar sitio?
+                        </div>
+                        <div className={styles.confirmMessage}>
+                            ¿Estás seguro de que deseas eliminar el sitio <strong>{confirmDeleteSite.name}</strong>?
+                            Esta acción fallará si el sitio tiene turnos o posiciones asociados.
+                        </div>
+                        <div className={styles.confirmActions}>
+                            <button
+                                className={styles.modalCancelButton}
+                                onClick={() => setConfirmDeleteSite(null)}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                className={styles.confirmDangerButton}
+                                onClick={handleDeleteSite}
+                            >
+                                Eliminar
+                            </button>
                         </div>
                     </div>
                 </div>
