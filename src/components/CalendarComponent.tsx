@@ -26,6 +26,7 @@ interface User {
   id: number;
   firstName: string;
   lastName: string;
+  isBlocked?: boolean;
 }
 
 interface Shift {
@@ -1376,7 +1377,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 {/* Columna de usuario */}
                 <div className={styles.userCell}>
                   <div className={styles.userName}>
-                    <span>{user.firstName} {user.lastName}</span>
+                    <span style={{ color: user.isBlocked ? 'var(--danger, #dc2626)' : 'inherit' }}>
+                      {user.firstName} {user.lastName}
+                    </span>
                     {/* Confirmation Slot - Always rendered to maintain spacing/alignment if needed, 
                         but effectively only visible when confirmed */}
                     <div
