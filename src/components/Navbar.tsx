@@ -2,11 +2,13 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useState, useEffect, useRef } from "react";
 import styles from "./Navbar.module.css";
 
 export default function Navbar() {
     const { user, logout } = useAuth();
+    const { language } = useTheme();
     const router = useRouter();
     const pathname = usePathname();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -57,7 +59,7 @@ export default function Navbar() {
                     </svg>
                 )}
                 <span className={styles.logoText}>
-                    RosterLoop <span className={styles.logoVersion}>(v1.5.1)</span>
+                    RosterLoop <span className={styles.logoVersion}>(v1.5.2)</span>
                 </span>
             </div>
 
@@ -101,7 +103,7 @@ export default function Navbar() {
                                     <circle cx="12" cy="12" r="3" />
                                     <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
                                 </svg>
-                                Configuración
+                                {language === 'es' ? 'Configuración' : 'Settings'}
                             </button>
                             <button
                                 className={styles.dropdownItem}
@@ -115,7 +117,7 @@ export default function Navbar() {
                                     <polyline points="16,17 21,12 16,7" />
                                     <line x1="21" y1="12" x2="9" y2="12" />
                                 </svg>
-                                Cerrar Sesión
+                                {language === 'es' ? 'Cerrar Sesión' : 'Log Out'}
                             </button>
                         </div>
                     )}

@@ -391,14 +391,14 @@ export default function SettingsPage() {
     const formatDate = (dateStr: string | null) => {
         if (!dateStr) return '—';
         const d = new Date(dateStr);
-        return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return d.toLocaleDateString(language === 'es' ? 'es-AR' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
     };
 
     const formatDateTime = (dateStr: string | null) => {
-        if (!dateStr) return 'Nunca';
+        if (!dateStr) return language === 'es' ? 'Nunca' : 'Never';
         const d = new Date(dateStr);
-        return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-            + ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+        return d.toLocaleDateString(language === 'es' ? 'es-AR' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            + ' ' + d.toLocaleTimeString(language === 'es' ? 'es-AR' : 'en-US', { hour: '2-digit', minute: '2-digit' });
     };
 
     const handleSendMessage = async () => {
@@ -520,31 +520,31 @@ export default function SettingsPage() {
                             className={`${styles.tab} ${activeTab === 'general' ? styles.active : ''}`}
                             onClick={() => setActiveTab('general')}
                         >
-                            ⚙️ Configuración General
+                            ⚙️ {language === 'es' ? 'Configuración General' : 'General Settings'}
                         </button>
                         <button
                             className={`${styles.tab} ${activeTab === 'users' ? styles.active : ''}`}
                             onClick={() => setActiveTab('users')}
                         >
-                            👥 Administración de Usuarios
+                            👥 {language === 'es' ? 'Administración de Usuarios' : 'User Management'}
                         </button>
                         <button
                             className={`${styles.tab} ${activeTab === 'sites' ? styles.active : ''}`}
                             onClick={() => setActiveTab('sites')}
                         >
-                            🏢 Admin. de Sitios
+                            🏢 {language === 'es' ? 'Admin. de Sitios' : 'Site Management'}
                         </button>
                         <button
                             className={`${styles.tab} ${activeTab === 'logs' ? styles.active : ''}`}
                             onClick={() => setActiveTab('logs')}
                         >
-                            📜 Logs del Sistema
+                            📜 {language === 'es' ? 'Logs del Sistema' : 'System Logs'}
                         </button>
                         <button
                             className={`${styles.tab} ${activeTab === 'messaging' ? styles.active : ''}`}
                             onClick={() => setActiveTab('messaging')}
                         >
-                            🧪 Tests de Mensajería
+                            🧪 {language === 'es' ? 'Tests de Mensajería' : 'Messaging Tests'}
                         </button>
                     </div>
                 </div>
@@ -553,18 +553,18 @@ export default function SettingsPage() {
                     {/* Configuración General Tab */}
                     {activeTab === 'general' && (
                         <div className={styles.section}>
-                            <h2>⚙️ Configuración General</h2>
+                            <h2>⚙️ {language === 'es' ? 'Configuración General' : 'General Settings'}</h2>
                             <p className={styles.sectionDescription}>
-                                Personaliza la apariencia y preferencias de la aplicación
+                                {language === 'es' ? 'Personaliza la apariencia y preferencias de la aplicación' : 'Customize the appearance and preferences of the application'}
                             </p>
 
                             <div className={styles.settingsList}>
                                 {/* Modo Oscuro/Claro */}
                                 <div className={styles.settingItem}>
                                     <div className={styles.settingInfo}>
-                                        <span className={styles.settingLabel}>🌓 Modo de Apariencia</span>
+                                        <span className={styles.settingLabel}>🌓 {language === 'es' ? 'Modo de Apariencia' : 'Appearance Mode'}</span>
                                         <span className={styles.settingDescription}>
-                                            Elige entre modo claro u oscuro
+                                            {language === 'es' ? 'Elige entre modo claro u oscuro' : 'Choose between light or dark mode'}
                                         </span>
                                     </div>
                                     <div className={styles.settingControl}>
@@ -573,13 +573,13 @@ export default function SettingsPage() {
                                                 className={`${styles.toggleOption} ${theme === 'light' ? styles.toggleActive : ''}`}
                                                 onClick={() => setTheme('light')}
                                             >
-                                                ☀️ Claro
+                                                ☀️ {language === 'es' ? 'Claro' : 'Light'}
                                             </button>
                                             <button
                                                 className={`${styles.toggleOption} ${theme === 'dark' ? styles.toggleActive : ''}`}
                                                 onClick={() => setTheme('dark')}
                                             >
-                                                🌙 Oscuro
+                                                🌙 {language === 'es' ? 'Oscuro' : 'Dark'}
                                             </button>
                                         </div>
                                     </div>
@@ -588,9 +588,9 @@ export default function SettingsPage() {
                                 {/* Selector de Idioma */}
                                 <div className={styles.settingItem}>
                                     <div className={styles.settingInfo}>
-                                        <span className={styles.settingLabel}>🌐 Idioma</span>
+                                        <span className={styles.settingLabel}>🌐 {language === 'es' ? 'Idioma' : 'Language'}</span>
                                         <span className={styles.settingDescription}>
-                                            Selecciona el idioma de la aplicación
+                                            {language === 'es' ? 'Selecciona el idioma de la aplicación' : 'Select the application language'}
                                         </span>
                                     </div>
                                     <div className={styles.settingControl}>
@@ -614,9 +614,9 @@ export default function SettingsPage() {
                                 {/* Filtros de Visualización */}
                                 <div className={styles.settingItem}>
                                     <div className={styles.settingInfo}>
-                                        <span className={styles.settingLabel}>👁️ Filtros de Visualización</span>
+                                        <span className={styles.settingLabel}>👁️ {language === 'es' ? 'Filtros de Visualización' : 'Display Filters'}</span>
                                         <span className={styles.settingDescription}>
-                                            Controla qué usuarios se muestran en el calendario
+                                            {language === 'es' ? 'Controla qué usuarios se muestran en el calendario' : 'Control which users are shown in the calendar'}
                                         </span>
                                     </div>
                                     <div className={styles.settingControl}>
@@ -625,13 +625,13 @@ export default function SettingsPage() {
                                                 className={`${styles.toggleOption} ${showOnlyActiveUsers ? styles.toggleActive : ''}`}
                                                 onClick={() => setShowOnlyActiveUsers(true)}
                                             >
-                                                👤 Solo usuarios no bloqueados
+                                                👤 {language === 'es' ? 'Solo usuarios no bloqueados' : 'Only unblocked users'}
                                             </button>
                                             <button
                                                 className={`${styles.toggleOption} ${!showOnlyActiveUsers ? styles.toggleActive : ''}`}
                                                 onClick={() => setShowOnlyActiveUsers(false)}
                                             >
-                                                👥 Todos los usuarios
+                                                👥 {language === 'es' ? 'Todos los usuarios' : 'All users'}
                                             </button>
                                         </div>
                                     </div>
@@ -643,9 +643,9 @@ export default function SettingsPage() {
                     {/* Administración de Usuarios Tab */}
                     {activeTab === 'users' && (
                         <div className={styles.section}>
-                            <h2>👥 Administración de Usuarios</h2>
+                            <h2>👥 {language === 'es' ? 'Administración de Usuarios' : 'User Management'}</h2>
                             <p className={styles.sectionDescription}>
-                                Gestión de usuarios del sistema
+                                {language === 'es' ? 'Gestión de usuarios del sistema' : 'System user management'}
                             </p>
 
                             {feedback && (
@@ -656,7 +656,7 @@ export default function SettingsPage() {
 
                             {/* User Counter */}
                             <div className={styles.userCounterCard}>
-                                <span className={styles.userCounterLabel}>Usuarios registrados</span>
+                                <span className={styles.userCounterLabel}>{language === 'es' ? 'Usuarios registrados' : 'Registered users'}</span>
                                 <div className={styles.userCounterBadge}>
                                     {usersLoading ? '…' : users.length}
                                 </div>
@@ -666,7 +666,7 @@ export default function SettingsPage() {
                             <div className={styles.toolbar}>
                                 <input
                                     type="text"
-                                    placeholder="🔍 Buscar por nombre, email o teléfono..."
+                                    placeholder={language === 'es' ? "🔍 Buscar por nombre, email o teléfono..." : "🔍 Search by name, email or phone..."}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className={styles.searchInput}
@@ -675,14 +675,14 @@ export default function SettingsPage() {
                                     className={styles.createButton}
                                     onClick={handleCreateUser}
                                 >
-                                    ➕ Crear Usuario
+                                    ➕ {language === 'es' ? 'Crear Usuario' : 'Create User'}
                                 </button>
                             </div>
 
                             {/* Search results count */}
                             {!usersLoading && searchQuery.trim() && (
                                 <div className={styles.userCount}>
-                                    {filteredUsers.length} resultado{filteredUsers.length !== 1 ? 's' : ''} para &quot;{searchQuery}&quot;
+                                    {filteredUsers.length} {language === 'es' ? 'resultado' : 'result'}{filteredUsers.length !== 1 ? 's' : ''} {language === 'es' ? 'para' : 'for'} &quot;{searchQuery}&quot;
                                 </div>
                             )}
 
@@ -695,12 +695,12 @@ export default function SettingsPage() {
                                 <div className={styles.emptyState}>
                                     <div className={styles.emptyIcon}>👥</div>
                                     <div className={styles.emptyTitle}>
-                                        {searchQuery ? 'Sin resultados' : 'No hay usuarios'}
+                                        {searchQuery ? (language === 'es' ? 'Sin resultados' : 'No results') : (language === 'es' ? 'No hay usuarios' : 'No users')}
                                     </div>
                                     <div className={styles.emptyDescription}>
                                         {searchQuery
-                                            ? `No se encontraron usuarios para "${searchQuery}"`
-                                            : 'Crea el primer usuario con el botón de arriba'
+                                            ? (language === 'es' ? `No se encontraron usuarios para "${searchQuery}"` : `No users found for "${searchQuery}"`)
+                                            : (language === 'es' ? 'Crea el primer usuario con el botón de arriba' : 'Create the first user with the button above')
                                         }
                                     </div>
                                 </div>
@@ -709,13 +709,13 @@ export default function SettingsPage() {
                                     <table className={styles.usersTable}>
                                         <thead>
                                             <tr>
-                                                <th>Nombre</th>
+                                                <th>{language === 'es' ? 'Nombre' : 'Name'}</th>
                                                 <th>Email</th>
-                                                <th>Teléfono</th>
-                                                <th>Rol</th>
-                                                <th>Estado</th>
-                                                <th>Último Login</th>
-                                                <th>Acciones</th>
+                                                <th>{language === 'es' ? 'Teléfono' : 'Phone'}</th>
+                                                <th>{language === 'es' ? 'Rol' : 'Role'}</th>
+                                                <th>{language === 'es' ? 'Estado' : 'Status'}</th>
+                                                <th>{language === 'es' ? 'Último Login' : 'Last Login'}</th>
+                                                <th>{language === 'es' ? 'Acciones' : 'Actions'}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -735,12 +735,12 @@ export default function SettingsPage() {
                                                             background: u.roleId === 0 ? '#F3E8FF' : u.roleId === 1 ? '#FEF3C7' : '#DBEAFE',
                                                             color: u.roleId === 0 ? '#6B21A8' : u.roleId === 1 ? '#92400E' : '#1E40AF'
                                                         }}>
-                                                            {u.roleName || `Rol ${u.roleId}`}
+                                                            {u.roleName || (language === 'es' ? `Rol ${u.roleId}` : `Role ${u.roleId}`)}
                                                         </span>
                                                     </td>
                                                     <td>
                                                         <span className={`${styles.badge} ${u.isBlocked ? styles.badgeBlocked : styles.badgeActive}`}>
-                                                            {u.isBlocked ? '🚫 Bloqueado' : '✅ Activo'}
+                                                            {u.isBlocked ? (language === 'es' ? '🚫 Bloqueado' : '🚫 Blocked') : (language === 'es' ? '✅ Activo' : '✅ Active')}
                                                         </span>
                                                     </td>
                                                     <td>
@@ -754,13 +754,13 @@ export default function SettingsPage() {
                                                                 <button
                                                                     className={styles.editButton}
                                                                     onClick={() => handleEditUser(u)}
-                                                                    title="Editar usuario"
+                                                                    title={language === 'es' ? 'Editar usuario' : 'Edit user'}
                                                                 >
-                                                                    ✏️ Editar
+                                                                    ✏️ {language === 'es' ? 'Editar' : 'Edit'}
                                                                 </button>
                                                             ) : (
-                                                                <button className={styles.editButton} disabled style={{ opacity: 0.3, cursor: 'not-allowed' }} title="Sin permisos">
-                                                                    ✏️ Editar
+                                                                <button className={styles.editButton} disabled style={{ opacity: 0.3, cursor: 'not-allowed' }} title={language === 'es' ? 'Sin permisos' : 'No permissions'}>
+                                                                    ✏️ {language === 'es' ? 'Editar' : 'Edit'}
                                                                 </button>
                                                             )}
                                                             {canBlockUser(u) && (
@@ -768,17 +768,17 @@ export default function SettingsPage() {
                                                                     <button
                                                                         className={styles.unblockButton}
                                                                         onClick={() => setConfirmAction({ user: u, action: 'unblock' })}
-                                                                        title="Desbloquear usuario"
+                                                                        title={language === 'es' ? 'Desbloquear usuario' : 'Unblock user'}
                                                                     >
-                                                                        🔓 Activar
+                                                                        🔓 {language === 'es' ? 'Activar' : 'Activate'}
                                                                     </button>
                                                                 ) : (
                                                                     <button
                                                                         className={styles.blockButton}
                                                                         onClick={() => setConfirmAction({ user: u, action: 'block' })}
-                                                                        title="Bloquear usuario"
+                                                                        title={language === 'es' ? 'Bloquear usuario' : 'Block user'}
                                                                     >
-                                                                        🔒 Bloquear
+                                                                        🔒 {language === 'es' ? 'Bloquear' : 'Block'}
                                                                     </button>
                                                                 )
                                                             )}
@@ -796,18 +796,18 @@ export default function SettingsPage() {
                     {/* Logs del Sistema Tab */}
                     {activeTab === 'logs' && (
                         <div className={styles.section}>
-                            <h2>📜 Logs del Sistema</h2>
+                            <h2>📜 {language === 'es' ? 'Logs del Sistema' : 'System Logs'}</h2>
                             <p className={styles.sectionDescription}>
-                                Seguimiento de eventos y auditoría de la plataforma
+                                {language === 'es' ? 'Seguimiento de eventos y auditoría de la plataforma' : 'Event tracking and platform auditing'}
                             </p>
                             <div className={styles.placeholder}>
-                                <p>Esta sección mostrará logs detallados de la plataforma:</p>
+                                <p>{language === 'es' ? 'Esta sección mostrará logs detallados de la plataforma:' : 'This section will show detailed platform logs:'}</p>
                                 <ul>
-                                    <li>Historial de inicios de sesión</li>
-                                    <li>Cambios en la programación (turnos publicados/editados)</li>
-                                    <li>Altas y bajas de usuarios</li>
-                                    <li>Errores críticos del servidor</li>
-                                    <li>Notificaciones push enviadas</li>
+                                    <li>{language === 'es' ? 'Historial de inicios de sesión' : 'Login history'}</li>
+                                    <li>{language === 'es' ? 'Cambios en la programación (turnos publicados/editados)' : 'Schedule changes (published/edited shifts)'}</li>
+                                    <li>{language === 'es' ? 'Altas y bajas de usuarios' : 'User creations and deletions'}</li>
+                                    <li>{language === 'es' ? 'Errores críticos del servidor' : 'Critical server errors'}</li>
+                                    <li>{language === 'es' ? 'Notificaciones push enviadas' : 'Push notifications sent'}</li>
                                 </ul>
                             </div>
                         </div>
@@ -816,9 +816,9 @@ export default function SettingsPage() {
                     {/* Tests de Mensajería Tab */}
                     {activeTab === 'messaging' && (
                         <div className={styles.section}>
-                            <h2>🧪 Tests de Mensajería</h2>
+                            <h2>🧪 {language === 'es' ? 'Tests de Mensajería' : 'Messaging Tests'}</h2>
                             <p className={styles.sectionDescription}>
-                                Herramientas para probar el sistema de mensajes y notificaciones push
+                                {language === 'es' ? 'Herramientas para probar el sistema de mensajes y notificaciones push' : 'Tools to test the messaging system and push notifications'}
                             </p>
 
                             {greeting && (
@@ -829,28 +829,28 @@ export default function SettingsPage() {
 
                             {/* Botones de saludo rápido */}
                             <div className={styles.quickTests}>
-                                <h3>Pruebas Rápidas</h3>
+                                <h3>{language === 'es' ? 'Pruebas Rápidas' : 'Quick Tests'}</h3>
                                 <div className={styles.buttonGrid}>
                                     <button
                                         className={styles.testButton}
                                         onClick={() => handleSaludar(0)}
                                     >
-                                        👋 Saludar a Francisco
+                                        👋 {language === 'es' ? 'Saludar a Francisco' : 'Greet Francisco'}
                                     </button>
                                     <button
                                         className={styles.testButton}
                                         onClick={() => handleSaludar(1)}
                                     >
-                                        👋 Saludar a Usuario Test
+                                        👋 {language === 'es' ? 'Saludar a Usuario Test' : 'Greet Test User'}
                                     </button>
                                 </div>
                             </div>
 
                             {/* Formulario personalizado */}
                             <div className={styles.customMessage}>
-                                <h3>Mensaje Personalizado</h3>
+                                <h3>{language === 'es' ? 'Mensaje Personalizado' : 'Custom Message'}</h3>
                                 <div className={styles.formGroup}>
-                                    <label>Email destinatario:</label>
+                                    <label>{language === 'es' ? 'Email destinatario:' : 'Recipient email:'}</label>
                                     <input
                                         type="email"
                                         value={customEmail}
@@ -861,22 +861,22 @@ export default function SettingsPage() {
                                 </div>
 
                                 <div className={styles.formGroup}>
-                                    <label>Título del mensaje:</label>
+                                    <label>{language === 'es' ? 'Título del mensaje:' : 'Message title:'}</label>
                                     <input
                                         type="text"
                                         value={customTitle}
                                         onChange={(e) => setCustomTitle(e.target.value)}
-                                        placeholder="Título del mensaje"
+                                        placeholder={language === 'es' ? "Título del mensaje" : "Message title"}
                                         className={styles.input}
                                     />
                                 </div>
 
                                 <div className={styles.formGroup}>
-                                    <label>Contenido:</label>
+                                    <label>{language === 'es' ? 'Contenido:' : 'Content:'}</label>
                                     <textarea
                                         value={customBody}
                                         onChange={(e) => setCustomBody(e.target.value)}
-                                        placeholder="Escribe tu mensaje aquí..."
+                                        placeholder={language === 'es' ? "Escribe tu mensaje aquí..." : "Write your message here..."}
                                         className={styles.textarea}
                                         rows={4}
                                     />
@@ -887,13 +887,13 @@ export default function SettingsPage() {
                                         className={styles.sendButton}
                                         onClick={handleSendMessage}
                                     >
-                                        📤 Enviar Mensaje
+                                        📤 {language === 'es' ? 'Enviar Mensaje' : 'Send Message'}
                                     </button>
                                     <button
                                         className={styles.testButton}
                                         onClick={() => handleSaludar(-1)}
                                     >
-                                        👋 Enviar Saludo
+                                        👋 {language === 'es' ? 'Enviar Saludo' : 'Send Greeting'}
                                     </button>
                                 </div>
                             </div>
@@ -903,9 +903,9 @@ export default function SettingsPage() {
                     {/* Administración de Sitios Tab */}
                     {activeTab === 'sites' && (
                         <div className={styles.section}>
-                            <h2>🏢 Administración de Sitios</h2>
+                            <h2>🏢 {language === 'es' ? 'Administración de Sitios' : 'Site Management'}</h2>
                             <p className={styles.sectionDescription}>
-                                Gestión de los sitios / locations del sistema
+                                {language === 'es' ? 'Gestión de los sitios / locations del sistema' : 'Management of system sites / locations'}
                             </p>
 
                             {feedback && (
@@ -921,7 +921,7 @@ export default function SettingsPage() {
                                     className={styles.createButton}
                                     onClick={handleCreateSite}
                                 >
-                                    ➕ Crear Sitio
+                                    ➕ {language === 'es' ? 'Crear Sitio' : 'Create Site'}
                                 </button>
                             </div>
 
@@ -934,10 +934,10 @@ export default function SettingsPage() {
                                 <div className={styles.emptyState}>
                                     <div className={styles.emptyIcon}>🏢</div>
                                     <div className={styles.emptyTitle}>
-                                        No hay sitios
+                                        {language === 'es' ? 'No hay sitios' : 'No sites'}
                                     </div>
                                     <div className={styles.emptyDescription}>
-                                        Crea el primer sitio con el botón de arriba
+                                        {language === 'es' ? 'Crea el primer sitio con el botón de arriba' : 'Create the first site using the button above'}
                                     </div>
                                 </div>
                             ) : (
@@ -946,8 +946,8 @@ export default function SettingsPage() {
                                         <thead>
                                             <tr>
                                                 <th>ID</th>
-                                                <th>Nombre</th>
-                                                <th>Acciones</th>
+                                                <th>{language === 'es' ? 'Nombre' : 'Name'}</th>
+                                                <th>{language === 'es' ? 'Acciones' : 'Actions'}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -966,14 +966,14 @@ export default function SettingsPage() {
                                                             <button
                                                                 className={styles.editButton}
                                                                 onClick={() => handleEditSite(s)}
-                                                                title="Editar sitio"
+                                                                title={language === 'es' ? 'Editar sitio' : 'Edit site'}
                                                             >
-                                                                ✏️ Editar
+                                                                ✏️ {language === 'es' ? 'Editar' : 'Edit'}
                                                             </button>
                                                             <button
                                                                 className={styles.blockButton}
                                                                 onClick={() => setConfirmDeleteSite(s)}
-                                                                title="Eliminar sitio"
+                                                                title={language === 'es' ? 'Eliminar sitio' : 'Delete site'}
                                                             >
                                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" style={{ marginRight: '4px', verticalAlign: 'text-bottom' }}>
                                                                     <path d="M3 6h18" />
@@ -981,7 +981,7 @@ export default function SettingsPage() {
                                                                     <line x1="10" y1="11" x2="10" y2="17" />
                                                                     <line x1="14" y1="11" x2="14" y2="17" />
                                                                 </svg>
-                                                                Eliminar
+                                                                {language === 'es' ? 'Eliminar' : 'Delete'}
                                                             </button>
                                                         </div>
                                                     </td>
@@ -1001,26 +1001,26 @@ export default function SettingsPage() {
                 <div className={styles.modalOverlay} onClick={() => setShowUserModal(false)}>
                     <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <div className={styles.modalTitle}>
-                            {editingUser ? '✏️ Editar Usuario' : '➕ Crear Usuario'}
+                            {editingUser ? (language === 'es' ? '✏️ Editar Usuario' : '✏️ Edit User') : (language === 'es' ? '➕ Crear Usuario' : '➕ Create User')}
                         </div>
                         <div className={styles.modalForm}>
                             <div className={styles.modalFormRow}>
                                 <div className={styles.modalField}>
-                                    <label>Nombre *</label>
+                                    <label>{language === 'es' ? 'Nombre *' : 'First Name *'}</label>
                                     <input
                                         type="text"
                                         value={formData.firstName}
                                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                        placeholder="Nombre"
+                                        placeholder={language === 'es' ? "Nombre" : "First Name"}
                                     />
                                 </div>
                                 <div className={styles.modalField}>
-                                    <label>Apellido *</label>
+                                    <label>{language === 'es' ? 'Apellido *' : 'Last Name *'}</label>
                                     <input
                                         type="text"
                                         value={formData.lastName}
                                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                        placeholder="Apellido"
+                                        placeholder={language === 'es' ? "Apellido" : "Last Name"}
                                     />
                                 </div>
                             </div>
@@ -1037,7 +1037,7 @@ export default function SettingsPage() {
 
                             <div className={styles.modalFormRow}>
                                 <div className={styles.modalField}>
-                                    <label>Teléfono</label>
+                                    <label>{language === 'es' ? 'Teléfono' : 'Phone'}</label>
                                     <input
                                         type="tel"
                                         value={formData.phone}
@@ -1046,7 +1046,7 @@ export default function SettingsPage() {
                                     />
                                 </div>
                                 <div className={styles.modalField}>
-                                    <label>Rol</label>
+                                    <label>{language === 'es' ? 'Rol' : 'Role'}</label>
                                     {/* Admins never change roles — only owner can promote/demote */}
                                     {user?.roleId === 0 && (
                                         editingUser && editingUser.id === user?.id ? (
@@ -1060,8 +1060,8 @@ export default function SettingsPage() {
                                                 color: 'var(--foreground-secondary)',
                                                 cursor: 'not-allowed'
                                             }}>
-                                                {editingUser.roleName ?? `Rol ${editingUser.roleId}`}
-                                                <span style={{ fontSize: '12px', marginLeft: '8px', opacity: 0.7 }}>(no editable)</span>
+                                                {editingUser.roleName ?? (language === 'es' ? `Rol ${editingUser.roleId}` : `Role ${editingUser.roleId}`)}
+                                                <span style={{ fontSize: '12px', marginLeft: '8px', opacity: 0.7 }}>({language === 'es' ? 'no editable' : 'not editable'})</span>
                                             </div>
                                         ) : (
                                             <select
@@ -1084,20 +1084,20 @@ export default function SettingsPage() {
                                             color: 'var(--foreground-secondary)',
                                             cursor: 'not-allowed'
                                         }}>
-                                            {editingUser?.roleName ?? roles.find(r => r.id === formData.roleId)?.name ?? `Rol ${formData.roleId}`}
-                                            <span style={{ fontSize: '12px', marginLeft: '8px', opacity: 0.7 }}>(no editable)</span>
+                                            {editingUser?.roleName ?? roles.find(r => r.id === formData.roleId)?.name ?? (language === 'es' ? `Rol ${formData.roleId}` : `Role ${formData.roleId}`)}
+                                            <span style={{ fontSize: '12px', marginLeft: '8px', opacity: 0.7 }}>({language === 'es' ? 'no editable' : 'not editable'})</span>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             <div className={styles.modalField}>
-                                <label>{editingUser ? 'Contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}</label>
+                                <label>{editingUser ? (language === 'es' ? 'Contraseña (dejar vacío para no cambiar)' : 'Password (leave blank to keep current)') : (language === 'es' ? 'Contraseña *' : 'Password *')}</label>
                                 <input
                                     type="password"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    placeholder={editingUser ? '••••••••' : 'Ingresa una contraseña'}
+                                    placeholder={editingUser ? '••••••••' : (language === 'es' ? 'Ingresa una contraseña' : 'Enter a password')}
                                 />
                             </div>
 
@@ -1110,14 +1110,14 @@ export default function SettingsPage() {
                                     className={styles.modalCancelButton}
                                     onClick={() => setShowUserModal(false)}
                                 >
-                                    Cancelar
+                                    {language === 'es' ? 'Cancelar' : 'Cancel'}
                                 </button>
                                 <button
                                     className={styles.modalSaveButton}
                                     onClick={handleSaveUser}
                                     disabled={formSaving}
                                 >
-                                    {formSaving ? 'Guardando...' : (editingUser ? 'Guardar Cambios' : 'Crear Usuario')}
+                                    {formSaving ? (language === 'es' ? 'Guardando...' : 'Saving...') : (editingUser ? (language === 'es' ? 'Guardar Cambios' : 'Save Changes') : (language === 'es' ? 'Crear Usuario' : 'Create User'))}
                                 </button>
                             </div>
                         </div>
@@ -1133,12 +1133,12 @@ export default function SettingsPage() {
                             {confirmAction.action === 'block' ? '🔒' : '🔓'}
                         </div>
                         <div className={styles.confirmTitle}>
-                            {confirmAction.action === 'block' ? '¿Bloquear usuario?' : '¿Desbloquear usuario?'}
+                            {confirmAction.action === 'block' ? (language === 'es' ? '¿Bloquear usuario?' : 'Block user?') : (language === 'es' ? '¿Desbloquear usuario?' : 'Unblock user?')}
                         </div>
                         <div className={styles.confirmMessage}>
                             {confirmAction.action === 'block'
-                                ? `${confirmAction.user.firstName} ${confirmAction.user.lastName} no podrá iniciar sesión mientras esté bloqueado.`
-                                : `${confirmAction.user.firstName} ${confirmAction.user.lastName} volverá a poder iniciar sesión.`
+                                ? (language === 'es' ? `${confirmAction.user.firstName} ${confirmAction.user.lastName} no podrá iniciar sesión mientras esté bloqueado.` : `${confirmAction.user.firstName} ${confirmAction.user.lastName} will not be able to log in while blocked.`)
+                                : (language === 'es' ? `${confirmAction.user.firstName} ${confirmAction.user.lastName} volverá a poder iniciar sesión.` : `${confirmAction.user.firstName} ${confirmAction.user.lastName} will be able to log in again.`)
                             }
                         </div>
                         <div className={styles.confirmActions}>
@@ -1146,21 +1146,21 @@ export default function SettingsPage() {
                                 className={styles.modalCancelButton}
                                 onClick={() => setConfirmAction(null)}
                             >
-                                Cancelar
+                                {language === 'es' ? 'Cancelar' : 'Cancel'}
                             </button>
                             {confirmAction.action === 'block' ? (
                                 <button
                                     className={styles.confirmDangerButton}
                                     onClick={handleToggleBlock}
                                 >
-                                    Bloquear
+                                    {language === 'es' ? 'Bloquear' : 'Block'}
                                 </button>
                             ) : (
                                 <button
                                     className={styles.confirmSuccessButton}
                                     onClick={handleToggleBlock}
                                 >
-                                    Desbloquear
+                                    {language === 'es' ? 'Desbloquear' : 'Unblock'}
                                 </button>
                             )}
                         </div>
@@ -1173,16 +1173,16 @@ export default function SettingsPage() {
                 <div className={styles.modalOverlay} onClick={() => setShowSiteModal(false)}>
                     <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <div className={styles.modalTitle}>
-                            {editingSite ? '✏️ Editar Sitio' : '➕ Crear Sitio'}
+                            {editingSite ? (language === 'es' ? '✏️ Editar Sitio' : '✏️ Edit Site') : (language === 'es' ? '➕ Crear Sitio' : '➕ Create Site')}
                         </div>
                         <div className={styles.modalForm}>
                             <div className={styles.modalField}>
-                                <label>Nombre del Sitio *</label>
+                                <label>{language === 'es' ? 'Nombre del Sitio *' : 'Site Name *'}</label>
                                 <input
                                     type="text"
                                     value={siteName}
                                     onChange={(e) => setSiteName(e.target.value)}
-                                    placeholder="Ej: Sede Central"
+                                    placeholder={language === 'es' ? "Ej: Sede Central" : "Ex: Main Office"}
                                 />
                             </div>
 
@@ -1195,14 +1195,14 @@ export default function SettingsPage() {
                                     className={styles.modalCancelButton}
                                     onClick={() => setShowSiteModal(false)}
                                 >
-                                    Cancelar
+                                    {language === 'es' ? 'Cancelar' : 'Cancel'}
                                 </button>
                                 <button
                                     className={styles.modalSaveButton}
                                     onClick={handleSaveSite}
                                     disabled={siteSaving}
                                 >
-                                    {siteSaving ? 'Guardando...' : (editingSite ? 'Guardar Cambios' : 'Crear Sitio')}
+                                    {siteSaving ? (language === 'es' ? 'Guardando...' : 'Saving...') : (editingSite ? (language === 'es' ? 'Guardar Cambios' : 'Save Changes') : (language === 'es' ? 'Crear Sitio' : 'Create Site'))}
                                 </button>
                             </div>
                         </div>
@@ -1223,24 +1223,25 @@ export default function SettingsPage() {
                             </svg>
                         </div>
                         <div className={styles.confirmTitle}>
-                            ¿Eliminar sitio?
+                            {language === 'es' ? '¿Eliminar sitio?' : 'Delete site?'}
                         </div>
                         <div className={styles.confirmMessage}>
-                            ¿Estás seguro de que deseas eliminar el sitio <strong>{confirmDeleteSite.name}</strong>?
-                            Esta acción fallará si el sitio tiene turnos o posiciones asociados.
+                            {language === 'es' ? '¿Estás seguro de que deseas eliminar el sitio' : 'Are you sure you want to delete the site'} <strong>{confirmDeleteSite.name}</strong>?
+                            <br />
+                            {language === 'es' ? 'Esta acción fallará si el sitio tiene turnos o posiciones asociados.' : 'This action will fail if the site has associated shifts or positions.'}
                         </div>
                         <div className={styles.confirmActions}>
                             <button
                                 className={styles.modalCancelButton}
                                 onClick={() => setConfirmDeleteSite(null)}
                             >
-                                Cancelar
+                                {language === 'es' ? 'Cancelar' : 'Cancel'}
                             </button>
                             <button
                                 className={styles.confirmDangerButton}
                                 onClick={handleDeleteSite}
                             >
-                                Eliminar
+                                {language === 'es' ? 'Eliminar' : 'Delete'}
                             </button>
                         </div>
                     </div>
