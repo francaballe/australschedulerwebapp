@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useDraggable } from "@/hooks/useDraggable";
+import { useTheme } from "@/context/ThemeContext";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import CalendarComponent from "@/components/CalendarComponent";
@@ -98,6 +99,8 @@ export default function CalendarPage() {
       window.removeEventListener('siteChanged', handleSiteChanged);
     };
   }, []);
+
+  const { language } = useTheme();
 
   if (isLoading) {
     return (
@@ -442,22 +445,26 @@ export default function CalendarPage() {
         <div className={modalStyles.modalOverlay} onClick={() => setPublishModalOpen(false)}>
           <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={modalStyles.modalHeader}>
-              <h3>Publicar Cronograma</h3>
+              <h3>{language === 'es' ? 'Publicar Cronograma' : 'Publish Schedule'}</h3>
               <button className={modalStyles.modalCloseButton} onClick={() => setPublishModalOpen(false)}>×</button>
             </div>
             <div className={modalStyles.modalBody}>
               <p>
-                ¿Está seguro de que desea publicar todos los turnos del {view === 'day' ? 'DÍA' : 'periodo visible'}?
+                {language === 'es'
+                  ? `¿Está seguro de que desea publicar todos los turnos del ${view === 'day' ? 'DÍA' : 'periodo visible'}?`
+                  : `Are you sure you want to publish all shifts for the ${view === 'day' ? 'DAY' : 'visible period'}?`}
               </p>
               {conflictCount > 0 && (
                 <p style={{ color: '#f59e0b', fontSize: '0.9em', marginTop: '12px' }}>
-                  ⚠️ Hay {conflictCount} turno{conflictCount > 1 ? 's' : ''} con conflicto (usuario no disponible con turno asignado).
+                  {language === 'es'
+                    ? `⚠️ Hay ${conflictCount} turno${conflictCount > 1 ? 's' : ''} con conflicto (usuario no disponible con turno asignado).`
+                    : `⚠️ There ${conflictCount > 1 ? 'are' : 'is'} ${conflictCount} shift${conflictCount > 1 ? 's' : ''} with a conflict (unavailable user with assigned shift).`}
                 </p>
               )}
             </div>
             <div className={modalStyles.modalFooter}>
-              <button className={modalStyles.modalCancelButton} onClick={() => setPublishModalOpen(false)} disabled={publishLoading}>Cancelar</button>
-              <button className={modalStyles.primaryBtn} onClick={confirmPublish} disabled={publishLoading}>{publishLoading ? 'Publicando...' : 'Publicar'}</button>
+              <button className={modalStyles.modalCancelButton} onClick={() => setPublishModalOpen(false)} disabled={publishLoading}>{language === 'es' ? 'Cancelar' : 'Cancel'}</button>
+              <button className={modalStyles.primaryBtn} onClick={confirmPublish} disabled={publishLoading}>{publishLoading ? (language === 'es' ? 'Publicando...' : 'Publishing...') : (language === 'es' ? 'Publicar' : 'Publish')}</button>
             </div>
           </div>
         </div>

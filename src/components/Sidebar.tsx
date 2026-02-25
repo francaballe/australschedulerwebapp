@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './Sidebar.module.css';
+import { useTheme } from '@/context/ThemeContext';
 
 interface Position {
     id: string | number;
@@ -36,6 +37,19 @@ const Sidebar: React.FC<SidebarProps> = ({
     // Site selector state
     const [sites, setSites] = useState<{ id: number; name: string }[]>([]);
     const [selectedSite, setSelectedSite] = useState<number | null>(null);
+
+    const { language } = useTheme();
+
+    const t = (key: string) => {
+        if (language === 'es') {
+            if (key === 'No Position') return 'Sin Asignar';
+            if (key === 'Unavailable') return 'No Disponible';
+        } else {
+            if (key === 'No Position') return 'No Position';
+            if (key === 'Unavailable') return 'Unavailable';
+        }
+        return key;
+    };
 
     const [positions, setPositions] = useState<Position[]>([]);
     const [loading, setLoading] = useState(true);
@@ -366,10 +380,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     className={styles.primaryBtn}
                                     onClick={onPublishAll}
                                     disabled={unpublishedCount === 0}
-                                    title={unpublishedCount === 0 ? "Todo publicado" : "Publicar cronograma"}
+                                    title={unpublishedCount === 0 ? (language === 'es' ? "Todo publicado" : "All published") : (language === 'es' ? "Publicar cronograma" : "Publish schedule")}
                                     style={unpublishedCount === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                                 >
-                                    PUBLICAR CRONOGRAMA
+                                    {language === 'es' ? 'PUBLICAR CRONOGRAMA' : 'PUBLISH SCHEDULE'}
                                 </button>
 
                             </div>
@@ -429,7 +443,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                                     onChange={() => handleTogglePosition(pos.id)}
                                                 />
                                                 <span className={styles.checkbox}></span>
-                                                <span className={styles.positionName}>{pos.name}</span>
+                                                <span className={styles.positionName}>{t(pos.name)}</span>
                                             </label>
                                             <div className={styles.positionActions}>
                                                 {pos.id !== 0 && pos.id !== 1 && (

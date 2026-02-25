@@ -60,7 +60,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   onStatsUpdate,
   managerName
 }) => {
-  const { showOnlyActiveUsers } = useTheme();
+  const { showOnlyActiveUsers, language } = useTheme();
+
+  const t = (key: string | undefined | null) => {
+    if (!key) return '';
+    if (language === 'es') {
+      if (key === 'No Position') return 'Sin Asignar';
+      if (key === 'Unavailable') return 'No Disponible';
+    } else {
+      if (key === 'No Position') return 'No Position';
+      if (key === 'Unavailable') return 'Unavailable';
+    }
+    return key;
+  };
+
   // Local state removed for currentDate and view (lifted)
 
   const [users, setUsers] = useState<User[]>([]);
@@ -1232,19 +1245,19 @@ const CalendarComponent: React.FC<CalendarProps> = ({
               className={`${styles.toggleButton} ${view === 'day' ? styles.active : ''}`}
               onClick={() => setView('day')}
             >
-              Día
+              {language === 'es' ? 'Día' : 'Day'}
             </button>
             <button
               className={`${styles.toggleButton} ${view === 'week' ? styles.active : ''}`}
               onClick={() => setView('week')}
             >
-              Semana
+              {language === 'es' ? 'Semana' : 'Week'}
             </button>
             <button
               className={`${styles.toggleButton} ${view === 'twoWeeks' ? styles.active : ''}`}
               onClick={() => setView('twoWeeks')}
             >
-              2 Semanas
+              {language === 'es' ? '2 Semanas' : '2 Weeks'}
             </button>
           </div>
           <div className={styles.navigationControls}>
@@ -1280,7 +1293,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
               </svg>
             </button>
             <button onClick={goToToday} className={styles.todaySmallBtn}>
-              Hoy
+              {language === 'es' ? 'Hoy' : 'Today'}
             </button>
           </div>
         </div>
@@ -1293,7 +1306,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
             </svg>
           </button>
           {view === 'week' && (
-            <button className={styles.actionButton} title="Copiar semana anterior" onClick={handleCopyWeekClick}>
+            <button className={styles.actionButton} title={language === 'es' ? "Copiar semana anterior" : "Copy previous week"} onClick={handleCopyWeekClick}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -1301,7 +1314,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
             </button>
           )}
           {view === 'week' && (
-            <button className={`${styles.actionButton} ${styles.deleteAction}`} title="Borrar semana completa" onClick={handleDeleteWeekClick}>
+            <button className={`${styles.actionButton} ${styles.deleteAction}`} title={language === 'es' ? "Borrar semana completa" : "Clear entire week"} onClick={handleDeleteWeekClick}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 6h18" />
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -1339,20 +1352,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
         {/* Contenido de usuarios */}
         {loading ? (
-          <div className={styles.loadingContainer}>Cargando usuarios...</div>
+          <div className={styles.loadingContainer}>{language === 'es' ? 'Cargando usuarios...' : 'Loading users...'}</div>
         ) : shiftsLoading ? (
           <div className={styles.loadingContainer}>
             <div className={styles.loadingSpinner}></div>
             <div>
-              {view === 'day' ? 'Cargando día...' :
-                view === 'twoWeeks' ? 'Cargando 2 semanas...' :
-                  'Cargando semana...'}
+              {view === 'day' ? (language === 'es' ? 'Cargando día...' : 'Loading day...') :
+                view === 'twoWeeks' ? (language === 'es' ? 'Cargando 2 semanas...' : 'Loading 2 weeks...') :
+                  (language === 'es' ? 'Cargando semana...' : 'Loading week...')}
             </div>
           </div>
         ) : error ? (
           <div className={styles.errorContainer}>{error}</div>
         ) : users.length === 0 ? (
-          <div className={styles.emptyContainer}>No se encontraron usuarios</div>
+          <div className={styles.emptyContainer}>{language === 'es' ? 'No se encontraron usuarios' : 'No users found'}</div>
         ) : (
           // Show all users
           // filter users by selected site if available -> REMOVED per requirement
@@ -1419,11 +1432,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                               ? 'repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 10px, #e5e7eb 10px, #e5e7eb 20px)' // Striped gray for other sites
                               : isFilteredOut
                                 ? '#f3f4f6' // Light gray for filtered/ghost items
-                                : (shift.positionColor ?
+                                : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ?
                                   `${shift.positionColor}${!shift.published ? '30' : '85'}` :
                                   (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)')),
-                            borderLeftColor: isOtherSite ? '#9ca3af' : (shift.positionColor || '#3b82f6'),
-                            color: isOtherSite ? '#6b7280' : (isFilteredOut ? 'var(--foreground-secondary, #94a3b8)' : (shift.positionColor || '#fbbf24')),
+                            borderLeftColor: isOtherSite ? '#9ca3af' : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ? shift.positionColor : '#3b82f6'),
+                            color: isOtherSite ? '#6b7280' : (isFilteredOut ? 'var(--foreground-secondary, #94a3b8)' : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ? shift.positionColor : '#fbbf24')),
                             position: 'relative',
                             opacity: isOtherSite ? 0.8 : 1,
                             boxShadow: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime())
@@ -1434,12 +1447,12 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           }}
                           title={
                             isOtherSite
-                              ? `Turno de otro sitio: ${shift.siteName || 'Desconocido'}`
-                              : (shift.isUserUnavailable ? 'Conflicto: usuario no disponible con turno asignado' : undefined)
+                              ? (language === 'es' ? `Turno de otro sitio: ${shift.siteName || 'Desconocido'}` : `Shift from other site: ${shift.siteName || 'Unknown'}`)
+                              : (shift.isUserUnavailable ? (language === 'es' ? 'Conflicto: usuario no disponible con turno asignado' : 'Conflict: unavailable user with assigned shift') : undefined)
                           }
                         >
                           {shift.isUserUnavailable && (
-                            <div className={styles.unavailableWarningOverlay} title="Usuario NO disponible — turno asignado por manager">
+                            <div className={styles.unavailableWarningOverlay} title={language === 'es' ? "Usuario NO disponible — turno asignado por manager" : "User UNAVAILABLE — shift assigned by manager"}>
                               <svg className={styles.unavailableWarningIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M12 2L2 22H22L12 2Z" fill="#FBBF24" stroke="black" strokeWidth="2" strokeLinejoin="round" />
                                 <path d="M12 9V14" stroke="black" strokeWidth="3" strokeLinecap="round" />
@@ -1454,9 +1467,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           )}
                           {shift.position && (
                             <div className={styles.shiftPosition} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                              <span>{shift.position}</span>
+                              <span>{t(shift.position)}</span>
                               {shift.positionDeleted && (
-                                <div title="Esta posición fue eliminada" style={{ display: 'flex', alignItems: 'center', marginLeft: '4px' }}>
+                                <div title={language === 'es' ? "Esta posición fue eliminada" : "This position was deleted"} style={{ display: 'flex', alignItems: 'center', marginLeft: '4px' }}>
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '17.5px', height: '17.5px', opacity: 0.7 }}>
                                     <path d="M3 6h18" />
                                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -1481,9 +1494,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                               : 'none',
                             zIndex: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime()) ? 5 : 'auto'
                           }}
-                          title="Usuario no disponible"
+                          title={language === 'es' ? "Usuario no disponible" : "User unavailable"}
                         >
-                          <span className={styles.positionName} style={{ color: '#9E9E9E', fontStyle: 'italic' }}>No Disponible</span>
+                          <span className={styles.positionName} style={{ color: '#9E9E9E', fontStyle: 'italic' }}>{t('Unavailable')}</span>
                         </div>
                       ) : (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime()) ? (
                         <div
