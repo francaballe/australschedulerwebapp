@@ -1794,7 +1794,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
                 </div>
-                <h4>Atención</h4>
+                <h4>{language === 'es' ? 'Atención' : 'Attention'}</h4>
                 <p>{warningMessage}</p>
                 <div style={{ padding: '0 20px 20px' }}>
                   <button
@@ -1802,7 +1802,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     onClick={() => setWarningMessage(null)}
                     style={{ width: '100%', justifyContent: 'center' }}
                   >
-                    Entendido
+                    {language === 'es' ? 'Entendido' : 'Understood'}
                   </button>
                 </div>
               </div>
@@ -1824,12 +1824,12 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
                 </div>
-                <h4>¿Sobrescribir semana actual?</h4>
+                <h4>{language === 'es' ? '¿Sobrescribir semana actual?' : 'Overwrite current week?'}</h4>
                 <p style={{ textAlign: 'center', marginBottom: '8px' }}>
-                  Hay turnos asignados en la semana actual.
+                  {language === 'es' ? 'Hay turnos asignados en la semana actual.' : 'There are shifts assigned in the current week.'}
                 </p>
                 <p style={{ textAlign: 'center', fontWeight: 'bold' }}>
-                  Al copiar, se borrarán TODOS los turnos de esta semana y se reemplazarán con los de la semana anterior.
+                  {language === 'es' ? 'Al copiar, se borrarán TODOS los turnos de esta semana y se reemplazarán con los de la semana anterior.' : 'By copying, ALL shifts from this week will be deleted and replaced with those from the previous week.'}
                 </p>
 
                 <div className={styles.deleteConfirmationButtons}>
@@ -1838,14 +1838,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     onClick={() => setShowCopyConfirmation(false)}
                     disabled={copyLoading}
                   >
-                    Cancelar
+                    {language === 'es' ? 'Cancelar' : 'Cancel'}
                   </button>
                   <button
                     className={styles.confirmDeleteBtn}
                     onClick={confirmCopyWeek}
                     disabled={copyLoading}
                   >
-                    {copyLoading ? 'Copiando...' : 'Confirmar Copia'}
+                    {copyLoading ? (language === 'es' ? 'Copiando...' : 'Copying...') : (language === 'es' ? 'Confirmar Copia' : 'Confirm Copy')}
                   </button>
                 </div>
               </div>
@@ -1877,15 +1877,15 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                   )}
                 </div>
                 <h4>
-                  {deleteWeekWarningType === 'published' ? '¿Eliminar semana PUBLICADA?' : '¿Eliminar semana completa?'}
+                  {deleteWeekWarningType === 'published' ? (language === 'es' ? '¿Eliminar semana PUBLICADA?' : 'Delete PUBLISHED week?') : (language === 'es' ? '¿Eliminar semana completa?' : 'Delete entire week?')}
                 </h4>
                 <p style={{ textAlign: 'center', marginBottom: '8px' }}>
                   {deleteWeekWarningType === 'published'
-                    ? 'Hay turnos PUBLICADOS en esta semana.'
-                    : 'Estás a punto de eliminar todos los turnos de la semana.'}
+                    ? (language === 'es' ? 'Hay turnos PUBLICADOS en esta semana.' : 'There are PUBLISHED shifts in this week.')
+                    : (language === 'es' ? 'Estás a punto de eliminar todos los turnos de la semana.' : 'You are about to delete all shifts for the week.')}
                 </p>
                 <p style={{ textAlign: 'center', fontWeight: 'bold', color: deleteWeekWarningType === 'published' ? '#d32f2f' : 'inherit' }}>
-                  Esta acción no se puede deshacer. Se eliminarán TODOS los turnos{deleteWeekWarningType === 'published' ? ' (incluyendo los publicados)' : ''}.
+                  {language === 'es' ? 'Esta acción no se puede deshacer. Se eliminarán TODOS los turnos' : 'This action cannot be undone. ALL shifts will be deleted'}{deleteWeekWarningType === 'published' ? (language === 'es' ? ' (incluyendo los publicados)' : ' (including published ones)') : ''}.
                 </p>
 
                 {deleteWeekWarningType === 'published' && (
@@ -1897,7 +1897,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                         onChange={(e) => setNotifyUsersOnWeekDelete(e.target.checked)}
                       />
                       <span className={styles.customCheckbox}></span>
-                      Notificar a los usuarios
+                      {language === 'es' ? 'Notificar a los usuarios' : 'Notify users'}
                     </label>
                   </div>
                 )}
@@ -1908,14 +1908,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     onClick={() => setShowDeleteWeekConfirmation(false)}
                     disabled={deleteWeekLoading}
                   >
-                    Cancelar
+                    {language === 'es' ? 'Cancelar' : 'Cancel'}
                   </button>
                   <button
                     className={styles.confirmDeleteBtn}
                     onClick={confirmDeleteWeek}
                     disabled={deleteWeekLoading}
                   >
-                    {deleteWeekLoading ? 'Eliminando...' : 'Eliminar Todo'}
+                    {deleteWeekLoading ? (language === 'es' ? 'Eliminando...' : 'Deleting...') : (language === 'es' ? 'Eliminar Todo' : 'Delete All')}
                   </button>
                 </div>
               </div>
