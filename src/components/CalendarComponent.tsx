@@ -845,6 +845,35 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     return totalHours;
   };
 
+  // Check if a user has overtime in any individual week within the visible range
+  const isUserOvertime = (userId: number): boolean => {
+    if (view === 'twoWeeks') {
+      // Split into week 1 (days 0-6) and week 2 (days 7-13), check each against 40
+      const week1Dates = new Set(weekDates.slice(0, 7).map(d => formatDateLocal(d)));
+      const week2Dates = new Set(weekDates.slice(7, 14).map(d => formatDateLocal(d)));
+
+      const userShifts = shifts.filter(s => s.userId === userId);
+
+      const calcWeekHours = (dateSet: Set<string>): number => {
+        const shiftsByDate = new Map<string, typeof userShifts>();
+        userShifts.filter(s => dateSet.has(s.date)).forEach(shift => {
+          if (!shiftsByDate.has(shift.date)) shiftsByDate.set(shift.date, []);
+          shiftsByDate.get(shift.date)!.push(shift);
+        });
+        let total = 0;
+        shiftsByDate.forEach((shiftsForDate) => {
+          total += calculateHours(shiftsForDate[0].startTime, shiftsForDate[0].endTime);
+        });
+        return total;
+      };
+
+      return calcWeekHours(week1Dates) > 40 || calcWeekHours(week2Dates) > 40;
+    }
+
+    // For week/day view, simple total check
+    return getUserTotalHours(userId) > 40;
+  };
+
   // ── Drag & Drop helpers ──
 
   const isShiftDraggable = (shift: Shift): boolean => {
@@ -1556,7 +1585,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                   <div className={styles.userHours}>
                     <span>{getUserTotalHours(user.id).toFixed(1)}</span>
                     {/* Overtime Slot - Now aligned with hours */}
-                    {getUserTotalHours(user.id) > 40 && (
+                    {isUserOvertime(user.id) && (
                       <div className={styles.overtimeIndicator} title={language === 'es' ? "Horas excedidas (>40hs)" : "Overtime (>40hs)"}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <circle cx="12" cy="12" r="10" />
