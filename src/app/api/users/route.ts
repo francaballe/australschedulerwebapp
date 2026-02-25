@@ -31,10 +31,6 @@ export async function GET(request: NextRequest) {
 
         const users = await prisma.user.findMany({
             where: whereClause,
-            orderBy: [
-                { firstname: 'asc' },
-                { lastname: 'asc' }
-            ],
             select: {
                 id: true,
                 email: true,
@@ -65,7 +61,11 @@ export async function GET(request: NextRequest) {
             lastLogin: user.lastlogin,
             createdDate: user.createddate,
             roleName: user.role?.name || null
-        }));
+        })).sort((a, b) => {
+            const first = (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' });
+            if (first !== 0) return first;
+            return (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' });
+        });
 
         return NextResponse.json(formattedUsers, { headers: corsHeaders });
 

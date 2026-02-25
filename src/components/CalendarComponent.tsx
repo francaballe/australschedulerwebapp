@@ -107,6 +107,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   const [deleteWeekWarningType, setDeleteWeekWarningType] = useState<'published' | 'unpublished'>('unpublished');
   const [notifyUsersOnWeekDelete, setNotifyUsersOnWeekDelete] = useState(false);
 
+  // Export state
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
   // Warning modal state
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
@@ -1116,6 +1120,152 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     }
   };
 
+  const handleExportPDF = async () => {
+    if (!calendarRef.current) return;
+    setIsExporting(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      // 1. Clone the calendar into an off-screen wrapper with light theme
+      //    This avoids any visual flash on the real page
+      const wrapper = document.createElement('div');
+      wrapper.setAttribute('data-theme', 'light');
+      wrapper.style.cssText = `
+        position: fixed;
+        left: -9999px;
+        top: 0;
+        width: ${calendarRef.current.scrollWidth}px;
+        background: #ffffff;
+        color: #0f172a;
+        z-index: -1;
+        pointer-events: none;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      `;
+
+      // Copy all stylesheets to ensure CSS modules work in the clone
+      const clone = calendarRef.current.cloneNode(true) as HTMLElement;
+      clone.style.height = 'auto';
+      clone.style.overflow = 'visible';
+      clone.style.flex = 'none';
+
+      // Neutralize sticky on header and footer in the clone
+      const cloneHeader = clone.querySelector('[class*="tableHeader"]') as HTMLElement | null;
+      const cloneFooter = clone.querySelector('[class*="tableFooter"]') as HTMLElement | null;
+      if (cloneHeader) cloneHeader.style.position = 'relative';
+      if (cloneFooter) cloneFooter.style.position = 'relative';
+
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
+      // Small delay for the browser to apply styles and reflow
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        height: clone.scrollHeight,
+        windowHeight: clone.scrollHeight
+      });
+
+      // Measure row boundaries from the clone BEFORE removing it
+      // Scale factor = 2 (html2canvas scale), so multiply DOM positions by 2
+      const scale = 2;
+      const cloneTop = clone.getBoundingClientRect().top;
+      const headerHeight = cloneHeader ? (cloneHeader.getBoundingClientRect().bottom - cloneTop) * scale : 0;
+      const footerHeight = cloneFooter ? cloneFooter.offsetHeight * scale : 0;
+
+      // Get the bottom edge of each user row (in canvas pixels)
+      const userRows = clone.querySelectorAll('[class*="userRow"]');
+      const rowBottoms: number[] = [];
+      userRows.forEach((row) => {
+        const rect = row.getBoundingClientRect();
+        rowBottoms.push((rect.bottom - cloneTop) * scale);
+      });
+
+      // Remove the off-screen clone
+      document.body.removeChild(wrapper);
+
+      const imgData = canvas.toDataURL('image/png');
+
+      // A4 landscape PDF with proper pagination
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const margin = 20;
+      const usableWidth = pdfWidth - margin * 2;
+      const usableHeight = pdfHeight - margin * 2;
+
+      // Scale ratio: how much to shrink the canvas to fit the PDF width
+      const ratio = usableWidth / canvas.width;
+      const scaledHeight = canvas.height * ratio;
+
+      if (scaledHeight <= usableHeight) {
+        // Everything fits on a single page
+        pdf.addImage(imgData, 'PNG', margin, margin, usableWidth, scaledHeight);
+      } else {
+        // Row-aware multi-page slicing
+        const maxCanvasHeightPerPage = usableHeight / ratio; // max canvas pixels per page
+        let srcY = 0;
+        let pageNumber = 0;
+
+        while (srcY < canvas.height) {
+          if (pageNumber > 0) pdf.addPage();
+
+          let sliceEnd = srcY + maxCanvasHeightPerPage;
+
+          // Snap sliceEnd to the nearest row boundary (below sliceEnd → back up)
+          if (sliceEnd < canvas.height - footerHeight) {
+            // Find the last row that fits completely within this page
+            let bestCut = srcY; // fallback
+            for (const rowBottom of rowBottoms) {
+              if (rowBottom <= sliceEnd && rowBottom > srcY) {
+                bestCut = rowBottom;
+              }
+            }
+            if (bestCut > srcY) {
+              sliceEnd = bestCut;
+            }
+          } else {
+            // Last page — include everything
+            sliceEnd = canvas.height;
+          }
+
+          const sliceHeight = Math.min(sliceEnd - srcY, canvas.height - srcY);
+
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceHeight;
+
+          const ctx = pageCanvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(canvas, 0, srcY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+          }
+
+          const pageImgData = pageCanvas.toDataURL('image/png');
+          const sliceScaledHeight = sliceHeight * ratio;
+          pdf.addImage(pageImgData, 'PNG', margin, margin, usableWidth, sliceScaledHeight);
+
+          srcY = sliceEnd;
+          pageNumber++;
+        }
+      }
+
+      const filename = `RosterLoop_${formatDateLocal(currentDate)}.pdf`;
+      pdf.save(filename);
+    } catch (err) {
+      console.error('Error exporting PDF:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleCopyWeekClick = () => {
     // Check if current week has any shifts
     // Filter shifts that are within the current week range
@@ -1325,12 +1475,21 @@ const CalendarComponent: React.FC<CalendarProps> = ({
               </svg>
             </button>
           )}
-          <button className={styles.actionButton} title={language === 'es' ? "Exportar" : "Export"}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
-              <polyline points="7,10 12,15 17,10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
+          <button
+            className={styles.actionButton}
+            title={language === 'es' ? "Exportar a PDF" : "Export to PDF"}
+            onClick={handleExportPDF}
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <div className={styles.loadingSpinner} style={{ width: '18px', height: '18px', borderTopColor: 'currentColor' }}></div>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
+                <polyline points="7,10 12,15 17,10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            )}
           </button>
         </div>
 
@@ -1338,7 +1497,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
       {/* Vista de calendario tipo tabla */}
       {/* Cuerpo de la tabla que contiene Header, Body y Footer */}
-      <div className={styles.tableBody}>
+      <div className={styles.tableBody} ref={calendarRef}>
         {/* Header de la tabla (Sticky) */}
         <div className={styles.tableHeader}>
           <div className={styles.userColumn}>{language === 'es' ? 'Usuarios' : 'Users'}</div>
