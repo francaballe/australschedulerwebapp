@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useDraggable } from "@/hooks/useDraggable";
 import DatePicker, { registerLocale } from "react-datepicker";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
 import "react-datepicker/dist/react-datepicker.css";
 import styles from "./CalendarComponent.module.css";
 import { useTheme } from "@/context/ThemeContext";
 
-// Register Spanish locale
+// Register locales
 registerLocale('es', es);
+registerLocale('en', enUS);
 
 interface CalendarProps {
   enabledPositions: Set<number>;
@@ -686,7 +687,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   const today = new Date();
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(language === 'es' ? 'es-AR' : 'en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric'
@@ -695,7 +696,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
   const formatDisplayRange = () => {
     if (view === 'day') {
-      return currentDate.toLocaleDateString('en-US', {
+      return currentDate.toLocaleDateString(language === 'es' ? 'es-AR' : 'en-US', {
         month: '2-digit', day: '2-digit', year: 'numeric'
       });
     }
@@ -707,11 +708,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       month: '2-digit', day: '2-digit', year: 'numeric'
     };
 
-    return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
+    return `${start.toLocaleDateString(language === 'es' ? 'es-AR' : 'en-US', options)} - ${end.toLocaleDateString(language === 'es' ? 'es-AR' : 'en-US', options)}`;
   };
 
   const formatMonth = (date: Date) => {
-    return date.toLocaleDateString('es-AR', {
+    return date.toLocaleDateString(language === 'es' ? 'es-AR' : 'en-US', {
       month: 'long',
       year: 'numeric'
     });
@@ -1261,7 +1262,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
             </button>
           </div>
           <div className={styles.navigationControls}>
-            <button onClick={goToPrevWeek} className={styles.iconNavBtn} title="Anterior">
+            <button onClick={goToPrevWeek} className={styles.iconNavBtn} title={language === 'es' ? "Anterior" : "Previous"}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
@@ -1275,19 +1276,19 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                   setCurrentDate(newDate);
                 }
               }}
-              locale="es"
+              locale={language === 'es' ? 'es' : 'en'}
               dateFormat="P"
               customInput={
                 <span
                   className={styles.dateRangeDisplay}
                   style={{ cursor: 'pointer', userSelect: 'none' }}
-                  title="Click para ir a una fecha específica"
+                  title={language === 'es' ? "Click para ir a una fecha específica" : "Click to go to a specific date"}
                 >
                   {formatDisplayRange()}
                 </span>
               }
             />
-            <button onClick={goToNextWeek} className={styles.iconNavBtn} title="Siguiente">
+            <button onClick={goToNextWeek} className={styles.iconNavBtn} title={language === 'es' ? "Siguiente" : "Next"}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
@@ -1299,7 +1300,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         </div>
 
         <div className={styles.headerActions}>
-          <button className={styles.actionButton} title="Actualizar" onClick={() => refreshData()}>
+          <button className={styles.actionButton} title={language === 'es' ? "Actualizar" : "Refresh"} onClick={() => refreshData()}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M23 4v6h-6" />
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
@@ -1323,7 +1324,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
               </svg>
             </button>
           )}
-          <button className={styles.actionButton} title="Exportar">
+          <button className={styles.actionButton} title={language === 'es' ? "Exportar" : "Export"}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
               <polyline points="7,10 12,15 17,10" />
@@ -1339,7 +1340,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       <div className={styles.tableBody}>
         {/* Header de la tabla (Sticky) */}
         <div className={styles.tableHeader}>
-          <div className={styles.userColumn}>Usuarios</div>
+          <div className={styles.userColumn}>{language === 'es' ? 'Usuarios' : 'Users'}</div>
           {weekDates.map((date: Date, index: number) => (
             <div
               key={index}
@@ -1394,7 +1395,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     <span>{getUserTotalHours(user.id).toFixed(1)}</span>
                     {/* Overtime Slot - Now aligned with hours */}
                     {getUserTotalHours(user.id) > 40 && (
-                      <div className={styles.overtimeIndicator} title="Horas excedidas (>40hs)">
+                      <div className={styles.overtimeIndicator} title={language === 'es' ? "Horas excedidas (>40hs)" : "Overtime (>40hs)"}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <circle cx="12" cy="12" r="10" />
                           <polyline points="12 6 12 12 16 14" />
@@ -1525,7 +1526,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         {/* Footer de totales (Sticky) */}
         <div className={styles.tableFooter}>
           <div className={styles.footerLabel}>
-            <span>Horas Totales</span>
+            <span>{language === 'es' ? 'Horas Totales' : 'Total Hours'}</span>
             <span>
               {(() => {
                 // Calculate grand total of all visible shifts for enabled users

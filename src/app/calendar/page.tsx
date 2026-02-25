@@ -486,7 +486,7 @@ export default function CalendarPage() {
               onMouseDown={handleModalDrag}
               style={{ cursor: 'grab', userSelect: 'none' }}
             >
-              <h3>{editingPosition ? 'Editar Posición' : 'Crear Posición'}</h3>
+              <h3>{editingPosition ? (language === 'es' ? 'Editar Posición' : 'Edit Position') : (language === 'es' ? 'Crear Posición' : 'Create Position')}</h3>
               <button className={modalStyles.modalCloseButton} onClick={closeEditModal}>×</button>
             </div>
             <div className={modalStyles.modalBody}>
@@ -494,13 +494,13 @@ export default function CalendarPage() {
               {/* Nombre */}
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                  Nombre de la posición:
+                  {language === 'es' ? 'Nombre de la posición:' : 'Position Name:'}
                 </label>
                 <input
                   type="text"
                   value={newPositionName}
                   onChange={(e) => setNewPositionName(e.target.value)}
-                  placeholder="Ingrese el nombre de la posición"
+                  placeholder={language === 'es' ? "Ingrese el nombre de la posición" : "Enter position name"}
                   style={{
                     width: '100%',
                     padding: '8px 12px',
@@ -516,7 +516,7 @@ export default function CalendarPage() {
               {/* Color */}
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                  Color:
+                  {language === 'es' ? 'Color:' : 'Color:'}
                 </label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {[
@@ -547,7 +547,7 @@ export default function CalendarPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                    Hora de inicio: *
+                    {language === 'es' ? 'Hora de inicio: *' : 'Start time: *'}
                   </label>
                   <input
                     type="time"
@@ -565,7 +565,7 @@ export default function CalendarPage() {
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                    Hora de fin: *
+                    {language === 'es' ? 'Hora de fin: *' : 'End time: *'}
                   </label>
                   <input
                     type="time"
@@ -592,14 +592,14 @@ export default function CalendarPage() {
                 onClick={closeEditModal}
                 disabled={editLoading}
               >
-                Cancelar
+                {language === 'es' ? 'Cancelar' : 'Cancel'}
               </button>
               <button
                 className={modalStyles.primaryBtn}
                 onClick={confirmEditPosition}
                 disabled={editLoading || !newPositionName.trim() || !newStartTime.trim() || !newEndTime.trim()}
               >
-                {editLoading ? 'Guardando...' : 'Guardar'}
+                {editLoading ? (language === 'es' ? 'Guardando...' : 'Saving...') : (language === 'es' ? 'Guardar' : 'Save')}
               </button>
             </div>
           </div>
