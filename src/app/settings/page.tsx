@@ -575,24 +575,30 @@ export default function SettingsPage() {
                         >
                             👥 {language === 'es' ? 'Administración de Usuarios' : 'User Management'}
                         </button>
-                        <button
-                            className={`${styles.tab} ${activeTab === 'sites' ? styles.active : ''}`}
-                            onClick={() => setActiveTab('sites')}
-                        >
-                            🏢 {language === 'es' ? 'Admin. de Sitios' : 'Site Management'}
-                        </button>
-                        <button
-                            className={`${styles.tab} ${activeTab === 'logs' ? styles.active : ''}`}
-                            onClick={() => setActiveTab('logs')}
-                        >
-                            📜 {language === 'es' ? 'Logs del Sistema' : 'System Logs'}
-                        </button>
-                        <button
-                            className={`${styles.tab} ${activeTab === 'messaging' ? styles.active : ''}`}
-                            onClick={() => setActiveTab('messaging')}
-                        >
-                            🧪 {language === 'es' ? 'Tests de Mensajería' : 'Messaging Tests'}
-                        </button>
+                        {user?.roleId === 0 && (
+                            <button
+                                className={`${styles.tab} ${activeTab === 'sites' ? styles.active : ''}`}
+                                onClick={() => setActiveTab('sites')}
+                            >
+                                🏢 {language === 'es' ? 'Admin. de Sitios' : 'Site Management'}
+                            </button>
+                        )}
+                        {user?.roleId === 0 && (
+                            <button
+                                className={`${styles.tab} ${activeTab === 'logs' ? styles.active : ''}`}
+                                onClick={() => setActiveTab('logs')}
+                            >
+                                📜 {language === 'es' ? 'Logs del Sistema' : 'System Logs'}
+                            </button>
+                        )}
+                        {user?.roleId === 0 && (
+                            <button
+                                className={`${styles.tab} ${activeTab === 'messaging' ? styles.active : ''}`}
+                                onClick={() => setActiveTab('messaging')}
+                            >
+                                🧪 {language === 'es' ? 'Tests de Mensajería' : 'Messaging Tests'}
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -841,7 +847,7 @@ export default function SettingsPage() {
                     )}
 
                     {/* Logs del Sistema Tab */}
-                    {activeTab === 'logs' && (
+                    {activeTab === 'logs' && user?.roleId === 0 && (
                         <div className={styles.section}>
                             <h2>📜 {language === 'es' ? 'Logs del Sistema' : 'System Logs'}</h2>
                             <p className={styles.sectionDescription}>
@@ -928,7 +934,7 @@ export default function SettingsPage() {
                     )}
 
                     {/* Tests de Mensajería Tab */}
-                    {activeTab === 'messaging' && (
+                    {activeTab === 'messaging' && user?.roleId === 0 && (
                         <div className={styles.section}>
                             <h2>🧪 {language === 'es' ? 'Tests de Mensajería' : 'Messaging Tests'}</h2>
                             <p className={styles.sectionDescription}>
@@ -1015,7 +1021,7 @@ export default function SettingsPage() {
                     )}
 
                     {/* Administración de Sitios Tab */}
-                    {activeTab === 'sites' && (
+                    {activeTab === 'sites' && user?.roleId === 0 && (
                         <div className={styles.section}>
                             <h2>🏢 {language === 'es' ? 'Administración de Sitios' : 'Site Management'}</h2>
                             <p className={styles.sectionDescription}>
