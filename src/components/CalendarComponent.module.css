@@ -163,7 +163,8 @@
 }
 
 .dayColumn {
-  flex: 1;
+  flex: 1 1 0%;
+  min-width: 0;
   padding: 12px 8px;
   text-align: center;
   border-right: 1px solid var(--border);
@@ -325,7 +326,8 @@
 }
 
 .dayCell {
-  flex: 1;
+  flex: 1 1 0%;
+  min-width: 0;
   border-right: 1px solid var(--border);
   cursor: pointer;
   transition: background-color 0.2s;
