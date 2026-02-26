@@ -110,6 +110,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   // Export state
   const calendarRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
 
   // Warning modal state
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
@@ -142,6 +144,18 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     return () => {
       window.removeEventListener('keyup', handleKeyUp);
     };
+  }, []);
+
+  // Close export dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target as Node)) {
+        setIsExportDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Load users (fetch all)
@@ -1295,6 +1309,154 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     }
   };
 
+  const handleExportExcel = async () => {
+    setIsExporting(true);
+    try {
+      const XLSX = await import('xlsx');
+
+      const isEs = language === 'es';
+      const locale = isEs ? 'es-AR' : 'en-US';
+
+      // Date column headers — matching the calendar header format
+      const dateHeaders = weekDates.map((date: Date) => {
+        return date.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' });
+      });
+
+      // Header row: mirrors the grid (Users | days... | Total Hours)
+      const header = [
+        isEs ? 'Nombre' : 'Name',
+        ...dateHeaders,
+        isEs ? 'Horas Totales' : 'Total Hours',
+      ];
+
+      // Data rows — one per user, exact same logic as grid rendering
+      const dataRows: (string | number)[][] = [];
+      let hasOtherSite = false;
+
+      // Use filteredUsers if available, otherwise fall back to all users
+      const exportUsers = filteredUsers.length > 0 ? filteredUsers : users;
+      console.log('Excel export debug:', { filteredUsersCount: filteredUsers.length, usersCount: users.length, shiftsCount: shifts.length, selectedSiteId });
+
+      exportUsers.forEach((user: User) => {
+        const employeeName = `${user.firstName} ${user.lastName}`;
+
+        // Same per-user total as grid sidebar: getUserTotalHours
+        const userTotal = Math.round(getUserTotalHours(user.id) * 100) / 100;
+
+        const dailyValues: (string | number)[] = weekDates.map((date: Date) => {
+          // Same function the grid uses to find shifts
+          const shift = getShiftForUserAndDay(user.id, date);
+          if (!shift) return '';
+          // Skip unavailable-only entries (positionId 1)
+          if (shift.positionId === 1) return '';
+
+          const hours = Math.round(calculateHours(shift.startTime, shift.endTime) * 100) / 100;
+          const posName = shift.position || '';
+          const site = shift.siteName || '';
+
+          // Check if this shift belongs to another site (shown as striped in grid)
+          const isOtherSite = selectedSiteId && shift.siteId && shift.siteId !== selectedSiteId;
+          if (isOtherSite) {
+            hasOtherSite = true;
+          }
+
+          // Build cell: Position | Hours | Site
+          const parts: string[] = [];
+          if (posName) parts.push(posName);
+          parts.push(`${hours}${isOtherSite ? '*' : ''}`);
+          if (site) parts.push(site);
+
+          return parts.join(' | ');
+        });
+
+        dataRows.push([
+          employeeName,
+          ...dailyValues,
+          userTotal,
+        ]);
+      });
+
+      // Footer row — exact same logic as grid footer
+      const footerValues = weekDates.map((date: Date) => {
+        const dateStr = formatDateLocal(date);
+        // Group shifts by user to avoid counting duplicates (same as grid footer)
+        const dailyShiftsMap = new Map<number, Shift>();
+        shifts
+          .filter(s => s.date === dateStr)
+          .forEach(shift => {
+            if (!dailyShiftsMap.has(shift.userId)) {
+              dailyShiftsMap.set(shift.userId, shift);
+            }
+          });
+
+        const totalHours = Array.from(dailyShiftsMap.values()).reduce((acc, shift) => {
+          // Only sum shifts that belong to the current site (if a site is selected)
+          if (selectedSiteId && shift.siteId && shift.siteId !== selectedSiteId) {
+            return acc;
+          }
+          return acc + calculateHours(shift.startTime, shift.endTime);
+        }, 0);
+
+        return Math.round(totalHours * 100) / 100;
+      });
+
+      const grandTotal = Math.round(filteredUsers.reduce((acc, user) => acc + getUserTotalHours(user.id), 0) * 100) / 100;
+
+      const footerRow: (string | number)[] = [
+        isEs ? 'Horas Totales' : 'Total Hours',
+        ...footerValues,
+        grandTotal,
+      ];
+
+      // Assemble worksheet — add site title row at top
+      const currentSiteName = selectedSiteId
+        ? (shifts.find(s => s.siteName && s.siteId == selectedSiteId)?.siteName || '')
+        : '';
+
+      const wsData: (string | number)[][] = [];
+
+      if (currentSiteName) {
+        wsData.push([`${isEs ? 'Sitio' : 'Site'}: ${currentSiteName}`]);
+        wsData.push([]); // blank separator row
+      }
+
+      wsData.push(header);
+      wsData.push(...dataRows);
+      wsData.push(footerRow);
+
+      // Footnote for cross-site shifts
+      if (hasOtherSite) {
+        wsData.push([]);
+        wsData.push([
+          isEs ? '* Turno de otro sitio' : '* Shift from another site'
+        ]);
+      }
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 24 }, // Name
+        ...weekDates.map(() => ({ wch: 14 })),
+        { wch: 14 }, // Total Hours
+      ];
+
+      // Create workbook and save
+      const wb = XLSX.utils.book_new();
+      const sheetName = view === 'day'
+        ? formatDateLocal(currentDate)
+        : `${formatDateLocal(weekDates[0])}_${formatDateLocal(weekDates[weekDates.length - 1])}`;
+      XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
+
+      const filename = `RosterLoop_${formatDateLocal(currentDate)}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    } catch (err) {
+      console.error('Error exporting Excel:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleCopyWeekClick = () => {
     // Check if current week has any shifts
     // Filter shifts that are within the current week range
@@ -1504,22 +1666,56 @@ const CalendarComponent: React.FC<CalendarProps> = ({
               </svg>
             </button>
           )}
-          <button
-            className={styles.actionButton}
-            title={language === 'es' ? "Exportar a PDF" : "Export to PDF"}
-            onClick={handleExportPDF}
-            disabled={isExporting}
-          >
-            {isExporting ? (
-              <div className={styles.loadingSpinner} style={{ width: '18px', height: '18px', borderTopColor: 'currentColor' }}></div>
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
-                <polyline points="7,10 12,15 17,10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
+          <div className={styles.exportDropdownWrapper} ref={exportDropdownRef}>
+            <button
+              className={styles.actionButton}
+              title={language === 'es' ? "Exportar" : "Export"}
+              onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <div className={styles.loadingSpinner} style={{ width: '18px', height: '18px', borderTopColor: 'currentColor' }}></div>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
+                  <polyline points="7,10 12,15 17,10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              )}
+            </button>
+            {isExportDropdownOpen && (
+              <div className={styles.exportDropdownMenu}>
+                <button
+                  className={styles.exportDropdownItem}
+                  onClick={() => {
+                    setIsExportDropdownOpen(false);
+                    handleExportPDF();
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                  PDF
+                </button>
+                <button
+                  className={styles.exportDropdownItem}
+                  onClick={() => {
+                    setIsExportDropdownOpen(false);
+                    handleExportExcel();
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="8" y1="13" x2="16" y2="13" />
+                    <line x1="8" y1="17" x2="16" y2="17" />
+                  </svg>
+                  Excel
+                </button>
+              </div>
             )}
-          </button>
+          </div>
         </div>
 
       </div>

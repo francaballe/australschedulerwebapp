@@ -63,11 +63,6 @@ export default function Navbar() {
                 </span>
             </div>
 
-            {pathname !== "/settings" && (
-                <div className={styles.centerSection}>
-                    {/* Site selector moved to sidebar */}
-                </div>
-            )}
 
             <div className={styles.userSection}>
                 <span className={styles.username}>
