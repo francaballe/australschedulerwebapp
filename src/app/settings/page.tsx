@@ -12,6 +12,19 @@ interface Role {
     name: string | null;
 }
 
+interface Log {
+    id: number;
+    createddate: string;
+    userId: number;
+    action: string;
+    user: {
+        id: number;
+        firstname: string | null;
+        lastname: string | null;
+        email: string | null;
+    };
+}
+
 interface ManagedUser {
     id: number;
     email: string | null;
@@ -63,6 +76,12 @@ export default function SettingsPage() {
     const [roles, setRoles] = useState<Role[]>([]);
     const [usersLoading, setUsersLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+
+    // Logs state
+    const [logs, setLogs] = useState<Log[]>([]);
+    const [logsLoading, setLogsLoading] = useState(false);
+    const [logsPage, setLogsPage] = useState(1);
+    const [logsTotalPages, setLogsTotalPages] = useState(1);
 
     // Sites management state
     const [sites, setSites] = useState<ManagedSite[]>([]);
@@ -151,14 +170,34 @@ export default function SettingsPage() {
         }
     }, []);
 
+    // Fetch logs
+    const fetchLogs = useCallback(async (page = 1) => {
+        setLogsLoading(true);
+        try {
+            const response = await fetch(`/api/logs?page=${page}&limit=50`, { cache: 'no-store' });
+            if (response.ok) {
+                const data = await response.json();
+                setLogs(data.logs);
+                setLogsPage(data.page);
+                setLogsTotalPages(data.totalPages);
+            }
+        } catch (error) {
+            console.error('Error fetching logs:', error);
+        } finally {
+            setLogsLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         if (activeTab === 'users') {
             fetchUsers();
             if (roles.length === 0) fetchRoles();
         } else if (activeTab === 'sites') {
             fetchSites();
+        } else if (activeTab === 'logs') {
+            fetchLogs(1);
         }
-    }, [activeTab, fetchUsers, fetchRoles, roles.length, fetchSites]);
+    }, [activeTab, fetchUsers, fetchRoles, roles.length, fetchSites, fetchLogs]);
 
     const showFeedback = (type: 'success' | 'error', message: string) => {
         setFeedback({ type, message });
@@ -246,11 +285,11 @@ export default function SettingsPage() {
                 lastName: formData.lastName.trim(),
                 email: formData.email.trim(),
                 phone: formData.phone.trim() || null,
+                callerUserId: user?.id,
             };
 
             if (isEdit) {
                 payload.id = editingUser!.id;
-                payload.callerUserId = user?.id; // Server will verify caller's role from DB
             }
             // Only send roleId if the logged-in user is the owner (admins can't change roles)
             if (user?.roleId === 0 && editingUser?.id !== user?.id) {
@@ -291,7 +330,7 @@ export default function SettingsPage() {
             const response = await fetch('/api/users', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: targetUser.id, isBlocked: newBlocked }),
+                body: JSON.stringify({ id: targetUser.id, isBlocked: newBlocked, callerUserId: user?.id }),
             });
 
             if (response.ok) {
@@ -386,6 +425,14 @@ export default function SettingsPage() {
         } finally {
             setConfirmDeleteSite(null);
         }
+    };
+
+    const handleNextLogsPage = () => {
+        if (logsPage < logsTotalPages) fetchLogs(logsPage + 1);
+    };
+
+    const handlePrevLogsPage = () => {
+        if (logsPage > 1) fetchLogs(logsPage - 1);
     };
 
     const formatDate = (dateStr: string | null) => {
@@ -800,15 +847,82 @@ export default function SettingsPage() {
                             <p className={styles.sectionDescription}>
                                 {language === 'es' ? 'Seguimiento de eventos y auditoría de la plataforma' : 'Event tracking and platform auditing'}
                             </p>
-                            <div className={styles.placeholder}>
-                                <p>{language === 'es' ? 'Esta sección mostrará logs detallados de la plataforma:' : 'This section will show detailed platform logs:'}</p>
-                                <ul>
-                                    <li>{language === 'es' ? 'Historial de inicios de sesión' : 'Login history'}</li>
-                                    <li>{language === 'es' ? 'Cambios en la programación (turnos publicados/editados)' : 'Schedule changes (published/edited shifts)'}</li>
-                                    <li>{language === 'es' ? 'Altas y bajas de usuarios' : 'User creations and deletions'}</li>
-                                    <li>{language === 'es' ? 'Errores críticos del servidor' : 'Critical server errors'}</li>
-                                    <li>{language === 'es' ? 'Notificaciones push enviadas' : 'Push notifications sent'}</li>
-                                </ul>
+                            <div className={styles.placeholder} style={{ marginTop: '20px', padding: '0', background: 'transparent', textAlign: 'left', border: 'none' }}>
+                                {logsLoading ? (
+                                    <div className={styles.loadingTable}>
+                                        <div className={styles.spinner}></div>
+                                    </div>
+                                ) : logs.length === 0 ? (
+                                    <div className={styles.emptyState}>
+                                        <div className={styles.emptyIcon}>📜</div>
+                                        <div className={styles.emptyTitle}>
+                                            {language === 'es' ? 'No hay logs registrados' : 'No logs recorded'}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className={styles.usersTableWrapper}>
+                                            <table className={styles.usersTable}>
+                                                <thead>
+                                                    <tr>
+                                                        <th style={{ width: '200px' }}>{language === 'es' ? 'Fecha y Hora' : 'Date & Time'}</th>
+                                                        <th style={{ width: '250px' }}>{language === 'es' ? 'Usuario' : 'User'}</th>
+                                                        <th>{language === 'es' ? 'Acción' : 'Action'}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {logs.map((log) => (
+                                                        <tr key={log.id}>
+                                                            <td>
+                                                                <span className={styles.lastLoginText} style={{ whiteSpace: 'nowrap' }}>
+                                                                    {formatDateTime(log.createddate)}
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <span className={styles.userName}>
+                                                                    {log.user.firstname} {log.user.lastname}
+                                                                </span>
+                                                                <div className={styles.userEmail} style={{ fontSize: '12px' }}>
+                                                                    {log.user.email}
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div className={styles.logActionCell}>
+                                                                    {log.action}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* Logs Pagination */}
+                                        <div className={styles.toolbar} style={{ justifyContent: 'space-between', marginTop: '16px', borderTop: 'none', padding: '0' }}>
+                                            <div style={{ fontSize: '14px', color: '#64748b' }}>
+                                                {language === 'es' ? 'Página' : 'Page'} {logsPage} {language === 'es' ? 'de' : 'of'} {logsTotalPages}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button
+                                                    className={styles.modalCancelButton}
+                                                    onClick={handlePrevLogsPage}
+                                                    disabled={logsPage <= 1 || logsLoading}
+                                                    style={{ padding: '6px 12px' }}
+                                                >
+                                                    {language === 'es' ? 'Anterior' : 'Previous'}
+                                                </button>
+                                                <button
+                                                    className={styles.modalCancelButton}
+                                                    onClick={handleNextLogsPage}
+                                                    disabled={logsPage >= logsTotalPages || logsLoading}
+                                                    style={{ padding: '6px 12px' }}
+                                                >
+                                                    {language === 'es' ? 'Siguiente' : 'Next'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     )}

@@ -1556,6 +1556,15 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       if (notifyUsersOnWeekDelete) {
         url += `&notify=true`;
       }
+      // Pass caller user ID for activity log
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const { id } = JSON.parse(storedUser);
+          if (id) url += `&callerUserId=${id}`;
+        }
+      } catch { }
+
 
       const response = await fetch(url, {
         method: 'DELETE',

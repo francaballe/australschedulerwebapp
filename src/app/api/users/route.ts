@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { email, password, firstName, lastName, phone, roleId } = body;
+        const { email, password, firstName, lastName, phone, roleId, callerUserId } = body;
 
         if (!email || !password || !firstName || !lastName) {
             return NextResponse.json(
@@ -133,6 +133,14 @@ export async function POST(request: NextRequest) {
                 }
             }
         });
+
+        // Log user creation (fire-and-forget)
+        if (callerUserId) {
+            const newName = `${newUser.firstname || ''} ${newUser.lastname || ''}`.trim();
+            (prisma as any).log.create({
+                data: { userId: callerUserId, action: `created_user: ${newName} (id: ${newUser.id}, email: ${newUser.email})` }
+            }).catch(() => { });
+        }
 
         return NextResponse.json({
             id: newUser.id,
@@ -263,6 +271,18 @@ export async function PUT(request: NextRequest) {
                 }
             }
         });
+
+        // Log significant actions (fire-and-forget)
+        if (callerUserId) {
+            const targetName = `${updatedUser.firstname || ''} ${updatedUser.lastname || ''}`.trim();
+
+            if (isBlocked !== undefined) {
+                const action = isBlocked
+                    ? `blocked_user: ${targetName} (id: ${id})`
+                    : `unblocked_user: ${targetName} (id: ${id})`;
+                (prisma as any).log.create({ data: { userId: callerUserId, action } }).catch(() => { });
+            }
+        }
 
         return NextResponse.json({
             id: updatedUser.id,

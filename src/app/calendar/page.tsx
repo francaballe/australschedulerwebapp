@@ -176,7 +176,8 @@ export default function CalendarPage() {
           startDate: startDateStr,
           endDate: endDateStr,
           type: 'all',
-          siteId: siteId ? Number(siteId) : undefined
+          siteId: siteId ? Number(siteId) : undefined,
+          callerUserId: user.id
         })
       });
 

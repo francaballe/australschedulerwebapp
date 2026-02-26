@@ -21,6 +21,7 @@ model User {
   userroleid     Int?
   phone          String?
   confirmedWeeks ConfirmedWeek[]
+  logs           Log[]
   messages       Message[]
   shifts         Shift[]
   pushTokens     UserPushToken[]
@@ -130,5 +131,16 @@ model ConfirmedWeek {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("confirmedweeks")
+  @@schema("app")
+}
+
+model Log {
+  id          Int       @id @default(autoincrement())
+  createddate DateTime? @default(now()) @db.Timestamptz(6)
+  userId      Int       @map("user_id")
+  action      String?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("logs")
   @@schema("app")
 }

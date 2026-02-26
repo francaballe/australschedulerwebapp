@@ -876,6 +876,17 @@
   border: 1px solid rgba(220, 38, 38, 0.15);
 }
 
+.logActionCell {
+  word-break: break-word;
+  font-family: monospace;
+  font-size: 13px;
+  background: var(--input-bg);
+  color: var(--foreground);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .main {

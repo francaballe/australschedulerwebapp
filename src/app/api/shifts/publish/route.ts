@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { startDate, endDate, type, siteId } = body;
+    const { startDate, endDate, type, siteId, callerUserId } = body;
 
     if (!startDate || !endDate) {
       return NextResponse.json({ error: 'startDate and endDate are required' }, { status: 400, headers: corsHeaders });
@@ -183,6 +183,16 @@ export async function POST(request: NextRequest) {
     });
 
     await Promise.allSettled(notificationPromises);
+
+    // Log the publish action
+    if (callerUserId) {
+      (prisma as any).log.create({
+        data: {
+          userId: callerUserId,
+          action: `published_shifts: ${startDate} to ${endDate} (${updated.count} shifts, type: ${type || 'all'})`,
+        }
+      }).catch(() => { });
+    }
 
     return NextResponse.json({ updated: updated.count, notifiedUsers: shiftsByUser.size }, { headers: corsHeaders });
 

@@ -336,6 +336,8 @@ export async function DELETE(request: NextRequest) {
     const endDate = searchParams.get('endDate');
     const siteId = searchParams.get('siteId');
 
+    const callerUserIdParam = searchParams.get('callerUserId');
+
     if (!startDate || !endDate) {
         return NextResponse.json(
             { error: 'startDate and endDate parameters are required' },
@@ -487,6 +489,16 @@ export async function DELETE(request: NextRequest) {
         });
 
         console.log(`🗑️ Deleted ${result.count} shifts between ${startDate} and ${endDate}`);
+
+        // Log the delete action
+        if (callerUserIdParam) {
+            (prisma as any).log.create({
+                data: {
+                    userId: parseInt(callerUserIdParam),
+                    action: `deleted_shifts: ${startDate} to ${endDate} (${result.count} shifts)`,
+                }
+            }).catch(() => { });
+        }
 
         return NextResponse.json({ success: true, count: result.count }, { headers: corsHeaders });
 
