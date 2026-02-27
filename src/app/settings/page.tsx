@@ -1012,10 +1012,48 @@ export default function SettingsPage() {
                     {/* Logs del Sistema Tab */}
                     {activeTab === 'logs' && user?.roleId === 0 && (
                         <div className={styles.section}>
-                            <h2>📜 {language === 'es' ? 'Logs del Sistema' : 'System Logs'}</h2>
-                            <p className={styles.sectionDescription}>
-                                {language === 'es' ? 'Seguimiento de eventos y auditoría de la plataforma' : 'Event tracking and platform auditing'}
-                            </p>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                                <div>
+                                    <h2 style={{ margin: 0 }}>📜 {language === 'es' ? 'Logs del Sistema' : 'System Logs'}</h2>
+                                    <p className={styles.sectionDescription} style={{ margin: 0 }}>
+                                        {language === 'es' ? 'Seguimiento de eventos y auditoría de la plataforma' : 'Event tracking and platform auditing'}
+                                    </p>
+                                </div>
+                                <button
+                                    className={styles.counterActionBtn}
+                                    onClick={async () => {
+                                        try {
+                                            const XLSX = await import('xlsx');
+                                            const wsData = [
+                                                [language === 'es' ? 'Fecha y Hora' : 'Date & Time', language === 'es' ? 'Usuario' : 'User', 'Email', language === 'es' ? 'Acción' : 'Action'],
+                                                ...logs.map(l => [
+                                                    formatDateTime(l.createddate),
+                                                    `${l.user.firstname} ${l.user.lastname}`,
+                                                    l.user.email,
+                                                    l.action
+                                                ])
+                                            ];
+                                            const ws = XLSX.utils.aoa_to_sheet(wsData);
+                                            // Auto-fit column widths
+                                            ws['!cols'] = wsData[0].map((_, i) => ({
+                                                wch: Math.max(...wsData.map(row => (row[i]?.toString() || '').length), 15)
+                                            }));
+                                            const wb = XLSX.utils.book_new();
+                                            XLSX.utils.book_append_sheet(wb, ws, 'Logs');
+                                            XLSX.writeFile(wb, `RosterLoop_Logs_Page${logsPage}_${new Date().toISOString().split('T')[0]}.xlsx`);
+                                        } catch (err) {
+                                            console.error('Error exporting Logs:', err);
+                                        }
+                                    }}
+                                    title={language === 'es' ? 'Exportar logs' : 'Export logs'}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
+                                        <polyline points="7,10 12,15 17,10" />
+                                        <line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                </button>
+                            </div>
                             <div className={styles.placeholder} style={{ marginTop: '20px', padding: '0', background: 'transparent', textAlign: 'left', border: 'none' }}>
                                 {logsLoading ? (
                                     <div className={styles.loadingTable}>
