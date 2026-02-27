@@ -19,7 +19,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [theme, setThemeState] = useState<Theme>("dark");
-    const [language, setLanguageState] = useState<Language>("es");
+    const [language, setLanguageState] = useState<Language>("en");
     const [showOnlyActiveUsers, setShowOnlyActiveUsersState] = useState<boolean>(true);
     const [mounted, setMounted] = useState(false);
 

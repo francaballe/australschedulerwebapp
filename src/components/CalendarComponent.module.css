@@ -416,10 +416,10 @@
 
 .unavailableWarningIcon {
   position: absolute;
-  top: 7px;
-  right: 9px;
-  width: 21px;
-  height: 21px;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
   opacity: 0.9;
 }
 
@@ -432,6 +432,16 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.shiftPosition span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .emptyCell {
@@ -524,6 +534,37 @@
     font-size: 10px;
     font-weight: 700;
   }
+}
+
+/* 2-Week View Specific Styles */
+.twoWeeks .userRow {
+  min-height: 70px;
+}
+
+.twoWeeks .dayCell {
+  padding: 4px;
+}
+
+.twoWeeks .shiftContent {
+  padding: 4px 6px;
+  min-height: 40px;
+  font-size: 11px;
+}
+
+.twoWeeks .shiftTime {
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+
+.twoWeeks .shiftPosition {
+  font-size: 9px;
+}
+
+.twoWeeks .unavailableWarningIcon {
+  width: 14px;
+  height: 14px;
+  top: 2px;
+  right: 2px;
 }
 
 /* Footer de totales */

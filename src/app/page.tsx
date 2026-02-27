@@ -3,6 +3,7 @@
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import styles from "./page.module.css";
 
 export default function LoginPage() {
@@ -11,7 +12,23 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, login, isLoading } = useAuth();
+  const { language, setLanguage } = useTheme();
   const router = useRouter();
+
+  const isEs = language === 'es';
+
+  const t = {
+    title: "RosterLoop",
+    subtitle: isEs ? "Iniciá sesión para continuar" : "Sign in to continue",
+    emailPlaceholder: isEs ? "Ingresá tu email" : "Enter your email",
+    passwordPlaceholder: isEs ? "Ingresá tu contraseña" : "Enter your password",
+    labelEmail: "Email",
+    labelPassword: isEs ? "Contraseña" : "Password",
+    submit: isEs ? "Iniciar Sesión" : "Sign In",
+    submitting: isEs ? "Iniciando sesión..." : "Signing in...",
+    emptyFields: isEs ? "Por favor, completá todos los campos" : "Please fill in all fields",
+    invalidCreds: isEs ? "Credenciales inválidas" : "Invalid credentials",
+  };
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -25,7 +42,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     if (!email.trim() || !password.trim()) {
-      setError("Por favor, completá todos los campos");
+      setError(t.emptyFields);
       setIsSubmitting(false);
       return;
     }
@@ -35,7 +52,7 @@ export default function LoginPage() {
     if (result.success) {
       router.push("/calendar");
     } else {
-      setError(result.error || "Credenciales inválidas");
+      setError(result.error || t.invalidCreds);
       setIsSubmitting(false);
     }
   };
@@ -71,13 +88,13 @@ export default function LoginPage() {
                 <line x1="3" y1="10" x2="21" y2="10" />
               </svg>
             </div>
-            <h1 className={styles.title}>RosterLoop</h1>
-            <p className={styles.subtitle}>Iniciá sesión para continuar</p>
+            <h1 className={styles.title}>{t.title}</h1>
+            <p className={styles.subtitle}>{t.subtitle}</p>
           </div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.inputGroup}>
-              <label htmlFor="email" className={styles.label}>Email</label>
+              <label htmlFor="email" className={styles.label}>{t.labelEmail}</label>
               <div className={styles.inputWrapper}>
                 <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -89,14 +106,14 @@ export default function LoginPage() {
                   className={styles.input}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Ingresá tu email"
+                  placeholder={t.emailPlaceholder}
                   disabled={isSubmitting}
                 />
               </div>
             </div>
 
             <div className={styles.inputGroup}>
-              <label htmlFor="password" className={styles.label}>Contraseña</label>
+              <label htmlFor="password" className={styles.label}>{t.labelPassword}</label>
               <div className={styles.inputWrapper}>
                 <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -108,7 +125,7 @@ export default function LoginPage() {
                   className={styles.input}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Ingresá tu contraseña"
+                  placeholder={t.passwordPlaceholder}
                   disabled={isSubmitting}
                 />
               </div>
@@ -133,7 +150,7 @@ export default function LoginPage() {
               {isSubmitting ? (
                 <>
                   <div className={styles.btnSpinner}></div>
-                  Iniciando sesión...
+                  {t.submitting}
                 </>
               ) : (
                 <>
@@ -142,7 +159,7 @@ export default function LoginPage() {
                     <polyline points="10,17 15,12 10,7" />
                     <line x1="15" y1="12" x2="3" y2="12" />
                   </svg>
-                  Iniciar Sesión
+                  {t.submit}
                 </>
               )}
             </button>

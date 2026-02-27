@@ -1601,7 +1601,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   };
 
   return (
-    <div className={styles.calendarContainer}>
+    <div className={`${styles.calendarContainer} ${styles[view]}`}>
       {/* Header del calendario */}
       <div className={styles.calendarHeader}>
         <div className={styles.leftHeader}>
