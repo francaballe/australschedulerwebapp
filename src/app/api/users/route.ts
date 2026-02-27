@@ -9,6 +9,16 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
+const validatePassword = (password: string): { isValid: boolean; message: string } => {
+    if (!password) return { isValid: false, message: 'La contraseña es requerida' };
+    if (password.length < 8) return { isValid: false, message: 'La contraseña debe tener al menos 8 caracteres' };
+    if (!/[A-Z]/.test(password)) return { isValid: false, message: 'La contraseña debe tener al menos una mayúscula' };
+    if (!/[a-z]/.test(password)) return { isValid: false, message: 'La contraseña debe tener al menos una minúscula' };
+    if (!/[0-9]/.test(password)) return { isValid: false, message: 'La contraseña debe tener al menos un número' };
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return { isValid: false, message: 'La contraseña debe tener al menos un carácter especial (ej: !@#$%)' };
+    return { isValid: true, message: '' };
+};
+
 export async function GET(request: NextRequest) {
     try {
         const q = request.nextUrl.searchParams.get('q');
@@ -96,6 +106,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Validate password complexity
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.isValid) {
+            return NextResponse.json({ error: passwordValidation.message }, { status: 400, headers: corsHeaders });
+        }
+
         // Check if email already exists
         const existing = await prisma.user.findFirst({
             where: { email: email.toLowerCase().trim() }
@@ -178,6 +194,13 @@ export async function PUT(request: NextRequest) {
     try {
         const body = await request.json();
         const { id, email, password, firstName, lastName, phone, roleId, isBlocked, siteIds } = body;
+
+        if (password) {
+            const passwordValidation = validatePassword(password);
+            if (!passwordValidation.isValid) {
+                return NextResponse.json({ error: passwordValidation.message }, { status: 400, headers: corsHeaders });
+            }
+        }
 
         if (!id) {
             return NextResponse.json(

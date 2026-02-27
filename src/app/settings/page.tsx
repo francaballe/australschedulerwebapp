@@ -105,6 +105,21 @@ export default function SettingsPage() {
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const [confirmAction, setConfirmAction] = useState<{ user: ManagedUser; action: 'block' | 'unblock' } | null>(null);
 
+    const validatePassword = (pass: string) => {
+        return {
+            length: pass.length >= 8,
+            upper: /[A-Z]/.test(pass),
+            lower: /[a-z]/.test(pass),
+            number: /[0-9]/.test(pass),
+            special: /[!@#$%^&*(),.?":{}|<>]/.test(pass)
+        };
+    };
+
+    const isPasswordValid = (pass: string) => {
+        const v = validatePassword(pass);
+        return v.length && v.upper && v.lower && v.number && v.special;
+    };
+
     useEffect(() => {
         if (!isLoading && !user) {
             router.push("/");
@@ -286,11 +301,17 @@ export default function SettingsPage() {
     // Save user (create or update)
     const handleSaveUser = async () => {
         if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
-            setFormError("Nombre, apellido y email son requeridos");
+            setFormError(language === 'es' ? "Nombre, apellido y email son requeridos" : "First name, last name and email are required");
             return;
         }
+
         if (!editingUser && !formData.password.trim()) {
-            setFormError("La contraseña es requerida para nuevos usuarios");
+            setFormError(language === 'es' ? "La contraseña es requerida para nuevos usuarios" : "Password is required for new users");
+            return;
+        }
+
+        if (formData.password.trim() && !isPasswordValid(formData.password)) {
+            setFormError(language === 'es' ? "La contraseña no cumple con los requisitos de seguridad" : "Password does not meet security requirements");
             return;
         }
 
@@ -759,20 +780,6 @@ export default function SettingsPage() {
                                     <button
                                         className={styles.counterActionBtn}
                                         onClick={() => {
-                                            // TODO: Implement bulk user upload from CSV
-                                            alert(language === 'es' ? 'Próximamente: Carga masiva de usuarios desde CSV' : 'Coming soon: Bulk user upload from CSV');
-                                        }}
-                                        title={language === 'es' ? 'Carga masiva de usuarios' : 'Bulk user upload'}
-                                    >
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
-                                            <polyline points="17,8 12,3 7,8" />
-                                            <line x1="12" y1="3" x2="12" y2="15" />
-                                        </svg>
-                                    </button>
-                                    <button
-                                        className={styles.counterActionBtn}
-                                        onClick={() => {
                                             setUserViewFilter(prev =>
                                                 prev === 'active' ? 'blocked' : prev === 'blocked' ? 'all' : 'active'
                                             );
@@ -796,10 +803,24 @@ export default function SettingsPage() {
                                                 <>
                                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                                                     <circle cx="9" cy="7" r="4" />
-                                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                                    <path d="M23 21v-2a4 4 0 0-3-3.87" />
                                                     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                                                 </>
                                             )}
+                                        </svg>
+                                    </button>
+                                    <button
+                                        className={styles.counterActionBtn}
+                                        onClick={() => {
+                                            // TODO: Implement bulk user upload from CSV
+                                            alert(language === 'es' ? 'Próximamente: Carga masiva de usuarios desde CSV' : 'Coming soon: Bulk user upload from CSV');
+                                        }}
+                                        title={language === 'es' ? 'Carga masiva de usuarios' : 'Bulk user upload'}
+                                    >
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
+                                            <polyline points="17,8 12,3 7,8" />
+                                            <line x1="12" y1="3" x2="12" y2="15" />
                                         </svg>
                                     </button>
                                     <button
@@ -1360,6 +1381,25 @@ export default function SettingsPage() {
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     placeholder={editingUser ? '••••••••' : (language === 'es' ? 'Ingresa una contraseña' : 'Enter a password')}
                                 />
+                                {formData.password && (
+                                    <div className={styles.passwordRequirements}>
+                                        <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).length ? '#10b981' : '#ef4444' }}>
+                                            {validatePassword(formData.password).length ? '✅' : '❌'} {language === 'es' ? 'Mínimo 8 caracteres' : 'Min 8 characters'}
+                                        </div>
+                                        <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).upper ? '#10b981' : '#ef4444' }}>
+                                            {validatePassword(formData.password).upper ? '✅' : '❌'} {language === 'es' ? 'Una mayúscula' : 'One uppercase'}
+                                        </div>
+                                        <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).lower ? '#10b981' : '#ef4444' }}>
+                                            {validatePassword(formData.password).lower ? '✅' : '❌'} {language === 'es' ? 'Una minúscula' : 'One lowercase'}
+                                        </div>
+                                        <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).number ? '#10b981' : '#ef4444' }}>
+                                            {validatePassword(formData.password).number ? '✅' : '❌'} {language === 'es' ? 'Un número' : 'One number'}
+                                        </div>
+                                        <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).special ? '#10b981' : '#ef4444' }}>
+                                            {validatePassword(formData.password).special ? '✅' : '❌'} {language === 'es' ? 'Un carácter especial' : 'One special char'}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Site Selection for Admins — Visible to Owners and the Admin themselves */}
