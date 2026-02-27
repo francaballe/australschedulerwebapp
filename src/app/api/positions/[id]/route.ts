@@ -143,6 +143,14 @@ export async function DELETE(
 
         const url = new URL(request.url);
         const confirm = url.searchParams.get('confirm') === 'true';
+        const callerUserIdParam = url.searchParams.get('callerUserId');
+        const callerUserId = callerUserIdParam ? parseInt(callerUserIdParam) : null;
+
+        // Get position name for logging before we potentially delete it
+        const positionToDelete = await prisma.position.findUnique({
+            where: { id: positionId },
+            select: { name: true }
+        });
 
         // Check for any shifts associated with this position
         const shiftsCount = await prisma.shift.count({
@@ -154,6 +162,17 @@ export async function DELETE(
             await prisma.position.delete({
                 where: { id: positionId }
             });
+
+            // Log HARD delete
+            if (callerUserId) {
+                (prisma as any).log.create({
+                    data: {
+                        userId: callerUserId,
+                        action: `deleted_position_permanently: ${positionToDelete?.name || 'Unknown'} (id: ${positionId})`
+                    }
+                }).catch((e: any) => console.error('Error logging position delete:', e));
+            }
+
             return NextResponse.json({ success: true, hardDeleted: true }, { headers: corsHeaders });
         }
 
@@ -201,6 +220,16 @@ export async function DELETE(
                 });
             }
         });
+
+        // Log SOFT delete
+        if (callerUserId) {
+            (prisma as any).log.create({
+                data: {
+                    userId: callerUserId,
+                    action: `deleted_position_soft: ${positionToDelete?.name || 'Unknown'} (id: ${positionId}${futureShiftsCount > 0 ? `, wiped ${futureShiftsCount} future shifts` : ''})`
+                }
+            }).catch((e: any) => console.error('Error logging position soft-delete:', e));
+        }
 
         return NextResponse.json({ success: true, softDeleted: true }, { headers: corsHeaders });
 

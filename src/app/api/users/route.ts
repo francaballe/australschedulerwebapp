@@ -340,11 +340,41 @@ export async function PUT(request: NextRequest) {
         if (callerUserId) {
             const targetName = `${updatedUser.firstname || ''} ${updatedUser.lastname || ''}`.trim();
 
-            if (isBlocked !== undefined) {
+            // 1. Log block/unblock status change
+            if (isBlocked !== undefined && isBlocked !== existingUser.isblocked) {
                 const action = isBlocked
                     ? `blocked_user: ${targetName} (id: ${id})`
                     : `unblocked_user: ${targetName} (id: ${id})`;
                 (prisma as any).log.create({ data: { userId: callerUserId, action } }).catch(() => { });
+            }
+
+            // 2. Log password change specifically
+            if (password) {
+                (prisma as any).log.create({
+                    data: {
+                        userId: callerUserId,
+                        action: `changed_password: ${targetName} (id: ${id})`
+                    }
+                }).catch(() => { });
+            }
+
+            // 3. Log other general edits
+            const otherFieldsChanged = (
+                (firstName !== undefined && firstName.trim() !== existingUser.firstname) ||
+                (lastName !== undefined && lastName.trim() !== existingUser.lastname) ||
+                (email !== undefined && email.toLowerCase().trim() !== existingUser.email) ||
+                (phone !== undefined && (phone?.trim() || null) !== existingUser.phone) ||
+                (roleId !== undefined && roleId !== existingUser.userroleid) ||
+                (siteIds !== undefined) // siteIds are always updated via transaction if present
+            );
+
+            if (otherFieldsChanged) {
+                (prisma as any).log.create({
+                    data: {
+                        userId: callerUserId,
+                        action: `updated_user_profile: ${targetName} (id: ${id})`
+                    }
+                }).catch(() => { });
             }
         }
 

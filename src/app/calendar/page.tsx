@@ -293,7 +293,7 @@ export default function CalendarPage() {
 
         console.log('Sending position update:', payload);
 
-        const response = await fetch(`/api/positions/${editingPosition.id}`, {
+        const response = await fetch(`/api/positions/${editingPosition.id}?callerUserId=${user?.id || ''}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',

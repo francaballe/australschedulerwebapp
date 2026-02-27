@@ -282,7 +282,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     const handleDeletePosition = async (id: number, name: string) => {
         try {
-            const url = `/api/positions/${id}`;
+            const url = `/api/positions/${id}?callerUserId=${user?.id || ''}`;
             let res = await fetch(url, { method: 'DELETE' });
 
             if (res.status === 409) {
@@ -315,7 +315,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         try {
             setDeleteLoading(true);
-            const res = await fetch(`/api/positions/${id}?confirm=true`, { method: 'DELETE' });
+            const res = await fetch(`/api/positions/${id}?confirm=true&callerUserId=${user?.id || ''}`, { method: 'DELETE' });
 
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
