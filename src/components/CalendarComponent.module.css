@@ -380,7 +380,7 @@
 
 .shiftTime {
   font-weight: 400;
-  color: var(--foreground);
+  color: inherit;
   margin-bottom: 4px;
 }
 
@@ -427,7 +427,7 @@
 
 .shiftPosition {
   font-size: 11px;
-  color: var(--foreground);
+  color: inherit;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 700;
@@ -679,7 +679,7 @@
 .simplifiedPosName {
   font-size: 11px;
   font-weight: 800;
-  color: var(--foreground);
+  color: inherit;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }

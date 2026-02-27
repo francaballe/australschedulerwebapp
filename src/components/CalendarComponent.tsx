@@ -1846,7 +1846,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                   `${shift.positionColor}${!shift.published ? '30' : '85'}` :
                                   (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)')),
                             borderLeftColor: isOtherSite ? '#9ca3af' : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ? shift.positionColor : '#3b82f6'),
-                            color: isOtherSite ? '#6b7280' : (isFilteredOut ? 'var(--foreground-secondary, #94a3b8)' : 'var(--text-primary)'),
+                            color: isOtherSite ? '#6b7280' : (isFilteredOut ? '#94a3b8' : '#1e293b'),
                             position: 'relative',
                             boxShadow: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime())
                               ? '0 0 0 3px var(--selection-border), 0 4px 12px rgba(0,0,0,0.15)'
