@@ -484,18 +484,26 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     }
 
     // Strategy:
-    // 1. If "No Position" (0) is enabled, show ALL users (except those filtered by blocked status/search).
+    // 1. If "No Position" (0) is enabled, show users who have NO shifts in the current week/site.
     // 2. If "Unavailable" (1) is enabled and user has unavailability, show.
     // 3. If user has any shift matching an enabled position in the CURRENT site, show.
 
-    if (enabledPositions.has(0)) return true;
+    const weekStart = formatDateLocal(weekDates[0]);
+    const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
+
+    if (enabledPositions.has(0)) {
+      const hasAnyShift = shifts.some(shift =>
+        shift.userId === user.id &&
+        shift.date >= weekStart &&
+        shift.date <= weekEnd &&
+        Number(shift.siteId) === Number(selectedSiteId)
+      );
+      if (!hasAnyShift) return true;
+    }
 
     if (enabledPositions.has(1) && weekDates.some(d => unavailableSet.has(`${user.id}-${formatDateLocal(d)}`))) {
       return true;
     }
-
-    const weekStart = formatDateLocal(weekDates[0]);
-    const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
 
     const hasVisibleShifts = shifts.some(shift =>
       shift.userId === user.id &&
