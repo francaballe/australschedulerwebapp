@@ -477,10 +477,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
   // Calculate filtered users - only show users that have shifts with enabled positions in current week
   const filteredUsers = users.filter(user => {
-    // If no positions are enabled (or strictly if list is empty, though UI typically defaults to all), show all?
-    // Actually, if size is 0 it implies nothing selected.
+    // If no positions are enabled, show nothing — intuitive empty state.
     if (enabledPositions.size === 0) {
-      return true;
+      return false;
     }
 
     // Strategy:
