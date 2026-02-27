@@ -1322,91 +1322,108 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         return date.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' });
       });
 
-      // Header row: mirrors the grid (Users | days... | Total Hours)
+      // Header row: Posición | Persona | Days... | Total Hours
+      const isDayView = view === 'day';
       const header = [
-        isEs ? 'Nombre' : 'Name',
+        isEs ? 'Posición' : 'Position',
+        isEs ? 'Persona' : 'Person',
         ...dateHeaders,
-        isEs ? 'Horas Totales' : 'Total Hours',
       ];
+      if (!isDayView) {
+        header.push(isEs ? 'Horas Totales' : 'Total Hours');
+      }
 
-      // Data rows — one per user, exact same logic as grid rendering
+      // Data rows — Grouped by (UserId, PositionId)
       const dataRows: (string | number)[][] = [];
-      let hasOtherSite = false;
+      const weekStart = formatDateLocal(weekDates[0]);
+      const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
 
-      // Use filteredUsers if available, otherwise fall back to all users
-      const exportUsers = filteredUsers.length > 0 ? filteredUsers : users;
-      console.log('Excel export debug:', { filteredUsersCount: filteredUsers.length, usersCount: users.length, shiftsCount: shifts.length, selectedSiteId });
+      // Filter shifts for the current week and site
+      const shiftsInWeek = shifts.filter(s =>
+        s.date >= weekStart &&
+        s.date <= weekEnd &&
+        (!selectedSiteId || s.siteId === selectedSiteId) &&
+        s.positionId !== 1 // Skip unavailability
+      );
 
-      exportUsers.forEach((user: User) => {
-        const employeeName = `${user.firstName} ${user.lastName}`;
-
-        // Same per-user total as grid sidebar: getUserTotalHours
-        const userTotal = Math.round(getUserTotalHours(user.id) * 100) / 100;
-
-        const dailyValues: (string | number)[] = weekDates.map((date: Date) => {
-          // Same function the grid uses to find shifts
-          const shift = getShiftForUserAndDay(user.id, date);
-          if (!shift) return '';
-          // Skip unavailable-only entries (positionId 1)
-          if (shift.positionId === 1) return '';
-
-          const hours = Math.round(calculateHours(shift.startTime, shift.endTime) * 100) / 100;
-          const posName = shift.position || '';
-          const site = shift.siteName || '';
-
-          // Check if this shift belongs to another site (shown as striped in grid)
-          const isOtherSite = selectedSiteId && shift.siteId && shift.siteId !== selectedSiteId;
-          if (isOtherSite) {
-            hasOtherSite = true;
-          }
-
-          // Build cell: Position | Hours | Site
-          const parts: string[] = [];
-          if (posName) parts.push(posName);
-          parts.push(`${hours}${isOtherSite ? '*' : ''}`);
-          if (site) parts.push(site);
-
-          return parts.join(' | ');
-        });
-
-        dataRows.push([
-          employeeName,
-          ...dailyValues,
-          userTotal,
-        ]);
+      // Group shifts by userId and positionId
+      const groupedShifts = new Map<string, Shift[]>();
+      shiftsInWeek.forEach(s => {
+        const key = `${s.userId}-${s.positionId}`;
+        if (!groupedShifts.has(key)) groupedShifts.set(key, []);
+        groupedShifts.get(key)!.push(s);
       });
 
-      // Footer row — exact same logic as grid footer
+      // For each group, create a row
+      groupedShifts.forEach((userPosShifts, key) => {
+        const [uId] = key.split('-').map(Number);
+        const user = users.find(u => u.id === uId);
+        if (!user) return;
+
+        const firstShift = userPosShifts[0];
+        const posName = t(firstShift.position) || (isEs ? 'Sin Asignar' : 'No Position');
+        const employeeName = `${user.firstName} ${user.lastName}`;
+
+        let rowTotal = 0;
+        const dailyHours = weekDates.map((date: Date) => {
+          const dateStr = formatDateLocal(date);
+          const shift = userPosShifts.find(s => s.date === dateStr);
+          if (!shift) return '';
+          const hours = Math.round(calculateHours(shift.startTime, shift.endTime) * 100) / 100;
+          rowTotal += hours;
+          return hours || '';
+        });
+
+        const rowData = [
+          posName,
+          employeeName,
+          ...dailyHours,
+        ];
+        if (!isDayView) {
+          rowData.push(Math.round(rowTotal * 100) / 100);
+        }
+        dataRows.push(rowData);
+      });
+
+      // Sort dataRows by employeeName and then by PosName
+      dataRows.sort((a, b) => {
+        const nameA = String(a[1]).toLowerCase();
+        const nameB = String(b[1]).toLowerCase();
+        if (nameA < nameB) return -1;
+        if (nameA > nameB) return 1;
+        const posA = String(a[0]).toLowerCase();
+        const posB = String(b[0]).toLowerCase();
+        return posA.localeCompare(posB);
+      });
+
+      // Footer row — Total hours per day (same as grid footer)
       const footerValues = weekDates.map((date: Date) => {
         const dateStr = formatDateLocal(date);
-        // Group shifts by user to avoid counting duplicates (same as grid footer)
-        const dailyShiftsMap = new Map<number, Shift>();
-        shifts
-          .filter(s => s.date === dateStr)
-          .forEach(shift => {
-            if (!dailyShiftsMap.has(shift.userId)) {
-              dailyShiftsMap.set(shift.userId, shift);
-            }
-          });
+        const dailyShifts = shiftsInWeek.filter(s => s.date === dateStr);
 
-        const totalHours = Array.from(dailyShiftsMap.values()).reduce((acc, shift) => {
-          // Only sum shifts that belong to the current site (if a site is selected)
-          if (selectedSiteId && shift.siteId && shift.siteId !== selectedSiteId) {
-            return acc;
-          }
+        // Use a map to handle distinct users if multiple positions per day (unlikely but possible)
+        const totalHours = dailyShifts.reduce((acc, shift) => {
           return acc + calculateHours(shift.startTime, shift.endTime);
         }, 0);
 
         return Math.round(totalHours * 100) / 100;
       });
 
-      const grandTotal = Math.round(filteredUsers.reduce((acc, user) => acc + getUserTotalHours(user.id), 0) * 100) / 100;
+      const grandTotal = Math.round(dataRows.reduce((acc, row) => {
+        if (isDayView) {
+          return acc + (Number(row[2]) || 0);
+        }
+        return acc + (Number(row[row.length - 1]) || 0);
+      }, 0) * 100) / 100;
 
       const footerRow: (string | number)[] = [
         isEs ? 'Horas Totales' : 'Total Hours',
+        '', // Space for 'Persona' column
         ...footerValues,
-        grandTotal,
       ];
+      if (!isDayView) {
+        footerRow.push(grandTotal);
+      }
 
       // Assemble worksheet — add site title row at top
       const currentSiteName = selectedSiteId
@@ -1424,22 +1441,18 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       wsData.push(...dataRows);
       wsData.push(footerRow);
 
-      // Footnote for cross-site shifts
-      if (hasOtherSite) {
-        wsData.push([]);
-        wsData.push([
-          isEs ? '* Turno de otro sitio' : '* Shift from another site'
-        ]);
-      }
-
       const ws = XLSX.utils.aoa_to_sheet(wsData);
 
       // Set column widths
-      ws['!cols'] = [
+      const cols = [
+        { wch: 18 }, // Position
         { wch: 24 }, // Name
-        ...weekDates.map(() => ({ wch: 14 })),
-        { wch: 14 }, // Total Hours
+        ...weekDates.map(() => ({ wch: 10 })), // days
       ];
+      if (!isDayView) {
+        cols.push({ wch: 12 }); // Total Hours
+      }
+      ws['!cols'] = cols;
 
       // Create workbook and save
       const wb = XLSX.utils.book_new();
