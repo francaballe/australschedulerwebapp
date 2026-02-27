@@ -216,6 +216,8 @@ export default function SettingsPage() {
         );
     });
 
+    const activeUsersCount = users.filter(u => !u.isBlocked).length;
+
     // Roles available in dropdown based on who's logged in:
     // - Owner (0): can assign Admin and Regular (never Owner)
     // - Admin (1): can only assign Regular (not Admin, not Owner)
@@ -415,13 +417,24 @@ export default function SettingsPage() {
 
             if (response.ok) {
                 await fetchSites();
-                showFeedback('success', `✅ Sitio eliminado correctamente`);
+                showFeedback('success', language === 'es' ? `✅ Sitio eliminado correctamente` : `✅ Site deleted successfully`);
             } else {
                 const err = await response.json();
-                showFeedback('error', err.error || 'Error al eliminar el sitio');
+                let errorMessage = err.error || (language === 'es' ? 'Error al eliminar el sitio' : 'Error deleting site');
+
+                // Translate specific conflict error from API if it contains typical keywords
+                if (errorMessage.includes('No se puede eliminar el sitio porque tiene')) {
+                    const shiftsCount = errorMessage.match(/(\d+) turnos/) ? errorMessage.match(/(\d+) turnos/)![1] : '0';
+                    const positionsCount = errorMessage.match(/(\d+) posiciones/) ? errorMessage.match(/(\d+) posiciones/)![1] : '0';
+                    errorMessage = language === 'es'
+                        ? `No se puede eliminar el sitio porque tiene ${shiftsCount} turnos y ${positionsCount} posiciones asociados.`
+                        : `Cannot delete site because it has ${shiftsCount} shifts and ${positionsCount} positions associated.`;
+                }
+
+                showFeedback('error', errorMessage);
             }
         } catch (error) {
-            showFeedback('error', 'Error de conexión');
+            showFeedback('error', language === 'es' ? 'Error de conexión' : 'Connection error');
         } finally {
             setConfirmDeleteSite(null);
         }
@@ -709,9 +722,9 @@ export default function SettingsPage() {
 
                             {/* User Counter */}
                             <div className={styles.userCounterCard}>
-                                <span className={styles.userCounterLabel}>{language === 'es' ? 'Usuarios registrados' : 'Registered users'}</span>
+                                <span className={styles.userCounterLabel}>{language === 'es' ? 'Usuarios activos' : 'Active users'}</span>
                                 <div className={styles.userCounterBadge}>
-                                    {usersLoading ? '…' : users.length}
+                                    {usersLoading ? '…' : activeUsersCount}
                                 </div>
                             </div>
 
