@@ -79,6 +79,7 @@ export default function SettingsPage() {
     const [roles, setRoles] = useState<Role[]>([]);
     const [usersLoading, setUsersLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [userViewFilter, setUserViewFilter] = useState<'active' | 'blocked' | 'all'>('active');
 
     // Logs state
     const [logs, setLogs] = useState<Log[]>([]);
@@ -209,8 +210,12 @@ export default function SettingsPage() {
         setTimeout(() => setFeedback(null), 4000);
     };
 
-    // Filtered users based on search (Blocked status filter only applies to the calendar grid)
+    // Filtered users based on view filter + search
     const filteredUsers = users.filter(u => {
+        // Apply view filter first
+        if (userViewFilter === 'active' && u.isBlocked) return false;
+        if (userViewFilter === 'blocked' && !u.isBlocked) return false;
+        // Then apply search
         if (!searchQuery.trim()) return true;
         const term = searchQuery.toLowerCase();
         return (
@@ -221,7 +226,11 @@ export default function SettingsPage() {
         );
     });
 
-    const activeUsersCount = users.filter(u => !u.isBlocked).length;
+    const displayedUsersCount = userViewFilter === 'active'
+        ? users.filter(u => !u.isBlocked).length
+        : userViewFilter === 'blocked'
+            ? users.filter(u => u.isBlocked).length
+            : users.length;
 
     // Roles available in dropdown based on who's logged in:
     // - Owner (0): can assign Admin and Regular (never Owner)
@@ -739,21 +748,124 @@ export default function SettingsPage() {
 
                             {/* User Counter */}
                             <div className={styles.userCounterCard}>
-                                <span className={styles.userCounterLabel}>{language === 'es' ? 'Usuarios activos' : 'Active users'}</span>
+                                <span className={styles.userCounterLabel}>
+                                    {userViewFilter === 'active'
+                                        ? (language === 'es' ? 'Usuarios activos' : 'Active users')
+                                        : userViewFilter === 'blocked'
+                                            ? (language === 'es' ? 'Usuarios bloqueados' : 'Blocked users')
+                                            : (language === 'es' ? 'Todos los usuarios' : 'All users')}
+                                </span>
+                                <div className={styles.userCounterActions}>
+                                    <button
+                                        className={styles.counterActionBtn}
+                                        onClick={() => {
+                                            // TODO: Implement bulk user upload from CSV
+                                            alert(language === 'es' ? 'Próximamente: Carga masiva de usuarios desde CSV' : 'Coming soon: Bulk user upload from CSV');
+                                        }}
+                                        title={language === 'es' ? 'Carga masiva de usuarios' : 'Bulk user upload'}
+                                    >
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
+                                            <polyline points="17,8 12,3 7,8" />
+                                            <line x1="12" y1="3" x2="12" y2="15" />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        className={styles.counterActionBtn}
+                                        onClick={() => {
+                                            setUserViewFilter(prev =>
+                                                prev === 'active' ? 'blocked' : prev === 'blocked' ? 'all' : 'active'
+                                            );
+                                        }}
+                                        title={language === 'es' ? 'Cambiar filtro de usuarios' : 'Change user filter'}
+                                    >
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            {userViewFilter === 'active' ? (
+                                                <>
+                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                    <circle cx="12" cy="7" r="4" />
+                                                </>
+                                            ) : userViewFilter === 'blocked' ? (
+                                                <>
+                                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                                    <circle cx="8.5" cy="7" r="4" />
+                                                    <line x1="18" y1="8" x2="23" y2="13" />
+                                                    <line x1="23" y1="8" x2="18" y2="13" />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                                    <circle cx="9" cy="7" r="4" />
+                                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                                </>
+                                            )}
+                                        </svg>
+                                    </button>
+                                    <button
+                                        className={styles.counterActionBtn}
+                                        onClick={async () => {
+                                            try {
+                                                const XLSX = await import('xlsx');
+                                                const wsData = [
+                                                    [language === 'es' ? 'Nombre' : 'Name', 'Email', language === 'es' ? 'Teléfono' : 'Phone', language === 'es' ? 'Rol' : 'Role', 'Status'],
+                                                    ...filteredUsers.map(u => [
+                                                        `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+                                                        u.email || '',
+                                                        u.phone || '',
+                                                        u.roleName || '',
+                                                        u.isBlocked ? (language === 'es' ? 'Bloqueado' : 'Blocked') : (language === 'es' ? 'Activo' : 'Active')
+                                                    ])
+                                                ];
+                                                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                                                // Auto-fit column widths
+                                                ws['!cols'] = wsData[0].map((_, i) => ({
+                                                    wch: Math.max(...wsData.map(row => (row[i]?.toString() || '').length), 10)
+                                                }));
+                                                const wb = XLSX.utils.book_new();
+                                                XLSX.utils.book_append_sheet(wb, ws, 'Users');
+                                                XLSX.writeFile(wb, `RosterLoop_Users_${new Date().toISOString().split('T')[0]}.xlsx`);
+                                            } catch (err) {
+                                                console.error('Error exporting Excel:', err);
+                                            }
+                                        }}
+                                        title={language === 'es' ? 'Exportar usuarios' : 'Export users'}
+                                    >
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
+                                            <polyline points="7,10 12,15 17,10" />
+                                            <line x1="12" y1="15" x2="12" y2="3" />
+                                        </svg>
+                                    </button>
+                                </div>
                                 <div className={styles.userCounterBadge}>
-                                    {usersLoading ? '…' : activeUsersCount}
+                                    {usersLoading ? '…' : displayedUsersCount}
                                 </div>
                             </div>
 
                             {/* Toolbar */}
                             <div className={styles.toolbar}>
-                                <input
-                                    type="text"
-                                    placeholder={language === 'es' ? "🔍 Buscar por nombre, email o teléfono..." : "🔍 Search by name, email or phone..."}
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className={styles.searchInput}
-                                />
+                                <div className={styles.searchWrapper}>
+                                    <input
+                                        type="text"
+                                        placeholder={language === 'es' ? "🔍 Buscar por nombre, email o teléfono..." : "🔍 Search by name, email or phone..."}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className={styles.searchInput}
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            className={styles.clearButton}
+                                            onClick={() => setSearchQuery('')}
+                                            title={language === 'es' ? 'Limpiar búsqueda' : 'Clear search'}
+                                        >
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
                                 <button
                                     className={styles.createButton}
                                     onClick={handleCreateUser}

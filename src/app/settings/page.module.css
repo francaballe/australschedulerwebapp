@@ -392,6 +392,40 @@
   letter-spacing: -0.5px;
 }
 
+.userCounterActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+  margin-right: 16px;
+}
+
+.counterActionBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--foreground-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  height: 40px;
+  width: 40px;
+  padding: 0;
+}
+
+.counterActionBtn:hover {
+  background: var(--hover-bg);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.counterActionBtn svg {
+  width: 18px;
+  height: 18px;
+}
+
 .toolbar {
   display: flex;
   gap: 12px;
@@ -409,6 +443,7 @@
   background: var(--input-bg);
   color: var(--foreground);
   transition: border-color 0.2s, box-shadow 0.2s;
+  padding-right: 40px;
 }
 
 .searchInput::placeholder {
@@ -419,6 +454,42 @@
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.searchWrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.clearButton {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--foreground-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+
+.clearButton:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--foreground);
+  opacity: 1;
+}
+
+.clearButton svg {
+  width: 16px;
+  height: 16px;
 }
 
 .createButton {

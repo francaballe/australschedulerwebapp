@@ -232,8 +232,8 @@
 
     .searchInput {
         width: 100%;
-        padding: 10px 36px 10px 12px;
-        /* Icon on right */
+        padding: 10px 44px 10px 12px;
+        /* Icon on right + space for clear button */
         background: var(--input-bg);
         /* Use slight dark/gray background */
         border: 1px solid transparent;
@@ -743,4 +743,33 @@
 .confirmDeleteBtn:hover {
     background: #dc2626;
     box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.clearButton {
+    position: absolute;
+    right: 32px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    opacity: 0.6;
+}
+
+.clearButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    opacity: 1;
+}
+
+.clearButton svg {
+    width: 14px;
+    height: 14px;
 }
