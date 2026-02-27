@@ -24,6 +24,9 @@
   --warning: #d97706;
   --past-day-bg: #f3f4f6;
   --past-day-pattern-color: rgba(0, 0, 0, 0.03);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --selection-border: #000000;
 }
 
 /* Dark Theme */
@@ -48,6 +51,9 @@
   --warning: #f59e0b;
   --past-day-bg: rgba(0, 0, 0, 0.2);
   --past-day-pattern-color: rgba(255, 255, 255, 0.03);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --selection-border: #ffffff;
 }
 
 * {

@@ -1778,7 +1778,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
           // Show all users
           // filter users by selected site if available -> REMOVED per requirement
           filteredUsers
-            .map((user: User) => (
+            .map((user: User, userIndex: number) => (
               <div key={user.id} className={styles.userRow}>
                 {/* Columna de usuario */}
                 <div className={styles.userCell}>
@@ -1846,50 +1846,124 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                   `${shift.positionColor}${!shift.published ? '30' : '85'}` :
                                   (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)')),
                             borderLeftColor: isOtherSite ? '#9ca3af' : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ? shift.positionColor : '#3b82f6'),
-                            color: isOtherSite ? '#6b7280' : (isFilteredOut ? 'var(--foreground-secondary, #94a3b8)' : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ? shift.positionColor : '#fbbf24')),
+                            color: isOtherSite ? '#6b7280' : (isFilteredOut ? 'var(--foreground-secondary, #94a3b8)' : 'var(--text-primary)'),
                             position: 'relative',
-                            opacity: isOtherSite ? 0.8 : 1,
                             boxShadow: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime())
-                              ? '0 0 0 3px #000, 0 4px 12px rgba(0,0,0,0.15)'
+                              ? '0 0 0 3px var(--selection-border), 0 4px 12px rgba(0,0,0,0.15)'
                               : 'none',
                             zIndex: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime()) ? 5 : 'auto',
                             ...(isOtherSite && { cursor: 'not-allowed' })
                           }}
                           title={
-                            isOtherSite
-                              ? (language === 'es' ? `Turno de otro sitio: ${shift.siteName || 'Desconocido'}` : `Shift from other site: ${shift.siteName || 'Unknown'}`)
-                              : (shift.isUserUnavailable ? (language === 'es' ? 'Conflicto: usuario no disponible con turno asignado' : 'Conflict: unavailable user with assigned shift') : undefined)
+                            (view !== 'twoWeeks')
+                              ? (isOtherSite
+                                ? (language === 'es' ? `Turno de otro sitio: ${shift.siteName || 'Desconocido'}` : `Shift from other site: ${shift.siteName || 'Unknown'}`)
+                                : (shift.isUserUnavailable ? (language === 'es' ? 'Conflicto: usuario no disponible con turno asignado' : 'Conflict: unavailable user with assigned shift') : undefined))
+                              : undefined
                           }
                         >
-                          {shift.isUserUnavailable && (
-                            <div className={styles.unavailableWarningOverlay} title={language === 'es' ? "Usuario NO disponible — turno asignado por manager" : "User UNAVAILABLE — shift assigned by manager"}>
-                              <svg className={styles.unavailableWarningIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 2L2 22H22L12 2Z" fill="#FBBF24" stroke="black" strokeWidth="2" strokeLinejoin="round" />
-                                <path d="M12 9V14" stroke="black" strokeWidth="3" strokeLinecap="round" />
-                                <circle cx="12" cy="19" r="1.5" fill="black" />
-                              </svg>
-                            </div>
-                          )}
-                          {shiftTimeText && (
-                            <div className={styles.shiftTime} style={{ fontWeight: 'normal' }}>
-                              {shiftTimeText}
-                            </div>
-                          )}
-                          {shift.position && (
-                            <div className={styles.shiftPosition} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                              <span>{t(shift.position)}</span>
-                              {shift.positionDeleted && (
-                                <div title={language === 'es' ? "Esta posición fue eliminada" : "This position was deleted"} style={{ display: 'flex', alignItems: 'center', marginLeft: '4px' }}>
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '17.5px', height: '17.5px', opacity: 0.7 }}>
-                                    <path d="M3 6h18" />
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                    <line x1="10" y1="11" x2="10" y2="17" />
-                                    <line x1="14" y1="11" x2="14" y2="17" />
-                                  </svg>
+                          {/* Muted wrapper for everything EXCEPT the HUD card */}
+                          <div style={{ opacity: (isOtherSite || isFilteredOut) ? 0.7 : 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            {shift.isUserUnavailable && (
+                              <div className={styles.unavailableWarningOverlay} title={view !== 'twoWeeks' ? (language === 'es' ? "Usuario NO disponible — turno asignado por manager" : "User UNAVAILABLE — shift assigned by manager") : undefined}>
+                                <svg className={styles.unavailableWarningIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M12 2L2 22H22L12 2Z" fill="#FBBF24" stroke="black" strokeWidth="2" strokeLinejoin="round" />
+                                  <path d="M12 9V14" stroke="black" strokeWidth="3" strokeLinecap="round" />
+                                  <circle cx="12" cy="19" r="1.5" fill="black" />
+                                </svg>
+                              </div>
+                            )}
+
+                            <div className={styles.shiftLabels}>
+                              {/* Simplified view (centered base state) */}
+                              <div className={styles.simplifiedLabel}>
+                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                                  <span className={styles.simplifiedPosName}>
+                                    {t(shift.position).substring(0, 3).toUpperCase()}
+                                  </span>
+                                  {shift.positionDeleted && (
+                                    <div className={styles.simplifiedTrashWrapper}>
+                                      <div className={styles.deletedPositionIcon} title={view !== 'twoWeeks' ? (language === 'es' ? "Esta posición fue eliminada" : "This position was deleted") : undefined}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <path d="M3 6h18" />
+                                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                          <line x1="10" y1="11" x2="10" y2="17" />
+                                          <line x1="14" y1="11" x2="14" y2="17" />
+                                        </svg>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
+                              </div>
+
+                              {/* Standard Full view (for non-2-week views) */}
+                              <div className={styles.fullLabel}>
+                                {shiftTimeText && (
+                                  <div className={styles.shiftTime} style={{ fontWeight: 'normal' }}>
+                                    {shiftTimeText}
+                                  </div>
+                                )}
+                                {shift.position && (
+                                  <div className={styles.shiftPosition} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                    <span>{t(shift.position)}</span>
+                                    {shift.positionDeleted && (
+                                      <div className={styles.deletedPositionIcon} title={language === 'es' ? "Esta posición fue eliminada" : "This position was deleted"}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <path d="M3 6h18" />
+                                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                          <line x1="10" y1="11" x2="10" y2="17" />
+                                          <line x1="14" y1="11" x2="14" y2="17" />
+                                        </svg>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
+                          </div>
+
+                          {/* Floating HUD view (on hover) - OUTSIDE the muted container */}
+                          <div className={`${styles.hoverHUD} ${userIndex < 2 ? styles.topRowHUD : ''}`}>
+                            <div className={styles.hudHeader}>{t(shift.position)}</div>
+
+                            {shift.isUserUnavailable && (
+                              <div className={styles.hudConflict}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                  <line x1="12" y1="9" x2="12" y2="13" />
+                                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
+                                <span>{language === 'es' ? 'Conflicto: usuario no disponible' : 'Conflict: user unavailable'}</span>
+                              </div>
+                            )}
+
+                            {shift.positionDeleted && (
+                              <div className={styles.hudConflict}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M3 6h18" />
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                  <line x1="10" y1="11" x2="10" y2="17" />
+                                  <line x1="14" y1="11" x2="14" y2="17" />
+                                </svg>
+                                <span>{language === 'es' ? 'Posición eliminada' : 'Deleted position'}</span>
+                              </div>
+                            )}
+
+                            <div className={styles.hudRow}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                              </svg>
+                              <span>{shiftTimeText}</span>
+                            </div>
+                            <div className={styles.hudRow}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                <circle cx="12" cy="10" r="3" />
+                              </svg>
+                              <span>{shift.siteName || 'RosterLoop'}</span>
+                            </div>
+                          </div>
                         </div>
                       ) : unavailableSet.has(`${user.id}-${dateStr}`) ? (
                         <div
@@ -1900,13 +1974,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                             color: '#9E9E9E',
                             position: 'relative',
                             boxShadow: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime())
-                              ? '0 0 0 3px #000, 0 4px 12px rgba(0,0,0,0.15)'
+                              ? '0 0 0 3px var(--selection-border), 0 4px 12px rgba(0,0,0,0.15)'
                               : 'none',
                             zIndex: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime()) ? 5 : 'auto'
                           }}
                           title={language === 'es' ? "Usuario no disponible" : "User unavailable"}
                         >
-                          <span className={styles.positionName} style={{ color: '#9E9E9E', fontStyle: 'italic' }}>{t('Unavailable')}</span>
+                          <div className={view === 'twoWeeks' ? styles.simplifiedLabel : styles.fullLabel}>
+                            <span className={view === 'twoWeeks' ? styles.simplifiedPosName : styles.positionName} style={{ color: '#9E9E9E', fontStyle: view === 'twoWeeks' ? 'normal' : 'italic' }}>
+                              {view === 'twoWeeks'
+                                ? (language === 'es' ? 'N/D' : 'N/A')
+                                : t('Unavailable')
+                              }
+                            </span>
+                          </div>
                         </div>
                       ) : (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime()) ? (
                         <div
@@ -1914,7 +1995,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           style={{
                             backgroundColor: 'transparent',
                             borderLeftColor: 'transparent',
-                            boxShadow: '0 0 0 3px #000, 0 4px 12px rgba(0,0,0,0.15)',
+                            boxShadow: '0 0 0 3px var(--selection-border), 0 4px 12px rgba(0,0,0,0.15)',
                             position: 'relative',
                             zIndex: 5
                           }}
@@ -1982,212 +2063,213 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       </div>
 
       {/* Modal for Position Selection */}
-      {isModalOpen && (
-        <div className={styles.modalOverlay} onClick={handleModalClose}>
-          <div
-            className={styles.modalContent}
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              transform: `translate(${modalPos.x}px, ${modalPos.y}px)`,
-              cursor: 'default'
-            }}
-          >
+      {
+        isModalOpen && (
+          <div className={styles.modalOverlay} onClick={handleModalClose}>
             <div
-              className={styles.modalHeader}
-              onMouseDown={handleModalDrag}
-              style={{ cursor: 'grab', userSelect: 'none' }}
+              className={styles.modalContent}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                transform: `translate(${modalPos.x}px, ${modalPos.y}px)`,
+                cursor: 'default'
+              }}
             >
+              <div
+                className={styles.modalHeader}
+                onMouseDown={handleModalDrag}
+                style={{ cursor: 'grab', userSelect: 'none' }}
+              >
 
-              <div>
-                <h3>
-                  {selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date))
-                    ? 'Editar Turno'
-                    : 'Asignar Turno'}
-                </h3>
-                {selectedCell && (
-                  <p>
-                    Usuario: {users.find(u => u.id === selectedCell.userId)?.firstName} {users.find(u => u.id === selectedCell.userId)?.lastName}
-                    <br />
-                    Fecha: {selectedCell.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                  </p>
-                )}
-              </div>
-              <div className={styles.modalHeaderActions}>
-                {selectedCell && (() => {
-                  const allUserShifts = shifts.filter(s =>
-                    s.userId === selectedCell.userId &&
-                    s.date === formatDateLocal(selectedCell.date)
-                  );
-                  const hasMultiple = allUserShifts.length > 1;
-                  const shift = allUserShifts[0];
-
-                  return (
-                    <div>
-                      {hasMultiple && (
-                        <div style={{ color: 'orange', fontSize: '0.9em', marginBottom: '10px' }}>
-                          ⚠️ Se detectaron múltiples turnos para esta fecha. Se mostrará/operará con el primero.
-                        </div>
-                      )}
-                      {shift && shift.positionId !== 1 && (
-                        <button className={styles.modalDeleteButton} onClick={() => handleDeleteShift()} title="Borrar">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M3 6h18" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                            <line x1="10" y1="11" x2="10" y2="17" />
-                            <line x1="14" y1="11" x2="14" y2="17" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  );
-                })()}
-                <button className={styles.modalCloseButton} onClick={handleModalClose} title="Cerrar">
-                  ×
-                </button>
-              </div>
-            </div>
-
-            <div className={styles.modalBody}>
-              {showDeleteConfirmation ? (
-                <div className={styles.deleteConfirmation}>
-                  <div className={styles.deleteIconContainer}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                      <path d="M12 9v4" />
-                      <path d="M12 17h.01" />
-                    </svg>
-                  </div>
-                  <h4>¿Eliminar turno publicado?</h4>
-                  <p>Este turno ya fue publicado. Si continúas, puedes optar por enviarle una notificación a la persona.</p>
-
-                  <div className={styles.notificationOption}>
-                    <label className={styles.checkboxLabel}>
-                      <input
-                        type="checkbox"
-                        checked={notifyUserOnDelete}
-                        onChange={(e) => setNotifyUserOnDelete(e.target.checked)}
-                      />
-                      <span className={styles.customCheckbox}></span>
-                      Notificar al usuario
-                    </label>
-                  </div>
-
-                  <div className={styles.deleteConfirmationButtons}>
-                    <button
-                      className={styles.cancelDeleteBtn}
-                      onClick={() => setShowDeleteConfirmation(false)}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      className={styles.confirmDeleteBtn}
-                      onClick={() => handleDeleteShift(true)}
-                    >
-                      Eliminar Turno
-                    </button>
-                  </div>
-                </div>
-              ) : modalLoading ? (
-                <div className={styles.modalLoading}>Cargando posiciones...</div>
-              ) : positions.length > 0 ? (
                 <div>
+                  <h3>
+                    {selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date))
+                      ? 'Editar Turno'
+                      : 'Asignar Turno'}
+                  </h3>
+                  {selectedCell && (
+                    <p>
+                      Usuario: {users.find(u => u.id === selectedCell.userId)?.firstName} {users.find(u => u.id === selectedCell.userId)?.lastName}
+                      <br />
+                      Fecha: {selectedCell.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </p>
+                  )}
+                </div>
+                <div className={styles.modalHeaderActions}>
                   {selectedCell && (() => {
-                    const shift = shifts.find(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date));
-                    if (!shift) return null;
+                    const allUserShifts = shifts.filter(s =>
+                      s.userId === selectedCell.userId &&
+                      s.date === formatDateLocal(selectedCell.date)
+                    );
+                    const hasMultiple = allUserShifts.length > 1;
+                    const shift = allUserShifts[0];
+
                     return (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                        <div>
-                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: 'var(--text-primary)' }}>
-                            Hora de inicio
-                          </label>
-                          <input
-                            type="time"
-                            value={selectedStartTime}
-                            onChange={(e) => setSelectedStartTime(e.target.value)}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              border: '1px solid var(--border)',
-                              borderRadius: '6px',
-                              fontSize: '14px',
-                              boxSizing: 'border-box',
-                              backgroundColor: 'var(--background)',
-                              color: 'var(--text-primary)'
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: 'var(--text-primary)' }}>
-                            Hora de fin
-                          </label>
-                          <input
-                            type="time"
-                            value={selectedEndTime}
-                            onChange={(e) => setSelectedEndTime(e.target.value)}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              border: '1px solid var(--border)',
-                              borderRadius: '6px',
-                              fontSize: '14px',
-                              boxSizing: 'border-box',
-                              backgroundColor: 'var(--background)',
-                              color: 'var(--text-primary)'
-                            }}
-                          />
-                        </div>
+                      <div>
+                        {hasMultiple && (
+                          <div style={{ color: 'orange', fontSize: '0.9em', marginBottom: '10px' }}>
+                            ⚠️ Se detectaron múltiples turnos para esta fecha. Se mostrará/operará con el primero.
+                          </div>
+                        )}
+                        {shift && shift.positionId !== 1 && (
+                          <button className={styles.modalDeleteButton} onClick={() => handleDeleteShift()} title="Borrar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <line x1="10" y1="11" x2="10" y2="17" />
+                              <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     );
                   })()}
-                  <div className={styles.positionsGrid}>
-                    {positions.map((position) => (
-                      <div
-                        key={position.id}
-                        className={`${styles.positionCard} ${selectedPositionId === position.id ? styles.selected : ''}`}
-                        onClick={(e) => handlePositionSelect(position.id, e)}
-                        style={{
-                          backgroundColor: position.color ? `${position.color}20` : '#f5f5f5',
-                          borderLeftColor: position.color || '#ccc'
-                        }}
+                  <button className={styles.modalCloseButton} onClick={handleModalClose} title="Cerrar">
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.modalBody}>
+                {showDeleteConfirmation ? (
+                  <div className={styles.deleteConfirmation}>
+                    <div className={styles.deleteIconContainer}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                        <path d="M12 9v4" />
+                        <path d="M12 17h.01" />
+                      </svg>
+                    </div>
+                    <h4>¿Eliminar turno publicado?</h4>
+                    <p>Este turno ya fue publicado. Si continúas, puedes optar por enviarle una notificación a la persona.</p>
+
+                    <div className={styles.notificationOption}>
+                      <label className={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={notifyUserOnDelete}
+                          onChange={(e) => setNotifyUserOnDelete(e.target.checked)}
+                        />
+                        <span className={styles.customCheckbox}></span>
+                        Notificar al usuario
+                      </label>
+                    </div>
+
+                    <div className={styles.deleteConfirmationButtons}>
+                      <button
+                        className={styles.cancelDeleteBtn}
+                        onClick={() => setShowDeleteConfirmation(false)}
                       >
-                        <div className={styles.positionInfo}>
-                          {position.starttime && position.endtime && (
-                            <div className={styles.shiftTime} style={{ fontWeight: 'normal', marginBottom: '4px' }}>
-                              {formatShiftTime(position.starttime, position.endtime)}
-                            </div>
-                          )}
-                          <div className={styles.shiftPosition}>
-                            {position.name}
+                        Cancelar
+                      </button>
+                      <button
+                        className={styles.confirmDeleteBtn}
+                        onClick={() => handleDeleteShift(true)}
+                      >
+                        Eliminar Turno
+                      </button>
+                    </div>
+                  </div>
+                ) : modalLoading ? (
+                  <div className={styles.modalLoading}>Cargando posiciones...</div>
+                ) : positions.length > 0 ? (
+                  <div>
+                    {selectedCell && (() => {
+                      const shift = shifts.find(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date));
+                      if (!shift) return null;
+                      return (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: 'var(--text-primary)' }}>
+                              Hora de inicio
+                            </label>
+                            <input
+                              type="time"
+                              value={selectedStartTime}
+                              onChange={(e) => setSelectedStartTime(e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                border: '1px solid var(--border)',
+                                borderRadius: '6px',
+                                fontSize: '14px',
+                                boxSizing: 'border-box',
+                                backgroundColor: 'var(--background)',
+                                color: 'var(--text-primary)'
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: 'var(--text-primary)' }}>
+                              Hora de fin
+                            </label>
+                            <input
+                              type="time"
+                              value={selectedEndTime}
+                              onChange={(e) => setSelectedEndTime(e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                border: '1px solid var(--border)',
+                                borderRadius: '6px',
+                                fontSize: '14px',
+                                boxSizing: 'border-box',
+                                backgroundColor: 'var(--background)',
+                                color: 'var(--text-primary)'
+                              }}
+                            />
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })()}
+                    <div className={styles.positionsGrid}>
+                      {positions.map((position) => (
+                        <div
+                          key={position.id}
+                          className={`${styles.positionCard} ${selectedPositionId === position.id ? styles.selected : ''}`}
+                          onClick={(e) => handlePositionSelect(position.id, e)}
+                          style={{
+                            backgroundColor: position.color ? `${position.color}20` : '#f5f5f5',
+                            borderLeftColor: position.color || '#ccc'
+                          }}
+                        >
+                          <div className={styles.positionInfo}>
+                            {position.starttime && position.endtime && (
+                              <div className={styles.shiftTime} style={{ fontWeight: 'normal', marginBottom: '4px' }}>
+                                {formatShiftTime(position.starttime, position.endtime)}
+                              </div>
+                            )}
+                            <div className={styles.shiftPosition}>
+                              {position.name}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                ) : (
+                  <div className={styles.modalError}>No hay posiciones disponibles</div>
+                )}
+              </div>
+              {selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date)) && (
+                <div className={styles.modalFooter}>
+                  <button
+                    className={styles.modalCancelButton}
+                    onClick={handleModalClose}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className={styles.primaryBtn}
+                    onClick={handleSaveAssignment}
+                    disabled={selectedPositionId === null || modalLoading}
+                  >
+                    Guardar
+                  </button>
                 </div>
-              ) : (
-                <div className={styles.modalError}>No hay posiciones disponibles</div>
               )}
             </div>
-            {selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date)) && (
-              <div className={styles.modalFooter}>
-                <button
-                  className={styles.modalCancelButton}
-                  onClick={handleModalClose}
-                >
-                  Cancelar
-                </button>
-                <button
-                  className={styles.primaryBtn}
-                  onClick={handleSaveAssignment}
-                  disabled={selectedPositionId === null || modalLoading}
-                >
-                  Guardar
-                </button>
-              </div>
-            )}
           </div>
-        </div>
-      )
+        )
       }
 
       {/* Warning Modal */}
