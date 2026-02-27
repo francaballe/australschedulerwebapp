@@ -1846,7 +1846,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                   `${shift.positionColor}${!shift.published ? '30' : '85'}` :
                                   (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)')),
                             borderLeftColor: isOtherSite ? '#9ca3af' : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ? shift.positionColor : '#3b82f6'),
-                            color: isOtherSite ? '#6b7280' : (isFilteredOut ? '#94a3b8' : '#1e293b'),
+                            color: isOtherSite ? '#6b7280' : (isFilteredOut ? '#94a3b8' : 'var(--foreground)'),
                             position: 'relative',
                             boxShadow: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime())
                               ? '0 0 0 3px var(--selection-border), 0 4px 12px rgba(0,0,0,0.15)'
@@ -2097,14 +2097,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 <div>
                   <h3>
                     {selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date))
-                      ? 'Editar Turno'
-                      : 'Asignar Turno'}
+                      ? (language === 'es' ? 'Editar Turno' : 'Edit Shift')
+                      : (language === 'es' ? 'Asignar Turno' : 'Assign Shift')}
                   </h3>
                   {selectedCell && (
                     <p>
-                      Usuario: {users.find(u => u.id === selectedCell.userId)?.firstName} {users.find(u => u.id === selectedCell.userId)?.lastName}
+                      {language === 'es' ? 'Usuario' : 'User'}: {users.find(u => u.id === selectedCell.userId)?.firstName} {users.find(u => u.id === selectedCell.userId)?.lastName}
                       <br />
-                      Fecha: {selectedCell.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {language === 'es' ? 'Fecha' : 'Date'}: {selectedCell.date.toLocaleDateString(language === 'es' ? 'es-AR' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                     </p>
                   )}
                 </div>
@@ -2121,11 +2121,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                       <div>
                         {hasMultiple && (
                           <div style={{ color: 'orange', fontSize: '0.9em', marginBottom: '10px' }}>
-                            ⚠️ Se detectaron múltiples turnos para esta fecha. Se mostrará/operará con el primero.
+                            ⚠️ {language === 'es' ? 'Se detectaron múltiples turnos para esta fecha. Se mostrará/operará con el primero.' : 'Multiple shifts detected for this date. The first one will be shown/operated on.'}
                           </div>
                         )}
                         {shift && shift.positionId !== 1 && (
-                          <button className={styles.modalDeleteButton} onClick={() => handleDeleteShift()} title="Borrar">
+                          <button className={styles.modalDeleteButton} onClick={() => handleDeleteShift()} title={language === 'es' ? 'Borrar' : 'Delete'}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M3 6h18" />
                               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -2137,7 +2137,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                       </div>
                     );
                   })()}
-                  <button className={styles.modalCloseButton} onClick={handleModalClose} title="Cerrar">
+                  <button className={styles.modalCloseButton} onClick={handleModalClose} title={language === 'es' ? 'Cerrar' : 'Close'}>
                     ×
                   </button>
                 </div>
@@ -2153,8 +2153,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                         <path d="M12 17h.01" />
                       </svg>
                     </div>
-                    <h4>¿Eliminar turno publicado?</h4>
-                    <p>Este turno ya fue publicado. Si continúas, puedes optar por enviarle una notificación a la persona.</p>
+                    <h4>{language === 'es' ? '¿Eliminar turno publicado?' : 'Delete published shift?'}</h4>
+                    <p>{language === 'es' ? 'Este turno ya fue publicado. Si continúas, puedes optar por enviarle una notificación a la persona.' : 'This shift has already been published. If you continue, you can choose to send a notification to the person.'}</p>
 
                     <div className={styles.notificationOption}>
                       <label className={styles.checkboxLabel}>
@@ -2164,7 +2164,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           onChange={(e) => setNotifyUserOnDelete(e.target.checked)}
                         />
                         <span className={styles.customCheckbox}></span>
-                        Notificar al usuario
+                        {language === 'es' ? 'Notificar al usuario' : 'Notify user'}
                       </label>
                     </div>
 
@@ -2173,18 +2173,18 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                         className={styles.cancelDeleteBtn}
                         onClick={() => setShowDeleteConfirmation(false)}
                       >
-                        Cancelar
+                        {language === 'es' ? 'Cancelar' : 'Cancel'}
                       </button>
                       <button
                         className={styles.confirmDeleteBtn}
                         onClick={() => handleDeleteShift(true)}
                       >
-                        Eliminar Turno
+                        {language === 'es' ? 'Eliminar Turno' : 'Delete Shift'}
                       </button>
                     </div>
                   </div>
                 ) : modalLoading ? (
-                  <div className={styles.modalLoading}>Cargando posiciones...</div>
+                  <div className={styles.modalLoading}>{language === 'es' ? 'Cargando posiciones...' : 'Loading positions...'}</div>
                 ) : positions.length > 0 ? (
                   <div>
                     {selectedCell && (() => {
@@ -2194,7 +2194,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                           <div>
                             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: 'var(--text-primary)' }}>
-                              Hora de inicio
+                              {language === 'es' ? 'Hora de inicio' : 'Start Time'}
                             </label>
                             <input
                               type="time"
@@ -2214,7 +2214,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           </div>
                           <div>
                             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: 'var(--text-primary)' }}>
-                              Hora de fin
+                              {language === 'es' ? 'Hora de fin' : 'End Time'}
                             </label>
                             <input
                               type="time"
@@ -2261,7 +2261,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className={styles.modalError}>No hay posiciones disponibles</div>
+                  <div className={styles.modalError}>{language === 'es' ? 'No hay posiciones disponibles' : 'No positions available'}</div>
                 )}
               </div>
               {selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date)) && (
@@ -2270,14 +2270,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     className={styles.modalCancelButton}
                     onClick={handleModalClose}
                   >
-                    Cancelar
+                    {language === 'es' ? 'Cancelar' : 'Cancel'}
                   </button>
                   <button
                     className={styles.primaryBtn}
                     onClick={handleSaveAssignment}
                     disabled={selectedPositionId === null || modalLoading}
                   >
-                    Guardar
+                    {language === 'es' ? 'Guardar' : 'Save'}
                   </button>
                 </div>
               )}
