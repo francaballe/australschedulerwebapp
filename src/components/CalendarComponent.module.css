@@ -435,6 +435,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  padding-right: 24px;
 }
 
 .shiftPosition span {
