@@ -36,6 +36,7 @@ interface ManagedUser {
     lastLogin: string | null;
     createdDate: string | null;
     roleName: string | null;
+    siteIds: number[];
 }
 
 interface ManagedSite {
@@ -50,6 +51,7 @@ interface UserFormData {
     phone: string;
     password: string;
     roleId: number;
+    siteIds: number[];
 }
 
 const emptyForm: UserFormData = {
@@ -58,7 +60,8 @@ const emptyForm: UserFormData = {
     email: "",
     phone: "",
     password: "",
-    roleId: 0,
+    roleId: 2, // Default to Regular
+    siteIds: [],
 };
 
 export default function SettingsPage() {
@@ -130,7 +133,7 @@ export default function SettingsPage() {
                 setRoles(data);
                 // Set default roleId to first available role
                 if (data.length > 0) {
-                    setFormData(prev => ({ ...prev, roleId: data[0].id }));
+                    setFormData(prev => ({ ...prev, roleId: 2 }));
                 }
             }
         } catch (error) {
@@ -156,9 +159,10 @@ export default function SettingsPage() {
 
     // Fetch sites for management
     const fetchSites = useCallback(async () => {
+        if (!user) return;
         setSitesLoading(true);
         try {
-            const response = await fetch('/api/sites', { cache: 'no-store' });
+            const response = await fetch(`/api/sites?userId=${user.id}&roleId=${user.roleId}`, { cache: 'no-store' });
             if (response.ok) {
                 const data = await response.json();
                 setSites(data);
@@ -168,7 +172,7 @@ export default function SettingsPage() {
         } finally {
             setSitesLoading(false);
         }
-    }, []);
+    }, [user]);
 
     // Fetch logs
     const fetchLogs = useCallback(async (page = 1) => {
@@ -191,6 +195,7 @@ export default function SettingsPage() {
     useEffect(() => {
         if (activeTab === 'users') {
             fetchUsers();
+            fetchSites(); // Fetch sites so they are available in the User Modal
             if (roles.length === 0) fetchRoles();
         } else if (activeTab === 'sites') {
             fetchSites();
@@ -230,7 +235,9 @@ export default function SettingsPage() {
     // Open create modal
     const handleCreateUser = () => {
         setEditingUser(null);
-        setFormData({ ...emptyForm, roleId: availableRoles[0]?.id ?? 2 });
+        // Find if role 2 is available, otherwise default to first available
+        const defaultRole = availableRoles.find(r => r.id === 2)?.id ?? (availableRoles[0]?.id ?? 2);
+        setFormData({ ...emptyForm, roleId: defaultRole });
         setFormError(null);
         setShowUserModal(true);
     };
@@ -261,6 +268,7 @@ export default function SettingsPage() {
             phone: u.phone || "",
             password: "",
             roleId: u.roleId || 2,
+            siteIds: u.siteIds || [],
         });
         setFormError(null);
         setShowUserModal(true);
@@ -274,6 +282,11 @@ export default function SettingsPage() {
         }
         if (!editingUser && !formData.password.trim()) {
             setFormError("La contraseña es requerida para nuevos usuarios");
+            return;
+        }
+
+        if (formData.roleId === 1 && formData.siteIds.length === 0) {
+            setFormError(language === 'es' ? '⚠️ Debes seleccionar al menos un sitio para el Admin' : '⚠️ You must select at least one site for the Admin');
             return;
         }
 
@@ -296,6 +309,10 @@ export default function SettingsPage() {
             // Only send roleId if the logged-in user is the owner (admins can't change roles)
             if (user?.roleId === 0 && editingUser?.id !== user?.id) {
                 payload.roleId = formData.roleId;
+                // Only send siteIds if the role is Admin (1)
+                if (formData.roleId === 1) {
+                    payload.siteIds = formData.siteIds;
+                }
             }
             if (formData.password.trim()) {
                 payload.password = formData.password;
@@ -1223,7 +1240,6 @@ export default function SettingsPage() {
                                     )}
                                 </div>
                             </div>
-
                             <div className={styles.modalField}>
                                 <label>{editingUser ? (language === 'es' ? 'Contraseña (dejar vacío para no cambiar)' : 'Password (leave blank to keep current)') : (language === 'es' ? 'Contraseña *' : 'Password *')}</label>
                                 <input
@@ -1233,6 +1249,65 @@ export default function SettingsPage() {
                                     placeholder={editingUser ? '••••••••' : (language === 'es' ? 'Ingresa una contraseña' : 'Enter a password')}
                                 />
                             </div>
+
+                            {/* Site Selection for Admins — Visible to Owners and the Admin themselves */}
+                            {(user?.roleId === 0 || (user?.roleId === 1 && editingUser?.id === user?.id)) && formData.roleId === 1 && (
+                                <div className={styles.modalField} style={{ marginTop: '8px' }}>
+                                    <label style={{ marginBottom: '12px', display: 'block' }}>
+                                        🏢 {language === 'es' ? 'Acceso a Sitios (Admins) *' : 'Site Access (Admins) *'}
+                                        {user?.roleId !== 0 && (
+                                            <span style={{ fontSize: '11px', fontWeight: 'normal', opacity: 0.7, marginLeft: '8px' }}>
+                                                ({language === 'es' ? 'solo lectura' : 'read-only'})
+                                            </span>
+                                        )}
+                                    </label>
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                                        gap: '10px',
+                                        padding: '12px',
+                                        background: 'var(--bg-secondary)',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border)',
+                                        maxHeight: '150px',
+                                        overflowY: 'auto',
+                                        opacity: user?.roleId !== 0 ? 0.7 : 1
+                                    }}>
+                                        {sites.map(site => (
+                                            <label key={site.id} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                fontSize: '13px',
+                                                cursor: 'pointer',
+                                                color: 'var(--foreground)'
+                                            }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.siteIds.includes(site.id)}
+                                                    disabled={user?.roleId !== 0}
+                                                    onChange={(e) => {
+                                                        const checked = e.target.checked;
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            siteIds: checked
+                                                                ? [...prev.siteIds, site.id]
+                                                                : prev.siteIds.filter(id => id !== site.id)
+                                                        }));
+                                                    }}
+                                                    style={{ width: '16px', height: '16px' }}
+                                                />
+                                                {site.name}
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {formData.siteIds.length === 0 && user?.roleId === 0 && (
+                                        <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '4px' }}>
+                                            {language === 'es' ? '⚠️ Debes seleccionar al menos un sitio para el Admin' : '⚠️ You must select at least one site for the Admin'}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {formError && (
                                 <div className={styles.modalError}>{formError}</div>

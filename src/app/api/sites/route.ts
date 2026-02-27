@@ -9,7 +9,36 @@ export async function GET(request: NextRequest) {
     };
 
     try {
+        const { searchParams } = new URL(request.url);
+        const userIdParam = searchParams.get('userId');
+        const roleIdParam = searchParams.get('roleId');
+
+        if (!userIdParam || !roleIdParam) {
+            return NextResponse.json(
+                { error: 'userId y roleId son requeridos' },
+                { status: 400, headers: corsHeaders }
+            );
+        }
+
+        const userId = parseInt(userIdParam, 10);
+        const roleId = parseInt(roleIdParam, 10);
+
+        let whereClause = {};
+
+        // If roleId is 1 (Admin), filter by UserSiteAccess
+        // If roleId is 0 (Owner), no filter (all sites)
+        if (roleId === 1) {
+            whereClause = {
+                userAccess: {
+                    some: {
+                        userId: userId
+                    }
+                }
+            };
+        }
+
         const sites = await prisma.site.findMany({
+            where: whereClause,
             orderBy: {
                 id: 'asc'
             },

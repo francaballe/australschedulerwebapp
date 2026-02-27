@@ -46,11 +46,16 @@ export async function GET(request: NextRequest) {
                         id: true,
                         name: true
                     }
+                },
+                siteAccess: {
+                    select: {
+                        siteId: true
+                    }
                 }
-            }
-        });
+            } as any
+        }) as any;
 
-        const formattedUsers = users.map((user) => ({
+        const formattedUsers = users.map((user: any) => ({
             id: user.id,
             email: user.email,
             firstName: user.firstname,
@@ -60,8 +65,9 @@ export async function GET(request: NextRequest) {
             isBlocked: user.isblocked,
             lastLogin: user.lastlogin,
             createdDate: user.createddate,
-            roleName: user.role?.name || null
-        })).sort((a, b) => {
+            roleName: user.role?.name || null,
+            siteIds: user.siteAccess.map((sa: any) => sa.siteId)
+        })).sort((a: any, b: any) => {
             const first = (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' });
             if (first !== 0) return first;
             return (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' });
@@ -81,7 +87,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { email, password, firstName, lastName, phone, roleId, callerUserId } = body;
+        const { email, password, firstName, lastName, phone, roleId, siteIds, callerUserId } = body;
 
         if (!email || !password || !firstName || !lastName) {
             return NextResponse.json(
@@ -113,8 +119,11 @@ export async function POST(request: NextRequest) {
                 phone: phone?.trim() || null,
                 userroleid: roleId || 2,
                 isblocked: false,
-                createddate: new Date()
-            },
+                createddate: new Date(),
+                siteAccess: (roleId === 1 && siteIds && Array.isArray(siteIds)) ? {
+                    create: siteIds.map((sid: number) => ({ siteId: sid }))
+                } : undefined
+            } as any,
             select: {
                 id: true,
                 email: true,
@@ -138,7 +147,7 @@ export async function POST(request: NextRequest) {
         if (callerUserId) {
             const newName = `${newUser.firstname || ''} ${newUser.lastname || ''}`.trim();
             (prisma as any).log.create({
-                data: { userId: callerUserId, action: `created_user: ${newName} (id: ${newUser.id}, email: ${newUser.email})` }
+                data: { userId: callerUserId, action: `created_user: ${newName} (id: ${newUser.id}, email: ${(newUser as any).email})` }
             }).catch(() => { });
         }
 
@@ -152,7 +161,8 @@ export async function POST(request: NextRequest) {
             isBlocked: newUser.isblocked,
             lastLogin: newUser.lastlogin,
             createdDate: newUser.createddate,
-            roleName: newUser.role?.name || null
+            roleName: (newUser as any).role?.name || null,
+            siteIds: (newUser as any).siteAccess ? (newUser as any).siteAccess.map((sa: any) => sa.siteId) : []
         }, { status: 201, headers: corsHeaders });
 
     } catch (error: any) {
@@ -167,7 +177,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
     try {
         const body = await request.json();
-        const { id, email, password, firstName, lastName, phone, roleId, isBlocked } = body;
+        const { id, email, password, firstName, lastName, phone, roleId, isBlocked, siteIds } = body;
 
         if (!id) {
             return NextResponse.json(
@@ -249,6 +259,60 @@ export async function PUT(request: NextRequest) {
 
         // Only apply roleId change if explicitly included (after guard)
         if (roleId !== undefined) updateData.userroleid = roleId;
+
+        // Handle siteIds update
+        if (siteIds && Array.isArray(siteIds) && (roleId === 1 || existingUser.userroleid === 1)) {
+            // Transaction to update user and site access
+            const updatedUser = await prisma.$transaction(async (tx) => {
+                // Delete existing access
+                await (tx as any).userSiteAccess.deleteMany({
+                    where: { userId: id }
+                });
+
+                // Create new access
+                if (siteIds.length > 0) {
+                    await (tx as any).userSiteAccess.createMany({
+                        data: siteIds.map((sid: number) => ({
+                            userId: id,
+                            siteId: sid
+                        }))
+                    });
+                }
+
+                // Update user data
+                return await tx.user.update({
+                    where: { id },
+                    data: updateData,
+                    select: {
+                        id: true,
+                        email: true,
+                        firstname: true,
+                        lastname: true,
+                        userroleid: true,
+                        phone: true,
+                        isblocked: true,
+                        lastlogin: true,
+                        createddate: true,
+                        role: { select: { id: true, name: true } },
+                        siteAccess: { select: { siteId: true } }
+                    }
+                } as any);
+            }) as any;
+
+            return NextResponse.json({
+                id: updatedUser.id,
+                email: updatedUser.email,
+                firstName: updatedUser.firstname,
+                lastName: updatedUser.lastname,
+                roleId: updatedUser.userroleid,
+                phone: updatedUser.phone,
+                isBlocked: updatedUser.isblocked,
+                lastLogin: updatedUser.lastlogin,
+                createdDate: updatedUser.createddate,
+                roleName: (updatedUser as any).role?.name || null,
+                siteIds: (updatedUser as any).siteAccess.map((sa: any) => sa.siteId)
+            }, { headers: corsHeaders });
+        }
 
         const updatedUser = await prisma.user.update({
             where: { id },

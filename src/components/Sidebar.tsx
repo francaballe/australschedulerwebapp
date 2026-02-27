@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './Sidebar.module.css';
 import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface Position {
     id: string | number;
@@ -39,6 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [selectedSite, setSelectedSite] = useState<number | null>(null);
 
     const { language } = useTheme();
+    const { user } = useAuth();
 
     const t = (key: string) => {
         if (language === 'es') {
@@ -161,8 +163,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     // Fetch sites and handle selection (Moved from Navbar)
     useEffect(() => {
         const fetchSites = async () => {
+            if (!user) return;
             try {
-                const res = await fetch('/api/sites');
+                const res = await fetch(`/api/sites?userId=${user.id}&roleId=${user.roleId}`);
                 if (!res.ok) return;
                 const data = await res.json();
                 setSites(data);
@@ -181,7 +184,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         };
 
         fetchSites();
-    }, []);
+    }, [user]);
 
     const onSiteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const id = Number(e.target.value) || null;

@@ -27,6 +27,7 @@ model User {
   pushTokens     UserPushToken[]
   unavailability UserUnavailability[]
   role           Role?                @relation(fields: [userroleid], references: [id])
+  siteAccess     UserSiteAccess[]
 
   @@map("users")
   @@schema("app")
@@ -46,6 +47,7 @@ model Site {
   name String?
   positions Position[]
   shifts    Shift[]
+  userAccess UserSiteAccess[]
 
   @@map("sites")
   @@schema("app")
@@ -142,5 +144,16 @@ model Log {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("logs")
+  @@schema("app")
+}
+
+model UserSiteAccess {
+  userId Int  @map("user_id")
+  siteId Int  @map("site_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site   Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@id([userId, siteId])
+  @@map("user_site_access")
   @@schema("app")
 }
