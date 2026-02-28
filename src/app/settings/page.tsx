@@ -86,6 +86,7 @@ export default function SettingsPage() {
     const [logsLoading, setLogsLoading] = useState(false);
     const [logsPage, setLogsPage] = useState(1);
     const [logsTotalPages, setLogsTotalPages] = useState(1);
+    const [logsSearchQuery, setLogsSearchQuery] = useState("");
 
     // Sites management state
     const [sites, setSites] = useState<ManagedSite[]>([]);
@@ -191,10 +192,11 @@ export default function SettingsPage() {
     }, [user]);
 
     // Fetch logs
-    const fetchLogs = useCallback(async (page = 1) => {
+    const fetchLogs = useCallback(async (page = 1, search = "") => {
         setLogsLoading(true);
         try {
-            const response = await fetch(`/api/logs?page=${page}&limit=50`, { cache: 'no-store' });
+            const url = `/api/logs?page=${page}&limit=50${search ? `&search=${encodeURIComponent(search)}` : ''}`;
+            const response = await fetch(url, { cache: 'no-store' });
             if (response.ok) {
                 const data = await response.json();
                 setLogs(data.logs);
@@ -216,9 +218,13 @@ export default function SettingsPage() {
         } else if (activeTab === 'sites') {
             fetchSites();
         } else if (activeTab === 'logs') {
-            fetchLogs(1);
+            // Delay fetching when typing log search query
+            const delayDebounceFn = setTimeout(() => {
+                fetchLogs(1, logsSearchQuery);
+            }, 400);
+            return () => clearTimeout(delayDebounceFn);
         }
-    }, [activeTab, fetchUsers, fetchRoles, roles.length, fetchSites, fetchLogs]);
+    }, [activeTab, fetchUsers, fetchRoles, roles.length, fetchSites, fetchLogs, logsSearchQuery]);
 
     const showFeedback = (type: 'success' | 'error', message: string) => {
         setFeedback({ type, message });
@@ -488,11 +494,11 @@ export default function SettingsPage() {
     };
 
     const handleNextLogsPage = () => {
-        if (logsPage < logsTotalPages) fetchLogs(logsPage + 1);
+        if (logsPage < logsTotalPages) fetchLogs(logsPage + 1, logsSearchQuery);
     };
 
     const handlePrevLogsPage = () => {
-        if (logsPage > 1) fetchLogs(logsPage - 1);
+        if (logsPage > 1) fetchLogs(logsPage - 1, logsSearchQuery);
     };
 
     const formatDate = (dateStr: string | null) => {
@@ -1019,41 +1025,72 @@ export default function SettingsPage() {
                                         {language === 'es' ? 'Seguimiento de eventos y auditoría de la plataforma' : 'Event tracking and platform auditing'}
                                     </p>
                                 </div>
-                                <button
-                                    className={styles.counterActionBtn}
-                                    onClick={async () => {
-                                        try {
-                                            const XLSX = await import('xlsx');
-                                            const wsData = [
-                                                [language === 'es' ? 'Fecha y Hora' : 'Date & Time', language === 'es' ? 'Usuario' : 'User', 'Email', language === 'es' ? 'Acción' : 'Action'],
-                                                ...logs.map(l => [
-                                                    formatDateTime(l.createddate),
-                                                    `${l.user.firstname} ${l.user.lastname}`,
-                                                    l.user.email,
-                                                    l.action
-                                                ])
-                                            ];
-                                            const ws = XLSX.utils.aoa_to_sheet(wsData);
-                                            // Auto-fit column widths
-                                            ws['!cols'] = wsData[0].map((_, i) => ({
-                                                wch: Math.max(...wsData.map(row => (row[i]?.toString() || '').length), 15)
-                                            }));
-                                            const wb = XLSX.utils.book_new();
-                                            XLSX.utils.book_append_sheet(wb, ws, 'Logs');
-                                            XLSX.writeFile(wb, `RosterLoop_Logs_Page${logsPage}_${new Date().toISOString().split('T')[0]}.xlsx`);
-                                        } catch (err) {
-                                            console.error('Error exporting Logs:', err);
-                                        }
-                                    }}
-                                    title={language === 'es' ? 'Exportar logs' : 'Export logs'}
-                                >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
-                                        <polyline points="7,10 12,15 17,10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    <div className={styles.searchWrapper} style={{ margin: 0, minWidth: '400px' }}>
+                                        <input
+                                            type="text"
+                                            placeholder={language === 'es' ? "🔍 Buscar por usuario, acción o fecha (DD/MM/AAAA)..." : "🔍 Search by user, action or date (YYYY-MM-DD)..."}
+                                            value={logsSearchQuery}
+                                            onChange={(e) => setLogsSearchQuery(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === '/') {
+                                                    e.stopPropagation();
+                                                }
+                                            }}
+                                            className={styles.searchInput}
+                                            style={{ backgroundColor: 'white' }}
+                                        />
+                                        {logsSearchQuery && (
+                                            <button
+                                                className={styles.clearButton}
+                                                onClick={() => setLogsSearchQuery('')}
+                                                title={language === 'es' ? 'Limpiar búsqueda' : 'Clear search'}
+                                            >
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                    <button
+                                        className={styles.counterActionBtn}
+                                        onClick={async () => {
+                                            try {
+                                                const XLSX = await import('xlsx');
+                                                const wsData = [
+                                                    [language === 'es' ? 'Fecha y Hora' : 'Date & Time', language === 'es' ? 'Usuario' : 'User', 'Email', language === 'es' ? 'Acción' : 'Action'],
+                                                    ...logs.map(l => [
+                                                        formatDateTime(l.createddate),
+                                                        `${l.user.firstname} ${l.user.lastname}`,
+                                                        l.user.email,
+                                                        l.action
+                                                    ])
+                                                ];
+                                                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                                                // Auto-fit column widths
+                                                ws['!cols'] = wsData[0].map((_, i) => ({
+                                                    wch: Math.max(...wsData.map(row => (row[i]?.toString() || '').length), 15)
+                                                }));
+                                                const wb = XLSX.utils.book_new();
+                                                XLSX.utils.book_append_sheet(wb, ws, 'Logs');
+                                                XLSX.writeFile(wb, `RosterLoop_Logs_Page${logsPage}_${new Date().toISOString().split('T')[0]}.xlsx`);
+                                            } catch (err) {
+                                                console.error('Error exporting Logs:', err);
+                                            }
+                                        }}
+                                        title={language === 'es' ? 'Exportar logs' : 'Export logs'}
+                                        style={{ margin: 0 }}
+                                    >
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
+                                            <polyline points="7,10 12,15 17,10" />
+                                            <line x1="12" y1="15" x2="12" y2="3" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
+
                             <div className={styles.placeholder} style={{ marginTop: '20px', padding: '0', background: 'transparent', textAlign: 'left', border: 'none' }}>
                                 {logsLoading ? (
                                     <div className={styles.loadingTable}>
