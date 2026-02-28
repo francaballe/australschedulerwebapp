@@ -246,6 +246,13 @@
         color: #fff;
     }
 
+    .searchInput::-webkit-search-cancel-button,
+    .searchInput::-webkit-search-decoration {
+        -webkit-appearance: none;
+        appearance: none;
+        display: none;
+    }
+
     .searchInput::placeholder {
         color: #888;
     }

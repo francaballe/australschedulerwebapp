@@ -32,11 +32,24 @@ export async function GET(request: NextRequest) {
 
         if (q && q.trim()) {
             const term = q.trim();
-            whereClause.OR = [
-                { firstname: { contains: term, mode: 'insensitive' } },
-                { lastname: { contains: term, mode: 'insensitive' } },
-                { email: { contains: term, mode: 'insensitive' } }
-            ];
+            const words = term.split(/\s+/).filter(Boolean);
+            if (words.length > 1) {
+                // Multi-word: match first+last name combination
+                // e.g. "otro m" should match firstname="otro" + lastname starts with "m"
+                whereClause.AND = words.map((word: string) => ({
+                    OR: [
+                        { firstname: { contains: word, mode: 'insensitive' } },
+                        { lastname: { contains: word, mode: 'insensitive' } },
+                        { email: { contains: word, mode: 'insensitive' } }
+                    ]
+                }));
+            } else {
+                whereClause.OR = [
+                    { firstname: { contains: term, mode: 'insensitive' } },
+                    { lastname: { contains: term, mode: 'insensitive' } },
+                    { email: { contains: term, mode: 'insensitive' } }
+                ];
+            }
         }
 
         const users = await prisma.user.findMany({

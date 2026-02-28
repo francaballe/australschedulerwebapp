@@ -80,7 +80,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 const data = await response.json();
                 // Initialize with checked: true
                 const initialized = data.map((p: Position) => ({ ...p, checked: true }));
-                setPositions(initialized);
+                // Keep first 2 system positions fixed, sort the rest alphabetically
+                const fixed = initialized.filter((p: Position) => Number(p.id) <= 1);
+                const sortable = initialized.filter((p: Position) => Number(p.id) > 1);
+                sortable.sort((a: Position, b: Position) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+                setPositions([...fixed, ...sortable]);
                 setError(null);
             } catch (err) {
                 console.error('Failed to fetch positions:', err);
@@ -128,7 +132,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                     starttime: newPosition.starttime ? newPosition.starttime.slice(11, 16) : null,
                     endtime: newPosition.endtime ? newPosition.endtime.slice(11, 16) : null
                 };
-                setPositions(prev => [...prev, formattedPosition]);
+                setPositions(prev => {
+                    const all = [...prev, formattedPosition];
+                    const fixed = all.filter(p => Number(p.id) <= 1);
+                    const sortable = all.filter(p => Number(p.id) > 1);
+                    sortable.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+                    return [...fixed, ...sortable];
+                });
             }
         };
 

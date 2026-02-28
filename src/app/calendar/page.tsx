@@ -35,6 +35,7 @@ export default function CalendarPage() {
   const [newStartTime, setNewStartTime] = useState('');
   const [newEndTime, setNewEndTime] = useState('');
   const [editLoading, setEditLoading] = useState(false);
+  const [editWarning, setEditWarning] = useState<string | null>(null);
   const [enabledPositions, setEnabledPositions] = useState<Set<number>>(new Set());
 
   // Lifted state from CalendarComponent
@@ -188,7 +189,7 @@ export default function CalendarPage() {
       setPublishModalOpen(false);
     } catch (err) {
       console.error('Publish failed', err);
-      alert('Error al publicar. Revisa la consola.');
+      setEditWarning(language === 'es' ? 'Error al publicar. Revisa la consola.' : 'Publish error. Check console.');
     } finally {
       setPublishLoading(false);
     }
@@ -203,6 +204,7 @@ export default function CalendarPage() {
     const endTime = position.endtime ? formatTimeForInput(position.endtime) : '';
     setNewStartTime(startTime);
     setNewEndTime(endTime);
+    setEditWarning(null);
     setEditModalOpen(true);
   };
 
@@ -212,26 +214,28 @@ export default function CalendarPage() {
     setNewPositionColor('#94a3b8');
     setNewStartTime('');
     setNewEndTime('');
+    setEditWarning(null);
     setEditModalOpen(true);
   };
 
   const confirmEditPosition = async () => {
     // BUG FIX: Allow editingPosition to be null (creation mode)
+    setEditWarning(null);
     if (!newPositionName.trim()) {
-      alert('El nombre es obligatorio');
+      setEditWarning(language === 'es' ? 'El nombre es obligatorio' : 'Name is required');
       return;
     }
 
     // Validation for schedule times (MANDATORY)
     if (!newStartTime.trim() || !newEndTime.trim()) {
-      alert('Los horarios de inicio y fin son obligatorios');
+      setEditWarning(language === 'es' ? 'Los horarios de inicio y fin son obligatorios' : 'Start and end times are required');
       return;
     }
 
     const start = newStartTime.trim();
     const end = newEndTime.trim();
     if (start >= end) {
-      alert('La hora de inicio debe ser anterior a la hora de fin');
+      setEditWarning(language === 'es' ? 'La hora de inicio debe ser anterior a la hora de fin' : 'Start time must be before end time');
       return;
     }
 
@@ -322,8 +326,9 @@ export default function CalendarPage() {
         console.log('Creating position for siteId:', siteId);
 
         if (!siteId) {
-          alert('Error: No hay un sitio seleccionado. Por favor recarga la página.');
-          throw new Error('No site selected in localStorage');
+          setEditWarning(language === 'es' ? 'Error: No hay un sitio seleccionado. Por favor recarga la página.' : 'Error: No site selected. Please reload the page.');
+          setEditLoading(false);
+          return;
         }
 
         const payload = {
@@ -366,7 +371,7 @@ export default function CalendarPage() {
       setNewEndTime('');
     } catch (err: any) {
       console.error('Save position failed', err);
-      alert(`Error al guardar: ${err.message}`);
+      setEditWarning(language === 'es' ? `Error al guardar: ${err.message}` : `Save error: ${err.message}`);
     } finally {
       setEditLoading(false);
     }
@@ -491,6 +496,28 @@ export default function CalendarPage() {
               <button className={modalStyles.modalCloseButton} onClick={closeEditModal}>×</button>
             </div>
             <div className={modalStyles.modalBody}>
+              {editWarning && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '12px 16px',
+                  marginBottom: '16px',
+                  borderRadius: '8px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#ef4444',
+                  fontSize: '13px',
+                  fontWeight: 500
+                }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px', flexShrink: 0 }}>
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  <span>{editWarning}</span>
+                </div>
+              )}
 
               {/* Nombre */}
               <div style={{ marginBottom: '20px' }}>
