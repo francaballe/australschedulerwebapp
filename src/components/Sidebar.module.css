@@ -663,6 +663,7 @@
     align-items: center;
     justify-content: center;
     z-index: 1100;
+    outline: none;
 }
 
 .modalContent {

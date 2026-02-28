@@ -2101,7 +2101,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       {/* Modal for Position Selection */}
       {
         isModalOpen && (
-          <div className={styles.modalOverlay} onClick={handleModalClose}>
+          <div className={styles.modalOverlay} onClick={handleModalClose} onKeyDown={(e) => { if (e.key === 'Enter' && selectedPositionId !== null && !modalLoading) handleSaveAssignment(); }} tabIndex={-1} ref={(el) => el?.focus()}>
             <div
               className={styles.modalContent}
               onClick={(e) => e.stopPropagation()}
@@ -2311,7 +2311,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       {/* Warning Modal */}
       {
         warningMessage && (
-          <div className={styles.modalOverlay} onClick={() => setWarningMessage(null)} style={{ zIndex: 1100 }}>
+          <div className={styles.modalOverlay} onClick={() => setWarningMessage(null)} onKeyDown={(e) => { if (e.key === 'Enter') setWarningMessage(null); }} tabIndex={-1} ref={(el) => el?.focus()} style={{ zIndex: 1100 }}>
             <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
               <div className={styles.deleteConfirmation}>
                 <div className={styles.warningIconContainer}>
@@ -2341,7 +2341,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       {/* Copy Confirmation Modal */}
       {
         showCopyConfirmation && (
-          <div className={styles.modalOverlay} onClick={() => setShowCopyConfirmation(false)} style={{ zIndex: 1100 }}>
+          <div className={styles.modalOverlay} onClick={() => setShowCopyConfirmation(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !copyLoading) confirmCopyWeek(); }} tabIndex={-1} ref={(el) => el?.focus()} style={{ zIndex: 1100 }}>
             <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
               <div className={styles.deleteConfirmation}>
                 <div className={styles.warningIconContainer}>
@@ -2384,7 +2384,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       {/* Delete Week Confirmation Modal */}
       {
         showDeleteWeekConfirmation && (
-          <div className={styles.modalOverlay} onClick={() => setShowDeleteWeekConfirmation(false)} style={{ zIndex: 1100 }}>
+          <div className={styles.modalOverlay} onClick={() => setShowDeleteWeekConfirmation(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !deleteWeekLoading) confirmDeleteWeek(); }} tabIndex={-1} ref={(el) => el?.focus()} style={{ zIndex: 1100 }}>
             <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
               <div className={styles.deleteConfirmation}>
                 <div className={deleteWeekWarningType === 'published' ? styles.warningIconContainer : styles.deleteIconContainer}>

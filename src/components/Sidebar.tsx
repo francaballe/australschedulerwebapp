@@ -515,7 +515,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             {/* Delete Position Confirmation Modal */}
             {
                 deleteConfirmData && (
-                    <div className={styles.modalOverlay} onClick={() => !deleteLoading && setDeleteConfirmData(null)}>
+                    <div className={styles.modalOverlay} onClick={() => !deleteLoading && setDeleteConfirmData(null)} onKeyDown={(e) => { if (e.key === 'Enter' && !deleteLoading) confirmDeletePosition(); }} tabIndex={-1} ref={(el) => el?.focus()}>
                         <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                             <div className={styles.deleteConfirmation}>
                                 <div className={styles.deleteIconContainer}>

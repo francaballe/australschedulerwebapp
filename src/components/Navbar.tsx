@@ -50,7 +50,7 @@ export default function Navbar() {
                         </svg>
                     )}
                     <span className={styles.logoText}>
-                        RosterLoop <span className={styles.logoVersion}>(v1.7.10)</span>
+                        RosterLoop <span className={styles.logoVersion}>(v1.7.11)</span>
                     </span>
                 </div>
 
@@ -114,7 +114,7 @@ export default function Navbar() {
             {/* Logout Confirmation Modal */}
             {
                 showLogoutModal && (
-                    <div className={styles.modalOverlay} onClick={() => setShowLogoutModal(false)}>
+                    <div className={styles.modalOverlay} onClick={() => setShowLogoutModal(false)} onKeyDown={(e) => { if (e.key === 'Enter') { setShowLogoutModal(false); logout(); } }} tabIndex={-1} ref={(el) => el?.focus()}>
                         <div className={`${styles.modalContent} ${styles.confirmModal}`} onClick={(e) => e.stopPropagation()}>
                             <div className={styles.confirmIcon}>
                                 🚪

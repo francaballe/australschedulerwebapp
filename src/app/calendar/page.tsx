@@ -454,7 +454,7 @@ export default function CalendarPage() {
 
       {/* Publish confirmation modal copied legend from old app */}
       {publishModalOpen && (
-        <div className={modalStyles.modalOverlay} onClick={() => setPublishModalOpen(false)}>
+        <div className={modalStyles.modalOverlay} onClick={() => setPublishModalOpen(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !publishLoading) confirmPublish(); }} tabIndex={-1} ref={(el) => el?.focus()}>
           <div className={modalStyles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={modalStyles.modalHeader}>
               <h3>{language === 'es' ? 'Publicar Cronograma' : 'Publish Schedule'}</h3>
@@ -484,7 +484,7 @@ export default function CalendarPage() {
 
       {/* Edit Position modal (unified: name, color, schedule) */}
       {editModalOpen && (
-        <div className={modalStyles.modalOverlay} onClick={closeEditModal}>
+        <div className={modalStyles.modalOverlay} onClick={closeEditModal} onKeyDown={(e) => { if (e.key === 'Enter' && !editLoading && newPositionName.trim() && newStartTime.trim() && newEndTime.trim()) confirmEditPosition(); }} tabIndex={-1}>
           <div
             className={modalStyles.modalContent}
             onClick={(e) => e.stopPropagation()}
