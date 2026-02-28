@@ -1038,7 +1038,6 @@ export default function SettingsPage() {
                                                 }
                                             }}
                                             className={styles.searchInput}
-                                            style={{ backgroundColor: 'white' }}
                                         />
                                         {logsSearchQuery && (
                                             <button
