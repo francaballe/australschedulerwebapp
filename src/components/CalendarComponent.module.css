@@ -1308,3 +1308,19 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.adjacentDayCell {
+  background-color: var(--background-secondary) !important;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.adjacentDayCell .shiftContent {
+  opacity: 0.6;
+  filter: grayscale(80%);
+}
+
+.adjacentDayHeader {
+  opacity: 0.6;
+  background-color: var(--background-secondary) !important;
+}

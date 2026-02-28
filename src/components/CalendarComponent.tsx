@@ -445,11 +445,17 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   // Obtener días de la semana (domingo a sábado)
   // Obtener días de la semana (domingo a sábado)
   const getWeekDates = (date: Date) => {
-    const currentDate = new Date(date);
+    const currentDateStr = new Date(date);
 
-    // If view is 'day', just return that single day
+    // If view is 'day', return yesterday, today, tomorrow
     if (view === 'day') {
-      return [currentDate];
+      const yesterday = new Date(currentDateStr);
+      yesterday.setDate(currentDateStr.getDate() - 1);
+
+      const tomorrow = new Date(currentDateStr);
+      tomorrow.setDate(currentDateStr.getDate() + 1);
+
+      return [yesterday, currentDateStr, tomorrow];
     }
 
     const dayOfWeek = currentDate.getDay(); // 0=domingo, 1=lunes...
@@ -774,6 +780,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
   const isToday = (date: Date) => {
     return date.toDateString() === today.toDateString();
+  };
+
+  const isAdjacentDay = (date: Date) => {
+    return view === 'day' && date.toDateString() !== currentDate.toDateString();
   };
 
   // Obtener shift para un usuario en una fecha específica
@@ -1758,7 +1768,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
           {weekDates.map((date: Date, index: number) => (
             <div
               key={index}
-              className={`${styles.dayColumn} ${isToday(date) ? styles.today : ''}`}
+              className={`${styles.dayColumn} ${isToday(date) ? styles.today : ''} ${isAdjacentDay(date) ? styles.adjacentDayHeader : ''}`}
             >
               <div className={styles.dayName}>{formatDate(date)}</div>
             </div>
@@ -1832,17 +1842,29 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                   return (
                     <div
                       key={`${user.id}-${dayIndex}`}
-                      className={`${styles.dayCell} ${isToday(date) ? styles.todayCell : ''} ${isDropTarget ? styles.dropTargetCell : ''}`}
-                      onClick={(e) => handleCellClick(user.id, date, e)}
-                      onDragOver={(e) => handleDragOver(e, user.id, date)}
+                      className={`${styles.dayCell} ${isToday(date) ? styles.todayCell : ''} ${isDropTarget ? styles.dropTargetCell : ''} ${isAdjacentDay(date) ? styles.adjacentDayCell : ''}`}
+                      onClick={(e) => {
+                        if (isAdjacentDay(date)) return;
+                        handleCellClick(user.id, date, e);
+                      }}
+                      onDragOver={(e) => {
+                        if (isAdjacentDay(date)) return;
+                        handleDragOver(e, user.id, date);
+                      }}
                       onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, user.id, date)}
+                      onDrop={(e) => {
+                        if (isAdjacentDay(date)) { e.preventDefault(); return; }
+                        handleDrop(e, user.id, date);
+                      }}
                     >
                       {shift ? (
                         <div
                           className={`${styles.shiftContent} ${(!shift.published && !isOtherSite) ? styles.unpublishedShift : ''} ${isFilteredOut ? styles.filteredShift : ''}`}
-                          draggable={isShiftDraggable(shift)}
-                          onDragStart={(e) => handleDragStart(e, shift)}
+                          draggable={isAdjacentDay(date) ? false : isShiftDraggable(shift)}
+                          onDragStart={(e) => {
+                            if (isAdjacentDay(date)) { e.preventDefault(); return; }
+                            handleDragStart(e, shift);
+                          }}
                           onDragEnd={handleDragEnd}
                           style={{
                             backgroundColor: isOtherSite
@@ -2089,7 +2111,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
             return (
               <div
                 key={`footer-${index}`}
-                className={styles.footerCell}
+                className={`${styles.footerCell} ${isAdjacentDay(date) ? styles.adjacentDayHeader : ''}`}
               >
                 {totalHours > 0 ? `${totalHours.toFixed(1)}` : '-'}
               </div>
