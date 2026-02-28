@@ -33,6 +33,18 @@ export async function PATCH(
             );
         }
 
+        const currentPos = await prisma.position.findUnique({
+            where: { id: positionId },
+            select: { siteid: true, starttime: true, endtime: true }
+        });
+
+        if (!currentPos) {
+            return NextResponse.json(
+                { error: 'Posición no encontrada' },
+                { status: 404, headers: corsHeaders }
+            );
+        }
+
         const updateData: Record<string, unknown> = {};
         if (color !== undefined) updateData.color = color;
         if (name !== undefined) updateData.name = name;
@@ -40,12 +52,7 @@ export async function PATCH(
 
         // Check for duplicate name (case-insensitive) when renaming
         if (name !== undefined) {
-            // Get current position to know its siteId
-            const currentPos = await prisma.position.findUnique({
-                where: { id: positionId },
-                select: { siteid: true }
-            });
-            const checkSiteId = siteid !== undefined ? siteid : currentPos?.siteid;
+            const checkSiteId = siteid !== undefined ? siteid : currentPos.siteid;
 
             if (checkSiteId) {
                 const existing = await prisma.position.findFirst({
@@ -76,11 +83,21 @@ export async function PATCH(
             return new Date('1970-01-01T' + timeStr + ':00.000Z');
         };
 
+        let timeActuallyChanged = false;
+
         if (starttime !== undefined) {
-            updateData.starttime = starttime ? createTimeDate(starttime) : null;
+            const newStart = starttime ? createTimeDate(starttime) : null;
+            updateData.starttime = newStart;
+            if (currentPos.starttime?.getTime() !== newStart?.getTime()) {
+                timeActuallyChanged = true;
+            }
         }
         if (endtime !== undefined) {
-            updateData.endtime = endtime ? createTimeDate(endtime) : null;
+            const newEnd = endtime ? createTimeDate(endtime) : null;
+            updateData.endtime = newEnd;
+            if (currentPos.endtime?.getTime() !== newEnd?.getTime()) {
+                timeActuallyChanged = true;
+            }
         }
 
         console.log('Updating position with data:', updateData);
@@ -94,7 +111,7 @@ export async function PATCH(
             });
 
             // 2. If requested, update future/current unpublished shifts
-            if (updateUnpublishedShifts && startDate && endDate && (starttime !== undefined || endtime !== undefined)) {
+            if (updateUnpublishedShifts && startDate && endDate && timeActuallyChanged) {
                 console.log(`🔄 Bulk updating unpublished shifts for position ${positionId} between ${startDate} and ${endDate}`);
 
                 // We need to fetch the shifts first to update their specific dates with new times

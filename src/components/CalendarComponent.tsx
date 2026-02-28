@@ -618,7 +618,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     };
     const handlePosUpdate = (e: any) => {
       console.log('🔄 Detected position changes - updating local state:', e.detail);
-      const { positionId, color, name, starttime, endtime } = e.detail;
+      const { positionId, color, name, starttime, endtime, updateUnpublishedShifts } = e.detail;
 
       // Update shifts locally
       setShifts(prev => prev.map(s => {
@@ -629,9 +629,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
             ...s,
             ...(color !== undefined && { positionColor: color }),
             ...(name !== undefined && { position: name }),
-            // If unpublished, update times too
-            ...(!s.published && starttime !== undefined && { startTime: starttime }), // Note: property is 'startTime' in Shift, 'starttime' in detail
-            ...(!s.published && endtime !== undefined && { endTime: endtime })
+            // If unpublished AND the user actually requested/verified a time update, update times too.
+            ...(!s.published && starttime !== undefined && updateUnpublishedShifts && { startTime: starttime }), // Note: property is 'startTime' in Shift, 'starttime' in detail
+            ...(!s.published && endtime !== undefined && updateUnpublishedShifts && { endTime: endtime })
           };
         }
         return s;

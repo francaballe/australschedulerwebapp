@@ -291,7 +291,11 @@ export default function CalendarPage() {
           viewEndDateStr = end.toLocaleDateString('en-CA');
         }
 
-        payload.updateUnpublishedShifts = true;
+        const originalStartTime = editingPosition.starttime ? formatTimeForInput(editingPosition.starttime) : '';
+        const originalEndTime = editingPosition.endtime ? formatTimeForInput(editingPosition.endtime) : '';
+        const timeChanged = originalStartTime !== payload.starttime || originalEndTime !== payload.endtime;
+
+        payload.updateUnpublishedShifts = timeChanged;
         payload.startDate = viewStartDateStr;
         payload.endDate = viewEndDateStr;
 
@@ -317,7 +321,8 @@ export default function CalendarPage() {
             name: newPositionName.trim(),
             color: newPositionColor,
             starttime: newStartTime.trim(),
-            endtime: newEndTime.trim()
+            endtime: newEndTime.trim(),
+            updateUnpublishedShifts: timeChanged
           }
         }));
 
