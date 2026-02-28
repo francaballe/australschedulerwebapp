@@ -1861,18 +1861,12 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                             zIndex: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime()) ? 5 : 'auto',
                             ...(isOtherSite && { cursor: 'not-allowed' })
                           }}
-                          title={
-                            (view !== 'twoWeeks')
-                              ? (isOtherSite
-                                ? (language === 'es' ? `Turno de otro sitio: ${shift.siteName || 'Desconocido'}` : `Shift from other site: ${shift.siteName || 'Unknown'}`)
-                                : (shift.isUserUnavailable ? (language === 'es' ? 'Conflicto: usuario no disponible con turno asignado' : 'Conflict: unavailable user with assigned shift') : undefined))
-                              : undefined
-                          }
+
                         >
                           {/* Muted wrapper for everything EXCEPT the HUD card */}
                           <div style={{ opacity: (isOtherSite || isFilteredOut) ? 0.7 : 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                             {shift.isUserUnavailable && (
-                              <div className={styles.unavailableWarningOverlay} title={view !== 'twoWeeks' ? (language === 'es' ? "Usuario NO disponible — turno asignado por manager" : "User UNAVAILABLE — shift assigned by manager") : undefined}>
+                              <div className={styles.unavailableWarningOverlay}>
                                 <svg className={styles.unavailableWarningIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M12 2L2 22H22L12 2Z" fill="#FBBF24" stroke="black" strokeWidth="2" strokeLinejoin="round" />
                                   <path d="M12 9V14" stroke="black" strokeWidth="3" strokeLinecap="round" />
@@ -1890,7 +1884,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                   </span>
                                   {shift.positionDeleted && (
                                     <div className={styles.simplifiedTrashWrapper}>
-                                      <div className={styles.deletedPositionIcon} title={view !== 'twoWeeks' ? (language === 'es' ? "Esta posición fue eliminada" : "This position was deleted") : undefined}>
+                                      <div className={styles.deletedPositionIcon}>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                           <path d="M3 6h18" />
                                           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -1934,57 +1928,66 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           </div>
 
                           {/* Floating HUD view (on hover) - OUTSIDE the muted container */}
-                          <div className={`${styles.hoverHUD} ${userIndex < 2 ? styles.topRowHUD : ''}`}>
-                            <div className={styles.hudHeader}>{t(shift.position)}</div>
+                          {(view === 'twoWeeks' || isOtherSite || shift.isUserUnavailable || shift.positionDeleted) && (
+                            <div className={`${styles.hoverHUD} ${userIndex < 2 ? styles.topRowHUD : ''}`}>
+                              <div className={styles.hudHeader}>{t(shift.position)}</div>
 
-                            {isOtherSite && (
-                              <div className={styles.hudConflict}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                                  <circle cx="12" cy="10" r="3" />
-                                </svg>
-                                <span>{language === 'es' ? 'En otro sitio' : 'In a different site'}</span>
-                              </div>
-                            )}
+                              {isOtherSite && (
+                                <div className={styles.hudConflict}>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                  </svg>
+                                  <span>{view === 'twoWeeks'
+                                    ? (language === 'es' ? 'En otro sitio' : 'In a different site')
+                                    : (language === 'es' ? `En otro sitio: ${shift.siteName || 'Desconocido'}` : `Different site: ${shift.siteName || 'Unknown'}`)
+                                  }</span>
+                                </div>
+                              )}
 
-                            {shift.isUserUnavailable && (
-                              <div className={styles.hudConflict}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                                  <line x1="12" y1="9" x2="12" y2="13" />
-                                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                                </svg>
-                                <span>{language === 'es' ? 'Conflicto: usuario no disponible' : 'Conflict: user unavailable'}</span>
-                              </div>
-                            )}
+                              {shift.isUserUnavailable && (
+                                <div className={styles.hudConflict}>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                                  </svg>
+                                  <span>{language === 'es' ? 'Conflicto: usuario no disponible' : 'Conflict: user unavailable'}</span>
+                                </div>
+                              )}
 
-                            {shift.positionDeleted && (
-                              <div className={styles.hudConflict}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M3 6h18" />
-                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                  <line x1="10" y1="11" x2="10" y2="17" />
-                                  <line x1="14" y1="11" x2="14" y2="17" />
-                                </svg>
-                                <span>{language === 'es' ? 'Posición eliminada' : 'Deleted position'}</span>
-                              </div>
-                            )}
+                              {shift.positionDeleted && (
+                                <div className={styles.hudConflict}>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    <line x1="10" y1="11" x2="10" y2="17" />
+                                    <line x1="14" y1="11" x2="14" y2="17" />
+                                  </svg>
+                                  <span>{language === 'es' ? 'Posición eliminada' : 'Deleted position'}</span>
+                                </div>
+                              )}
 
-                            <div className={styles.hudRow}>
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10" />
-                                <polyline points="12 6 12 12 16 14" />
-                              </svg>
-                              <span>{shiftTimeText}</span>
+                              {view === 'twoWeeks' && (
+                                <div className={styles.hudRow}>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                  </svg>
+                                  <span>{shiftTimeText}</span>
+                                </div>
+                              )}
+                              {view === 'twoWeeks' && (
+                                <div className={styles.hudRow}>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                  </svg>
+                                  <span>{shift.siteName || 'RosterLoop'}</span>
+                                </div>
+                              )}
                             </div>
-                            <div className={styles.hudRow}>
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                                <circle cx="12" cy="10" r="3" />
-                              </svg>
-                              <span>{shift.siteName || 'RosterLoop'}</span>
-                            </div>
-                          </div>
+                          )}
                         </div>
                       ) : unavailableSet.has(`${user.id}-${dateStr}`) ? (
                         <div

@@ -371,7 +371,6 @@
 }
 
 .filteredShift {
-  filter: grayscale(100%);
   border: 1px dashed #cbd5e1 !important;
   color: #94a3b8 !important;
 }
@@ -576,11 +575,11 @@
 }
 
 @media (hover: hover) {
-  .twoWeeks .shiftContent:hover {
+  .shiftContent:hover {
     z-index: 1000 !important;
   }
 
-  .twoWeeks .shiftContent:hover .hoverHUD {
+  .shiftContent:hover .hoverHUD {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -598,7 +597,7 @@
   }
 
   /* Triangle for the HUD card */
-  .twoWeeks .shiftContent:hover .hoverHUD::after {
+  .shiftContent:hover .hoverHUD::after {
     content: '';
     position: absolute;
     top: 100%;
@@ -610,12 +609,12 @@
   }
 
   /* Flipped HUD for top rows */
-  .twoWeeks .shiftContent:hover .topRowHUD {
+  .shiftContent:hover .topRowHUD {
     bottom: auto;
     top: calc(100% + 10px);
   }
 
-  .twoWeeks .shiftContent:hover .topRowHUD::after {
+  .shiftContent:hover .topRowHUD::after {
     top: auto;
     bottom: 100%;
     border-color: transparent transparent #1e1e1e transparent;
@@ -625,7 +624,7 @@
 .hudHeader {
   font-weight: 700;
   font-size: 14px;
-  color: white;
+  color: white !important;
   margin-bottom: 4px;
 }
 
@@ -633,7 +632,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #f87171;
+  color: #f87171 !important;
   font-size: 12px;
   background: rgba(248, 113, 113, 0.1);
   padding: 8px 10px;
@@ -644,7 +643,7 @@
 .hudConflict svg {
   width: 14px;
   height: 14px;
-  color: #f87171;
+  color: #f87171 !important;
   flex-shrink: 0;
 }
 
@@ -652,24 +651,24 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #9ca3af;
+  color: #9ca3af !important;
   font-size: 12px;
 }
 
 .hudRow svg {
   width: 16px;
   height: 16px;
-  color: #60a5fa;
+  color: #60a5fa !important;
   flex-shrink: 0;
 }
 
 @media (hover: hover) {
-  .twoWeeks .shiftContent:hover .topRowHUD {
+  .shiftContent:hover .topRowHUD {
     bottom: auto;
     top: calc(100% + 10px);
   }
 
-  .twoWeeks .shiftContent:hover .topRowHUD::after {
+  .shiftContent:hover .topRowHUD::after {
     top: auto;
     bottom: 100%;
     border-color: transparent transparent #1e1e1e transparent;
