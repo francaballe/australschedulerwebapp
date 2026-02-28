@@ -306,7 +306,8 @@ export default function CalendarPage() {
         });
 
         if (!response.ok) {
-          throw new Error('Error al actualizar la posición');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Error al actualizar la posición');
         }
 
         // Notify sidebar to refresh positions list and calendar
@@ -370,8 +371,13 @@ export default function CalendarPage() {
       setNewStartTime('');
       setNewEndTime('');
     } catch (err: any) {
-      console.error('Save position failed', err);
-      setEditWarning(language === 'es' ? `Error al guardar: ${err.message}` : `Save error: ${err.message}`);
+      console.warn('Save position failed:', err.message);
+      // Translate known API error codes
+      let msg = err.message;
+      if (msg === 'DUPLICATE_NAME') {
+        msg = language === 'es' ? 'Ya existe una posición con este nombre' : 'A position with this name already exists';
+      }
+      setEditWarning(msg);
     } finally {
       setEditLoading(false);
     }
@@ -513,7 +519,7 @@ export default function CalendarPage() {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px', flexShrink: 0 }}>
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                     <line x1="12" y1="9" x2="12" y2="13" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                    <circle cx="12" cy="17" r="1" fill="currentColor" />
                   </svg>
                   <span>{editWarning}</span>
                 </div>

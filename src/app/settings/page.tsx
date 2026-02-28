@@ -426,7 +426,7 @@ export default function SettingsPage() {
 
         try {
             const isEdit = !!editingSite;
-            const payload: any = { name: siteName.trim() };
+            const payload: any = { name: siteName.trim(), callerUserId: user?.id };
 
             if (isEdit) {
                 payload.id = editingSite!.id;
@@ -458,7 +458,7 @@ export default function SettingsPage() {
         if (!confirmDeleteSite) return;
 
         try {
-            const response = await fetch(`/api/sites?id=${confirmDeleteSite.id}`, {
+            const response = await fetch(`/api/sites?id=${confirmDeleteSite.id}&callerUserId=${user?.id}`, {
                 method: 'DELETE',
             });
 

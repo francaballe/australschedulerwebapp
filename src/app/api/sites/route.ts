@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { name } = body;
+        const { name, callerUserId } = body;
 
         if (!name?.trim()) {
             return NextResponse.json(
@@ -95,6 +95,13 @@ export async function POST(request: NextRequest) {
             }
         });
 
+        // Log site creation (fire-and-forget)
+        if (callerUserId) {
+            (prisma as any).log.create({
+                data: { userId: callerUserId, action: `created_site: ${newSite.name} (id: ${newSite.id})` }
+            }).catch(() => { });
+        }
+
         return NextResponse.json(newSite, { status: 201, headers: corsHeaders });
 
     } catch (error: any) {
@@ -115,7 +122,7 @@ export async function PUT(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { id, name } = body;
+        const { id, name, callerUserId } = body;
 
         if (!id || !name?.trim()) {
             return NextResponse.json(
@@ -144,6 +151,13 @@ export async function PUT(request: NextRequest) {
             data: { name: name.trim() }
         });
 
+        // Log site update (fire-and-forget)
+        if (callerUserId) {
+            (prisma as any).log.create({
+                data: { userId: callerUserId, action: `updated_site: ${updatedSite.name} (id: ${updatedSite.id})` }
+            }).catch(() => { });
+        }
+
         return NextResponse.json(updatedSite, { headers: corsHeaders });
 
     } catch (error: any) {
@@ -165,6 +179,8 @@ export async function DELETE(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const idParam = searchParams.get('id');
+        const callerUserIdParam = searchParams.get('callerUserId');
+        const callerUserId = callerUserIdParam ? parseInt(callerUserIdParam, 10) : null;
 
         if (!idParam) {
             return NextResponse.json(
@@ -190,9 +206,19 @@ export async function DELETE(request: NextRequest) {
             );
         }
 
+        // Get site name before deleting for the log
+        const siteToDelete = await prisma.site.findUnique({ where: { id }, select: { name: true } });
+
         await prisma.site.delete({
             where: { id }
         });
+
+        // Log site deletion (fire-and-forget)
+        if (callerUserId) {
+            (prisma as any).log.create({
+                data: { userId: callerUserId, action: `deleted_site: ${siteToDelete?.name || 'unknown'} (id: ${id})` }
+            }).catch(() => { });
+        }
 
         return NextResponse.json({ success: true }, { headers: corsHeaders });
 

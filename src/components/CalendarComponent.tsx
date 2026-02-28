@@ -2002,7 +2002,6 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                               : 'none',
                             zIndex: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime()) ? 5 : 'auto'
                           }}
-                          title={language === 'es' ? "Usuario no disponible" : "User unavailable"}
                         >
                           <div className={view === 'twoWeeks' ? styles.simplifiedLabel : styles.fullLabel}>
                             <span className={view === 'twoWeeks' ? styles.simplifiedPosName : styles.positionName} style={{ color: '#9E9E9E', fontStyle: view === 'twoWeeks' ? 'normal' : 'italic' }}>
@@ -2011,6 +2010,19 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                 : t('Unavailable')
                               }
                             </span>
+                          </div>
+
+                          {/* Floating HUD for pure unavailable cells */}
+                          <div className={`${styles.hoverHUD} ${userIndex < 2 ? styles.topRowHUD : ''}`}>
+                            <div className={styles.hudHeader}>{t('Unavailable')}</div>
+                            <div className={styles.hudConflict}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                              </svg>
+                              <span>{language === 'es' ? 'Usuario no disponible' : 'User unavailable'}</span>
+                            </div>
                           </div>
                         </div>
                       ) : (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime()) ? (

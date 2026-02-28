@@ -38,6 +38,38 @@ export async function PATCH(
         if (name !== undefined) updateData.name = name;
         if (siteid !== undefined) updateData.siteid = siteid;
 
+        // Check for duplicate name (case-insensitive) when renaming
+        if (name !== undefined) {
+            // Get current position to know its siteId
+            const currentPos = await prisma.position.findUnique({
+                where: { id: positionId },
+                select: { siteid: true }
+            });
+            const checkSiteId = siteid !== undefined ? siteid : currentPos?.siteid;
+
+            if (checkSiteId) {
+                const existing = await prisma.position.findFirst({
+                    where: {
+                        name: { equals: name.trim(), mode: 'insensitive' },
+                        siteid: checkSiteId,
+                        id: { not: positionId },
+                        eliminated: false,
+                        OR: [
+                            { deleted: false },
+                            { deleted: null }
+                        ]
+                    }
+                });
+
+                if (existing) {
+                    return NextResponse.json(
+                        { error: 'DUPLICATE_NAME' },
+                        { status: 400, headers: corsHeaders }
+                    );
+                }
+            }
+        }
+
         // Helper to create Date from "HH:mm" string
         const createTimeDate = (timeStr: string) => {
             if (!timeStr) return null;

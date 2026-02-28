@@ -105,6 +105,26 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Check for duplicate name (case-insensitive) within the same site
+        const existing = await prisma.position.findFirst({
+            where: {
+                name: { equals: name.trim(), mode: 'insensitive' },
+                siteid: Number(siteId),
+                eliminated: false,
+                OR: [
+                    { deleted: false },
+                    { deleted: null }
+                ]
+            }
+        });
+
+        if (existing) {
+            return NextResponse.json(
+                { error: 'DUPLICATE_NAME' },
+                { status: 400, headers: corsHeaders }
+            );
+        }
+
         // Parse times if provided
         let startDateTime = null;
         let endDateTime = null;
