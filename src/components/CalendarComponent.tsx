@@ -1764,7 +1764,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       <div className={styles.tableBody} ref={calendarRef}>
         {/* Header de la tabla (Sticky) */}
         <div className={styles.tableHeader}>
-          <div className={styles.userColumn}>{language === 'es' ? 'Usuarios' : 'Users'}</div>
+          <div className={`${styles.userColumn} ${view === 'twoWeeks' ? styles.userColumnNarrow : ''}`}>{language === 'es' ? 'Usuarios' : 'Users'}</div>
           {weekDates.map((date: Date, index: number) => (
             <div
               key={index}
@@ -1798,7 +1798,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
             .map((user: User, userIndex: number) => (
               <div key={user.id} className={styles.userRow}>
                 {/* Columna de usuario */}
-                <div className={styles.userCell}>
+                <div className={`${styles.userCell} ${view === 'twoWeeks' ? styles.userCellNarrow : ''}`}>
                   <div className={styles.userName}>
                     <span style={{ color: user.isBlocked ? 'var(--danger, #dc2626)' : 'inherit' }}>
                       {user.firstName} {user.lastName}
