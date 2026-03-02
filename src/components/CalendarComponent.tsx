@@ -1334,13 +1334,17 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       const isEs = language === 'es';
       const locale = isEs ? 'es-AR' : 'en-US';
 
+      const isDayView = view === 'day';
+
+      // For daily view, only export the current day, ignore adjacent days used for UI
+      const exportDates = isDayView ? [currentDate] : weekDates;
+
       // Date column headers — matching the calendar header format
-      const dateHeaders = weekDates.map((date: Date) => {
+      const dateHeaders = exportDates.map((date: Date) => {
         return date.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' });
       });
 
       // Header row: Posición | Persona | Days... | Total Hours
-      const isDayView = view === 'day';
       const header = [
         isEs ? 'Posición' : 'Position',
         isEs ? 'Persona' : 'Person',
@@ -1352,8 +1356,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
       // Data rows — Grouped by (UserId, PositionId)
       const dataRows: (string | number)[][] = [];
-      const weekStart = formatDateLocal(weekDates[0]);
-      const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
+      const weekStart = formatDateLocal(exportDates[0]);
+      const weekEnd = formatDateLocal(exportDates[exportDates.length - 1]);
 
       // Filter shifts for the current week and site
       const shiftsInWeek = shifts.filter(s =>
@@ -1382,7 +1386,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         const employeeName = `${user.firstName} ${user.lastName}`;
 
         let rowTotal = 0;
-        const dailyHours = weekDates.map((date: Date) => {
+        const dailyHours = exportDates.map((date: Date) => {
           const dateStr = formatDateLocal(date);
           const shift = userPosShifts.find(s => s.date === dateStr);
           if (!shift) return '';
@@ -1414,7 +1418,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       });
 
       // Footer row — Total hours per day (same as grid footer)
-      const footerValues = weekDates.map((date: Date) => {
+      const footerValues = exportDates.map((date: Date) => {
         const dateStr = formatDateLocal(date);
         const dailyShifts = shiftsInWeek.filter(s => s.date === dateStr);
 
