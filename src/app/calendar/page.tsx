@@ -567,15 +567,19 @@ export default function CalendarPage() {
                     '#0ea5e9', '#4f46e5', '#d946ef', '#92400e',
                     '#64748b', '#475569', '#1e293b'
                     */
-                    '#4F46E5',
-                    '#3730A3',
-                    '#14B8A6',
-                    '#2DD48F',
-                    '#15803D',
-                    '#0EA5E9',
-                    '#2563EB',
-                    '#F59E0B',
-                    '#7C3AED',
+                    // Purples
+                    '#3730A3', '#4F46E5', '#6366f1', '#7C3AED', '#a855f7',
+                    // Blues
+                    '#2563EB', '#3b82f6',
+                    // Cyans/Teals
+                    '#0EA5E9', '#06b6d4', '#14B8A6',
+                    // Greens
+                    '#166534', '#15803D', '#22c55e', '#2DD48F', '#84cc16',
+                    // Yellows / Oranges
+                    '#FACC15', '#F59E0B', '#f97316',
+                    // Reds / Pinks
+                    '#ef4444', '#e11d48', '#ec4899',
+                    // Grays
                     '#475569'
                   ].map(color => (
                     <button
