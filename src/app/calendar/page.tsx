@@ -559,12 +559,24 @@ export default function CalendarPage() {
                 </label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {[
+                    /* Old colors:
                     '#ef4444', '#f97316', '#f59e0b', '#FACC15',
                     '#22c55e', '#166534', '#06b6d4', '#3b82f6',
                     '#6366f1', '#a855f7', '#ec4899',
                     '#e11d48', '#fb7185', '#84cc16', '#14b8a6',
                     '#0ea5e9', '#4f46e5', '#d946ef', '#92400e',
                     '#64748b', '#475569', '#1e293b'
+                    */
+                    // Purples & Blues
+                    '#7C3AED', '#3730A3', '#4F46E5', '#2563EB',
+                    // Cyans & Teals
+                    '#0284C7', '#0EA5E9', '#14B8A6', '#2DD4BF',
+                    // Greens
+                    '#2DD48F', '#15803D',
+                    // Oranges / Yellows
+                    '#F59E0B', '#D97706',
+                    // Grays
+                    '#475569'
                   ].map(color => (
                     <button
                       key={color}
