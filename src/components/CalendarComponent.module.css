@@ -527,15 +527,18 @@
   }
 
   .shiftContent {
-    padding: 4px 8px;
+    padding: 2px 4px;
     min-height: 40px;
-    font-size: 12px;
+    font-size: 11px;
+    overflow: hidden;
   }
 
   .shiftTime {
-    font-size: 7.5px;
+    font-size: 7px;
     letter-spacing: -0.4px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .shiftPosition {
