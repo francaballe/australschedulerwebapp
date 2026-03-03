@@ -67,6 +67,15 @@
   max-width: 720px;
 }
 
+/* Adjust centerSection when sidebar is narrower at <=1440px */
+@media (max-width: 1440px) {
+  .centerSection {
+    left: 240px;
+    /* matched to new sidebar width */
+    width: calc(100% - 240px);
+  }
+}
+
 /* Adjust centerSection when sidebar is narrower at <=1024px */
 @media (max-width: 1024px) {
   .centerSection {
@@ -269,6 +278,41 @@
 }
 
 /* Responsive */
+@media (max-width: 1440px) {
+  .navbar {
+    height: 56px;
+    padding: 0 16px;
+  }
+
+  .leftSection {
+    width: 240px;
+    min-width: 240px;
+    padding: 0 16px;
+  }
+
+  .logoText {
+    font-size: 1.25rem;
+  }
+
+  .logoVersion {
+    font-size: 0.8rem;
+  }
+
+  .navBtn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  .logoutBtn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  .username {
+    font-size: 0.85rem;
+  }
+}
+
 @media (max-width: 768px) {
   .navbar {
     padding: 12px 16px;

@@ -601,6 +601,46 @@
     }
 
     /* Responsive */
+    @media (max-width: 1440px) {
+        .sidebar {
+            width: 240px;
+        }
+
+        .sidebarInner {
+            padding: 16px;
+        }
+
+        .section .sectionTitle {
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+        }
+
+        .section .siteSelect {
+            padding: 8px 10px;
+            font-size: 0.8rem;
+        }
+
+        .section .searchInput {
+            padding: 8px 36px 8px 10px;
+            font-size: 0.85rem;
+        }
+
+        .section .primaryBtn,
+        .section .secondaryBtn {
+            padding: 8px;
+            font-size: 0.75rem;
+        }
+
+        .positionName {
+            font-size: 0.85rem;
+        }
+
+        .addPositionBtn {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+    }
+
     @media (max-width: 1024px) {
         .sidebar {
             width: 300px;

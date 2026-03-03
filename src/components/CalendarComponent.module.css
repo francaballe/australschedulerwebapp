@@ -482,6 +482,76 @@
 }
 
 /* Responsive */
+@media (max-width: 1440px) {
+  .calendarHeader {
+    padding: 12px 10px;
+  }
+
+  .tableHeader {
+    min-height: 48px;
+  }
+
+  .userColumn {
+    width: 170px;
+    min-width: 170px;
+    padding: 12px 8px;
+    font-size: 14px;
+  }
+
+  .userRow {
+    min-height: 60px;
+  }
+
+  .userCell {
+    width: 170px;
+    min-width: 170px;
+    padding: 8px;
+  }
+
+  .userName {
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  .userHours {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .dayColumn {
+    padding: 8px 4px;
+  }
+
+  .dayName {
+    font-size: 13px;
+  }
+
+  .shiftContent {
+    padding: 4px 8px;
+    min-height: 40px;
+    font-size: 12px;
+  }
+
+  .shiftTime {
+    font-size: 8px;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+  }
+
+  .shiftPosition {
+    font-size: 10px;
+  }
+
+  .twoWeeks .userRow {
+    min-height: 54px;
+  }
+
+  .twoWeeks .shiftContent {
+    min-height: 34px;
+    font-size: 10px;
+  }
+}
+
 @media (max-width: 768px) {
   .calendarHeader {
     flex-direction: column;
