@@ -1891,15 +1891,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                         >
                           {/* Muted wrapper for everything EXCEPT the HUD card */}
                           <div style={{ opacity: (isOtherSite || isFilteredOut) ? 0.7 : 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                            {shift.isUserUnavailable && (
-                              <div className={styles.unavailableWarningOverlay}>
-                                <svg className={styles.unavailableWarningIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M12 2L2 22H22L12 2Z" fill="#FBBF24" stroke="black" strokeWidth="2" strokeLinejoin="round" />
-                                  <path d="M12 9V14" stroke="black" strokeWidth="3" strokeLinecap="round" />
-                                  <circle cx="12" cy="19" r="1.5" fill="black" />
-                                </svg>
-                              </div>
-                            )}
+
 
                             <div className={styles.shiftLabels}>
                               {/* Simplified view (centered base state) */}
@@ -1908,18 +1900,6 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                   <span className={styles.simplifiedPosName}>
                                     {t(shift.position).substring(0, 3).toUpperCase()}
                                   </span>
-                                  {shift.positionDeleted && (
-                                    <div className={styles.simplifiedTrashWrapper}>
-                                      <div className={styles.deletedPositionIcon}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <path d="M3 6h18" />
-                                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                          <line x1="10" y1="11" x2="10" y2="17" />
-                                          <line x1="14" y1="11" x2="14" y2="17" />
-                                        </svg>
-                                      </div>
-                                    </div>
-                                  )}
                                 </div>
                               </div>
 
@@ -1935,21 +1915,33 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                     <div className={styles.shiftPosition}>
                                       <span>{t(shift.position)}</span>
                                     </div>
-                                    {shift.positionDeleted && (
-                                      <div className={styles.simplifiedTrashWrapper} style={{ position: 'absolute', right: '-4px' }}>
-                                        <div className={styles.deletedPositionIcon} title={language === 'es' ? "Esta posición fue eliminada" : "This position was deleted"}>
-                                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M3 6h18" />
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                            <line x1="10" y1="11" x2="10" y2="17" />
-                                            <line x1="14" y1="11" x2="14" y2="17" />
-                                          </svg>
-                                        </div>
-                                      </div>
-                                    )}
                                   </div>
                                 )}
                               </div>
+                            </div>
+
+                            {/* Unified Icon Container for Warnings and Trash */}
+                            <div className={styles.shiftIconContainer}>
+                              {shift.isUserUnavailable && (
+                                <div>
+                                  <svg className={styles.shiftWarningIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2L2 22H22L12 2Z" fill="#FBBF24" stroke="black" strokeWidth="2" strokeLinejoin="round" />
+                                    <path d="M12 9V14" stroke="black" strokeWidth="3" strokeLinecap="round" />
+                                    <circle cx="12" cy="19" r="1.5" fill="black" />
+                                  </svg>
+                                </div>
+                              )}
+
+                              {shift.positionDeleted && (
+                                <div className={styles.shiftTrashIcon}>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    <line x1="10" y1="11" x2="10" y2="17" />
+                                    <line x1="14" y1="11" x2="14" y2="17" />
+                                  </svg>
+                                </div>
+                              )}
                             </div>
                           </div>
 
