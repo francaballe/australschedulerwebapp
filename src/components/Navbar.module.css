@@ -68,7 +68,7 @@
 }
 
 /* Adjust centerSection when sidebar is narrower at <=1440px */
-@media (max-width: 1440px) {
+@media (max-width: 1536px) {
   .centerSection {
     left: 240px;
     /* matched to new sidebar width */
@@ -278,7 +278,7 @@
 }
 
 /* Responsive */
-@media (max-width: 1440px) {
+@media (max-width: 1536px) {
   .navbar {
     height: 56px;
     padding: 0 16px;

@@ -51,7 +51,7 @@ export default function Navbar() {
                     )}
                     <span className={styles.logoText}>
                         <span className={styles.rosterText}>Roster</span><span className={styles.loopText}>Loop</span>
-                        <span className={styles.logoVersion}>(v1.7.16)</span>
+                        <span className={styles.logoVersion}>(v1.7.17)</span>
                     </span>
                 </div>
 

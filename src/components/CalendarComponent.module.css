@@ -482,7 +482,7 @@
 }
 
 /* Responsive */
-@media (max-width: 1440px) {
+@media (max-width: 1536px) {
   .calendarHeader {
     padding: 12px 10px;
   }
@@ -527,15 +527,15 @@
   }
 
   .shiftContent {
-    padding: 2px 4px;
+    padding: 2px 2px;
     min-height: 40px;
     font-size: 11px;
     overflow: hidden;
   }
 
   .shiftTime {
-    font-size: 7px;
-    letter-spacing: -0.4px;
+    font-size: 6.5px;
+    letter-spacing: -0.2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -868,6 +868,15 @@
 
 
 /* Update responsive styles for footer */
+/* Media query para pantallas más chicas (notebooks) */
+@media (max-width: 1536px) {
+  .footerLabel {
+    width: 150px;
+    min-width: 150px;
+  }
+
+}
+
 @media (max-width: 768px) {
   .footerLabel {
     width: 150px;
