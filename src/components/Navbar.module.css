@@ -38,6 +38,10 @@
   color: #4F46E5;
 }
 
+:global([data-theme="dark"]) .rosterText {
+  color: #ffffff;
+}
+
 .loopText {
   color: #14B8A6;
 }
