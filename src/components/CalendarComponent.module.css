@@ -1077,10 +1077,15 @@
   height: 32px;
 }
 
-.modalDeleteButton:hover {
+.modalDeleteButton:hover:not(:disabled) {
   background: #dc2626;
   color: white;
   border-color: #dc2626;
+}
+
+.modalDeleteButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .modalDeleteButton svg {
@@ -1352,11 +1357,30 @@
 .confirmDeleteBtn {
   background: #ef4444;
   color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
 }
 
-.confirmDeleteBtn:hover {
+.confirmDeleteBtn:hover:not(:disabled) {
   background: #dc2626;
   box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.confirmDeleteBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.buttonSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
 }
 
 /* Past Days Style */

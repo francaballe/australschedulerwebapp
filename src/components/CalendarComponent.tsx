@@ -2167,7 +2167,12 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           </div>
                         )}
                         {shift && shift.positionId !== 1 && !showDeleteConfirmation && (
-                          <button className={styles.modalDeleteButton} onClick={() => handleDeleteShift()} title={language === 'es' ? 'Borrar' : 'Delete'}>
+                          <button
+                            className={styles.modalDeleteButton}
+                            onClick={() => handleDeleteShift()}
+                            title={language === 'es' ? 'Borrar' : 'Delete'}
+                            disabled={modalLoading}
+                          >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M3 6h18" />
                               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -2214,13 +2219,16 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                       <button
                         className={styles.confirmDeleteBtn}
                         onClick={() => handleDeleteShift(true)}
+                        disabled={modalLoading}
                       >
-                        {language === 'es' ? 'Eliminar Turno' : 'Delete Shift'}
+                        {modalLoading ? (
+                          <span className={styles.buttonSpinner}></span>
+                        ) : language === 'es' ? 'Eliminar Turno' : 'Delete Shift'}
                       </button>
                     </div>
                   </div>
                 ) : modalLoading ? (
-                  <div className={styles.modalLoading}>{language === 'es' ? 'Cargando posiciones...' : 'Loading positions...'}</div>
+                  <div className={styles.modalLoading}>{language === 'es' ? 'Cargando...' : 'Loading...'}</div>
                 ) : positions.length > 0 ? (
                   <div>
                     {selectedCell && (() => {
