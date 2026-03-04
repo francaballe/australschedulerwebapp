@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -105,6 +105,19 @@ export default function SettingsPage() {
     const [formSaving, setFormSaving] = useState(false);
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const [confirmAction, setConfirmAction] = useState<{ user: ManagedUser; action: 'block' | 'unblock' } | null>(null);
+    const [showBulkMenu, setShowBulkMenu] = useState(false);
+    const bulkMenuRef = useRef<HTMLDivElement>(null);
+
+    // Close bulk menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (bulkMenuRef.current && !bulkMenuRef.current.contains(event.target as Node)) {
+                setShowBulkMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const validatePassword = (pass: string) => {
         return {
@@ -815,20 +828,59 @@ export default function SettingsPage() {
                                             )}
                                         </svg>
                                     </button>
-                                    <button
-                                        className={styles.counterActionBtn}
-                                        onClick={() => {
-                                            // TODO: Implement bulk user upload from CSV
-                                            alert(language === 'es' ? 'Próximamente: Carga masiva de usuarios desde CSV' : 'Coming soon: Bulk user upload from CSV');
-                                        }}
-                                        title={language === 'es' ? 'Carga masiva de usuarios' : 'Bulk user upload'}
-                                    >
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
-                                            <polyline points="17,8 12,3 7,8" />
-                                            <line x1="12" y1="3" x2="12" y2="15" />
-                                        </svg>
-                                    </button>
+                                    <div className={styles.dropdownContainer} ref={bulkMenuRef}>
+                                        <button
+                                            className={styles.counterActionBtn}
+                                            onClick={() => setShowBulkMenu(!showBulkMenu)}
+                                            title={language === 'es' ? 'Carga masiva de usuarios' : 'Bulk user upload'}
+                                        >
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
+                                                <polyline points="17,8 12,3 7,8" />
+                                                <line x1="12" y1="3" x2="12" y2="15" />
+                                            </svg>
+                                        </button>
+
+                                        {showBulkMenu && (
+                                            <div className={styles.dropdownMenu}>
+                                                <button
+                                                    className={styles.dropdownItem}
+                                                    onClick={async () => {
+                                                        setShowBulkMenu(false);
+                                                        try {
+                                                            const XLSX = await import('xlsx');
+                                                            const wsData = [
+                                                                [
+                                                                    language === 'es' ? 'Nombre' : 'First Name',
+                                                                    language === 'es' ? 'Apellido' : 'Last Name',
+                                                                    'Email',
+                                                                    language === 'es' ? 'Teléfono' : 'Phone',
+                                                                    language === 'es' ? 'Contraseña' : 'Password'
+                                                                ]
+                                                            ];
+                                                            const ws = XLSX.utils.aoa_to_sheet(wsData);
+                                                            const wb = XLSX.utils.book_new();
+                                                            XLSX.utils.book_append_sheet(wb, ws, 'Template');
+                                                            XLSX.writeFile(wb, `RosterLoop_Users_Template_${new Date().toISOString().split('T')[0]}.csv`);
+                                                        } catch (err) {
+                                                            console.error('Error exporting Template:', err);
+                                                        }
+                                                    }}
+                                                >
+                                                    📄 {language === 'es' ? 'Descargar Plantilla' : 'Download Template'}
+                                                </button>
+                                                <button
+                                                    className={styles.dropdownItem}
+                                                    onClick={() => {
+                                                        setShowBulkMenu(false);
+                                                        alert(language === 'es' ? 'Próximamente: Subir archivo y procesar transaccionalmente' : 'Coming soon: Upload file and process transactionally');
+                                                    }}
+                                                >
+                                                    ⬆️ {language === 'es' ? 'Subir Archivo CSV' : 'Upload CSV File'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                     <button
                                         className={styles.counterActionBtn}
                                         onClick={async () => {
