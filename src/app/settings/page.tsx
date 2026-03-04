@@ -1357,8 +1357,14 @@ export default function SettingsPage() {
             {showUserModal && (
                 <div className={styles.modalOverlay} onClick={() => setShowUserModal(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !formSaving) handleSaveUser(); }} tabIndex={-1}>
                     <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.modalTitle}>
+                        <div className={styles.modalTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             {editingUser ? (language === 'es' ? '✏️ Editar Usuario' : '✏️ Edit User') : (language === 'es' ? '➕ Crear Usuario' : '➕ Create User')}
+                            <button
+                                className={styles.modalCloseButton}
+                                onClick={() => setShowUserModal(false)}
+                            >
+                                ×
+                            </button>
                         </div>
                         <div className={styles.modalForm}>
                             <div className={styles.modalFormRow}>
@@ -1539,13 +1545,7 @@ export default function SettingsPage() {
                                 <div className={styles.modalError}>{formError}</div>
                             )}
 
-                            <div className={styles.modalActions}>
-                                <button
-                                    className={styles.modalCancelButton}
-                                    onClick={() => setShowUserModal(false)}
-                                >
-                                    {language === 'es' ? 'Cancelar' : 'Cancel'}
-                                </button>
+                            <div className={styles.modalActions} style={{ justifyContent: 'center' }}>
                                 <button
                                     className={styles.modalSaveButton}
                                     onClick={handleSaveUser}
@@ -1562,7 +1562,14 @@ export default function SettingsPage() {
             {/* Confirm Block/Unblock Modal */}
             {confirmAction && (
                 <div className={styles.modalOverlay} onClick={() => setConfirmAction(null)} onKeyDown={(e) => { if (e.key === 'Enter') handleToggleBlock(); }} tabIndex={-1} ref={(el) => el?.focus()}>
-                    <div className={`${styles.modalContent} ${styles.confirmModal}`} onClick={(e) => e.stopPropagation()}>
+                    <div className={`${styles.modalContent} ${styles.confirmModal}`} onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
+                        <button
+                            className={styles.modalCloseButton}
+                            onClick={() => setConfirmAction(null)}
+                            style={{ position: 'absolute', top: '16px', right: '16px' }}
+                        >
+                            ×
+                        </button>
                         <div className={styles.confirmIcon}>
                             {confirmAction.action === 'block' ? '🔒' : '🔓'}
                         </div>
@@ -1575,13 +1582,7 @@ export default function SettingsPage() {
                                 : (language === 'es' ? `${confirmAction.user.firstName} ${confirmAction.user.lastName} volverá a poder iniciar sesión.` : `${confirmAction.user.firstName} ${confirmAction.user.lastName} will be able to log in again.`)
                             }
                         </div>
-                        <div className={styles.confirmActions}>
-                            <button
-                                className={styles.modalCancelButton}
-                                onClick={() => setConfirmAction(null)}
-                            >
-                                {language === 'es' ? 'Cancelar' : 'Cancel'}
-                            </button>
+                        <div className={styles.confirmActions} style={{ justifyContent: 'center' }}>
                             {confirmAction.action === 'block' ? (
                                 <button
                                     className={styles.confirmDangerButton}
@@ -1606,8 +1607,14 @@ export default function SettingsPage() {
             {showSiteModal && (
                 <div className={styles.modalOverlay} onClick={() => setShowSiteModal(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !siteSaving && siteName.trim()) handleSaveSite(); }} tabIndex={-1}>
                     <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.modalTitle}>
+                        <div className={styles.modalTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             {editingSite ? (language === 'es' ? '✏️ Editar Sitio' : '✏️ Edit Site') : (language === 'es' ? '➕ Crear Sitio' : '➕ Create Site')}
+                            <button
+                                className={styles.modalCloseButton}
+                                onClick={() => setShowSiteModal(false)}
+                            >
+                                ×
+                            </button>
                         </div>
                         <div className={styles.modalForm}>
                             <div className={styles.modalField}>
@@ -1624,13 +1631,7 @@ export default function SettingsPage() {
                                 <div className={styles.modalError}>{siteError}</div>
                             )}
 
-                            <div className={styles.modalActions}>
-                                <button
-                                    className={styles.modalCancelButton}
-                                    onClick={() => setShowSiteModal(false)}
-                                >
-                                    {language === 'es' ? 'Cancelar' : 'Cancel'}
-                                </button>
+                            <div className={styles.modalActions} style={{ justifyContent: 'center' }}>
                                 <button
                                     className={styles.modalSaveButton}
                                     onClick={handleSaveSite}
@@ -1647,7 +1648,14 @@ export default function SettingsPage() {
             {/* Confirm Delete Site Modal */}
             {confirmDeleteSite && (
                 <div className={styles.modalOverlay} onClick={() => setConfirmDeleteSite(null)} onKeyDown={(e) => { if (e.key === 'Enter') handleDeleteSite(); }} tabIndex={-1} ref={(el) => el?.focus()}>
-                    <div className={`${styles.modalContent} ${styles.confirmModal}`} onClick={(e) => e.stopPropagation()}>
+                    <div className={`${styles.modalContent} ${styles.confirmModal}`} onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
+                        <button
+                            className={styles.modalCloseButton}
+                            onClick={() => setConfirmDeleteSite(null)}
+                            style={{ position: 'absolute', top: '16px', right: '16px' }}
+                        >
+                            ×
+                        </button>
                         <div className={styles.confirmIcon}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32" style={{ color: 'var(--danger)' }}>
                                 <path d="M3 6h18" />
@@ -1664,13 +1672,7 @@ export default function SettingsPage() {
                             <br />
                             {language === 'es' ? 'Esta acción fallará si el sitio tiene turnos o posiciones asociados.' : 'This action will fail if the site has associated shifts or positions.'}
                         </div>
-                        <div className={styles.confirmActions}>
-                            <button
-                                className={styles.modalCancelButton}
-                                onClick={() => setConfirmDeleteSite(null)}
-                            >
-                                {language === 'es' ? 'Cancelar' : 'Cancel'}
-                            </button>
+                        <div className={styles.confirmActions} style={{ justifyContent: 'center' }}>
                             <button
                                 className={styles.confirmDangerButton}
                                 onClick={handleDeleteSite}

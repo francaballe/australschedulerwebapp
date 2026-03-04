@@ -479,8 +479,7 @@ export default function CalendarPage() {
                 </p>
               )}
             </div>
-            <div className={modalStyles.modalFooter}>
-              <button className={modalStyles.modalCancelButton} onClick={() => setPublishModalOpen(false)} disabled={publishLoading}>{language === 'es' ? 'Cancelar' : 'Cancel'}</button>
+            <div className={modalStyles.modalFooter} style={{ justifyContent: 'center' }}>
               <button className={modalStyles.primaryBtn} onClick={confirmPublish} disabled={publishLoading}>{publishLoading ? (language === 'es' ? 'Publicando...' : 'Publishing...') : (language === 'es' ? 'Publicar' : 'Publish')}</button>
             </div>
           </div>
@@ -643,7 +642,7 @@ export default function CalendarPage() {
 
 
             </div>
-            <div className={modalStyles.modalFooter}>
+            <div className={modalStyles.modalFooter} style={{ justifyContent: 'center' }}>
               <button
                 className={modalStyles.primaryBtn}
                 onClick={confirmEditPosition}
