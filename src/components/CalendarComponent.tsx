@@ -2136,9 +2136,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
                 <div>
                   <h3>
-                    {selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date))
-                      ? (language === 'es' ? 'Editar Turno' : 'Edit Shift')
-                      : (language === 'es' ? 'Asignar Turno' : 'Assign Shift')}
+                    {showDeleteConfirmation
+                      ? (language === 'es' ? 'Eliminar Turno' : 'Delete Shift')
+                      : selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date))
+                        ? (language === 'es' ? 'Editar Turno' : 'Edit Shift')
+                        : (language === 'es' ? 'Asignar Turno' : 'Assign Shift')}
                   </h3>
                   {selectedCell && (
                     <p>
