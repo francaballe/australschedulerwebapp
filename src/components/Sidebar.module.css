@@ -706,6 +706,32 @@
     outline: none;
 }
 
+.modalCloseButton {
+    position: absolute;
+    top: 16px;
+    right: 24px;
+    background: white;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.modalCloseButton:hover {
+    background: #f9fafb;
+    color: #111827;
+    border-color: #3b82f6;
+}
+
 .modalContent {
     background: var(--background);
     border-radius: 12px;

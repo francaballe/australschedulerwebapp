@@ -645,13 +645,6 @@ export default function CalendarPage() {
             </div>
             <div className={modalStyles.modalFooter}>
               <button
-                className={modalStyles.modalCancelButton}
-                onClick={closeEditModal}
-                disabled={editLoading}
-              >
-                {language === 'es' ? 'Cancelar' : 'Cancel'}
-              </button>
-              <button
                 className={modalStyles.primaryBtn}
                 onClick={confirmEditPosition}
                 disabled={editLoading || !newPositionName.trim() || !newStartTime.trim() || !newEndTime.trim()}

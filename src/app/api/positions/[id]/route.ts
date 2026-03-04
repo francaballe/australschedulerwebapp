@@ -60,7 +60,6 @@ export async function PATCH(
                         name: { equals: name.trim(), mode: 'insensitive' },
                         siteid: checkSiteId,
                         id: { not: positionId },
-                        eliminated: false,
                         OR: [
                             { deleted: false },
                             { deleted: null }

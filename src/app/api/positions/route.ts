@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
 
         // Build where clause - admin only positions exclude id <= 1
         const whereClause: any = {
-            eliminated: false,
             OR: [
                 { deleted: false },
                 { deleted: null }
@@ -60,8 +59,8 @@ export async function GET(request: NextRequest) {
         const positions = adminOnly
             ? dbPositions
             : [
-                { id: 0, name: 'No Position', color: '#FFFFFF00', starttime: null, endtime: null, eliminated: false },
-                { id: 1, name: 'Unavailable', color: '#CDCDCD', starttime: null, endtime: null, eliminated: false },
+                { id: 0, name: 'No Position', color: '#FFFFFF00', starttime: null, endtime: null },
+                { id: 1, name: 'Unavailable', color: '#CDCDCD', starttime: null, endtime: null },
                 ...dbPositions
             ];
 
@@ -110,7 +109,6 @@ export async function POST(request: NextRequest) {
             where: {
                 name: { equals: name.trim(), mode: 'insensitive' },
                 siteid: Number(siteId),
-                eliminated: false,
                 OR: [
                     { deleted: false },
                     { deleted: null }
@@ -146,8 +144,7 @@ export async function POST(request: NextRequest) {
                 color: color || '#94a3b8', // Default color if not provided
                 starttime: startDateTime,
                 endtime: endDateTime,
-                siteid: Number(siteId),
-                eliminated: false
+                siteid: Number(siteId)
             }
         });
 

@@ -517,7 +517,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 deleteConfirmData && (
                     <div className={styles.modalOverlay} onClick={() => !deleteLoading && setDeleteConfirmData(null)} onKeyDown={(e) => { if (e.key === 'Enter' && !deleteLoading) confirmDeletePosition(); }} tabIndex={-1} ref={(el) => el?.focus()}>
                         <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                            <div className={styles.deleteConfirmation}>
+                            <div className={styles.deleteConfirmation} style={{ position: 'relative' }}>
+                                <button
+                                    className={styles.modalCloseButton}
+                                    onClick={() => setDeleteConfirmData(null)}
+                                    style={{ position: 'absolute', top: '16px', right: '16px' }}
+                                >
+                                    ×
+                                </button>
                                 <div className={styles.deleteIconContainer}>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
@@ -525,27 +532,29 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         <path d="M12 17h.01" />
                                     </svg>
                                 </div>
-                                <h4>¿Eliminar posición?</h4>
+                                <h4>{language === 'es' ? '¿Eliminar posición?' : 'Delete Position?'}</h4>
                                 <p>
-                                    La posición <strong>&ldquo;{deleteConfirmData.name}&rdquo;</strong> tiene{' '}
-                                    <strong>{deleteConfirmData.futureShiftsCount}</strong> turno(s) asignado(s) desde hoy en adelante.
+                                    {language === 'es' ?
+                                        <>La posición <strong>&ldquo;{deleteConfirmData.name}&rdquo;</strong> tiene{' '}<strong>{deleteConfirmData.futureShiftsCount}</strong> turno(s) asignado(s) desde hoy en adelante.</>
+                                        :
+                                        <>The position <strong>&ldquo;{deleteConfirmData.name}&rdquo;</strong> has{' '}<strong>{deleteConfirmData.futureShiftsCount}</strong> shift(s) assigned from today onward.</>
+                                    }
                                     <br /><br />
-                                    Si procedes, la posición y todos esos turnos futuros serán <strong>eliminados</strong>.
+                                    {language === 'es' ?
+                                        <>Si procedes, la posición y todos esos turnos futuros serán <strong>eliminados</strong>.</>
+                                        :
+                                        <>If you proceed, this position and all of those future shifts will be <strong>deleted</strong>.</>
+                                    }
                                 </p>
                                 <div className={styles.deleteConfirmationButtons}>
-                                    <button
-                                        className={styles.cancelDeleteBtn}
-                                        onClick={() => setDeleteConfirmData(null)}
-                                        disabled={deleteLoading}
-                                    >
-                                        Cancelar
-                                    </button>
                                     <button
                                         className={styles.confirmDeleteBtn}
                                         onClick={confirmDeletePosition}
                                         disabled={deleteLoading}
                                     >
-                                        {deleteLoading ? 'Eliminando...' : 'Eliminar Posición'}
+                                        {deleteLoading
+                                            ? (language === 'es' ? 'Eliminando...' : 'Deleting...')
+                                            : (language === 'es' ? 'Eliminar Posición' : 'Delete Position')}
                                     </button>
                                 </div>
                             </div>

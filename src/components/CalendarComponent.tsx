@@ -2164,7 +2164,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                             ⚠️ {language === 'es' ? 'Se detectaron múltiples turnos para esta fecha. Se mostrará/operará con el primero.' : 'Multiple shifts detected for this date. The first one will be shown/operated on.'}
                           </div>
                         )}
-                        {shift && shift.positionId !== 1 && (
+                        {shift && shift.positionId !== 1 && !showDeleteConfirmation && (
                           <button className={styles.modalDeleteButton} onClick={() => handleDeleteShift()} title={language === 'es' ? 'Borrar' : 'Delete'}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M3 6h18" />
@@ -2209,12 +2209,6 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     </div>
 
                     <div className={styles.deleteConfirmationButtons}>
-                      <button
-                        className={styles.cancelDeleteBtn}
-                        onClick={() => setShowDeleteConfirmation(false)}
-                      >
-                        {language === 'es' ? 'Cancelar' : 'Cancel'}
-                      </button>
                       <button
                         className={styles.confirmDeleteBtn}
                         onClick={() => handleDeleteShift(true)}
@@ -2304,14 +2298,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                   <div className={styles.modalError}>{language === 'es' ? 'No hay posiciones disponibles' : 'No positions available'}</div>
                 )}
               </div>
-              {selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date)) && (
+              {selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date)) && !showDeleteConfirmation && (
                 <div className={styles.modalFooter}>
-                  <button
-                    className={styles.modalCancelButton}
-                    onClick={handleModalClose}
-                  >
-                    {language === 'es' ? 'Cancelar' : 'Cancel'}
-                  </button>
                   <button
                     className={styles.primaryBtn}
                     onClick={handleSaveAssignment}
@@ -2361,7 +2349,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         showCopyConfirmation && (
           <div className={styles.modalOverlay} onClick={() => setShowCopyConfirmation(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !copyLoading) confirmCopyWeek(); }} tabIndex={-1} ref={(el) => el?.focus()} style={{ zIndex: 1100 }}>
             <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-              <div className={styles.deleteConfirmation}>
+              <div className={styles.deleteConfirmation} style={{ position: 'relative' }}>
+                <button
+                  className={styles.modalCloseButton}
+                  onClick={() => setShowCopyConfirmation(false)}
+                  style={{ position: 'absolute', top: '16px', right: '16px' }}
+                >
+                  ×
+                </button>
                 <div className={styles.warningIconContainer}>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -2378,13 +2373,6 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 </p>
 
                 <div className={styles.deleteConfirmationButtons}>
-                  <button
-                    className={styles.cancelDeleteBtn}
-                    onClick={() => setShowCopyConfirmation(false)}
-                    disabled={copyLoading}
-                  >
-                    {language === 'es' ? 'Cancelar' : 'Cancel'}
-                  </button>
                   <button
                     className={styles.confirmDeleteBtn}
                     onClick={confirmCopyWeek}
@@ -2404,7 +2392,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         showDeleteWeekConfirmation && (
           <div className={styles.modalOverlay} onClick={() => setShowDeleteWeekConfirmation(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !deleteWeekLoading) confirmDeleteWeek(); }} tabIndex={-1} ref={(el) => el?.focus()} style={{ zIndex: 1100 }}>
             <div className={styles.modalContent} style={{ maxWidth: '400px', padding: '0', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-              <div className={styles.deleteConfirmation}>
+              <div className={styles.deleteConfirmation} style={{ position: 'relative' }}>
+                <button
+                  className={styles.modalCloseButton}
+                  onClick={() => setShowDeleteWeekConfirmation(false)}
+                  style={{ position: 'absolute', top: '16px', right: '16px' }}
+                >
+                  ×
+                </button>
                 <div className={deleteWeekWarningType === 'published' ? styles.warningIconContainer : styles.deleteIconContainer}>
                   {deleteWeekWarningType === 'published' ? (
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -2448,13 +2443,6 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 )}
 
                 <div className={styles.deleteConfirmationButtons}>
-                  <button
-                    className={styles.cancelDeleteBtn}
-                    onClick={() => setShowDeleteWeekConfirmation(false)}
-                    disabled={deleteWeekLoading}
-                  >
-                    {language === 'es' ? 'Cancelar' : 'Cancel'}
-                  </button>
                   <button
                     className={styles.confirmDeleteBtn}
                     onClick={confirmDeleteWeek}

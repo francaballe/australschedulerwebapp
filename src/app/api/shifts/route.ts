@@ -369,7 +369,8 @@ export async function DELETE(request: NextRequest) {
                         published: true
                     },
                     include: {
-                        position: true
+                        position: true,
+                        user: { select: { email: true, firstname: true } }
                     }
                 });
 
@@ -387,7 +388,76 @@ export async function DELETE(request: NextRequest) {
                     // 3. Process each user
                     for (const [userId, userShifts] of shiftsByUser) {
                         try {
-                            // Get user's latest push token
+                            // Sort shifts chronologically
+                            userShifts.sort((a, b) => {
+                                const dateA = new Date(a.date).getTime();
+                                const dateB = new Date(b.date).getTime();
+                                if (dateA !== dateB) return dateA - dateB;
+
+                                // If same date, sort by start time
+                                const timeA = a.starttime ? new Date(a.starttime).getTime() : 0;
+                                const timeB = b.starttime ? new Date(b.starttime).getTime() : 0;
+                                return timeA - timeB;
+                            });
+
+                            // Format shifts for the message
+                            const formattedShifts = userShifts.map(shift => {
+                                const dateObj = new Date(shift.date);
+                                // Ensure UTC date parts
+                                const utcDate = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
+                                const dateStr = utcDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+                                const formatTime = (date: Date | null) => {
+                                    if (!date) return '??';
+                                    const hours = date.getUTCHours();
+                                    const minutes = date.getUTCMinutes();
+                                    const period = hours >= 12 ? 'PM' : 'AM';
+                                    // Fix: 12 PM should be 12, not 0
+                                    let h = hours % 12;
+                                    h = h ? h : 12;
+                                    const m = minutes === 0 ? '' : `:${minutes.toString().padStart(2, '0')}`;
+                                    return `${h}${m} ${period}`;
+                                };
+
+                                const timeStr = `${formatTime(shift.starttime)} - ${formatTime(shift.endtime)}`;
+                                const positionName = shift.position?.name || 'Default';
+
+                                return {
+                                    dateStr,
+                                    timeStr,
+                                    positionName,
+                                    color: shift.position?.color || '#ef5350'
+                                };
+                            });
+
+
+
+                            const innerTitle = userShifts.length > 1 ? 'Shifts Cancelled' : 'Shift Cancelled';
+                            const title = `${innerTitle}!`; // Use same logic for outer title
+
+                            const introText = `${userShifts.length} shift(s) have been cancelled from your schedule.`;
+                            const body = `${introText} Check the app for more details.`;
+
+                            const richBody = JSON.stringify({
+                                isRich: true,
+                                type: 'cancellation', // Red Alert style
+                                title: innerTitle, // Try to override the default title
+                                text: introText,
+                                shifts: formattedShifts
+                            });
+
+                            // Save to DB
+                            await prisma.message.create({
+                                data: {
+                                    userId: userId,
+                                    title: title,
+                                    body: richBody, // Use richBody for in-app view
+                                    read: false,
+                                    createdAt: new Date()
+                                }
+                            });
+
+                            // Get user's latest push token (for push notification)
                             const tokenRecord = await prisma.userPushToken.findFirst({
                                 where: { userId: userId },
                                 orderBy: { createdAt: 'desc' }
@@ -395,84 +465,40 @@ export async function DELETE(request: NextRequest) {
 
                             if (tokenRecord && tokenRecord.token) {
                                 console.log(`📱 Found push token for user ${userId}:`, tokenRecord.token.substring(0, 10) + '...');
-
-                                // Sort shifts chronologically
-                                userShifts.sort((a, b) => {
-                                    const dateA = new Date(a.date).getTime();
-                                    const dateB = new Date(b.date).getTime();
-                                    if (dateA !== dateB) return dateA - dateB;
-
-                                    // If same date, sort by start time
-                                    const timeA = a.starttime ? new Date(a.starttime).getTime() : 0;
-                                    const timeB = b.starttime ? new Date(b.starttime).getTime() : 0;
-                                    return timeA - timeB;
-                                });
-
-                                // Format shifts for the message
-                                const formattedShifts = userShifts.map(shift => {
-                                    const dateObj = new Date(shift.date);
-                                    // Ensure UTC date parts
-                                    const utcDate = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
-                                    const dateStr = utcDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'numeric' });
-
-                                    const formatTime = (date: Date | null) => {
-                                        if (!date) return '??';
-                                        const hours = date.getUTCHours();
-                                        const minutes = date.getUTCMinutes();
-                                        const period = hours >= 12 ? 'PM' : 'AM';
-                                        // Fix: 12 PM should be 12, not 0
-                                        let h = hours % 12;
-                                        h = h ? h : 12;
-                                        const m = minutes === 0 ? '' : `:${minutes.toString().padStart(2, '0')}`;
-                                        return `${h}${m} ${period}`;
-                                    };
-
-                                    const timeStr = `${formatTime(shift.starttime)} - ${formatTime(shift.endtime)}`;
-                                    const positionName = shift.position?.name || 'Default';
-
-                                    return {
-                                        dateStr,
-                                        timeStr,
-                                        positionName,
-                                        color: shift.position?.color || '#ef5350'
-                                    };
-                                });
-
-                                // Sort by date/time for the message
-                                formattedShifts.sort((a, b) => a.dateStr.localeCompare(b.dateStr));
-
-                                const innerTitle = userShifts.length > 1 ? 'Turnos Cancelados' : 'Turno Cancelado';
-                                const title = `¡${innerTitle}!`; // Use same logic for outer title
-
-                                const introText = `Se han cancelado ${userShifts.length} turnos de tu cronograma.`;
-                                const body = `${introText} Revisa la app para más detalles.`;
-
-                                const richBody = JSON.stringify({
-                                    isRich: true,
-                                    type: 'cancellation', // Red Alert style
-                                    title: innerTitle, // Try to override the default title
-                                    text: introText,
-                                    shifts: formattedShifts
-                                });
-
-                                // Save to DB
-                                await prisma.message.create({
-                                    data: {
-                                        userId: userId,
-                                        title: title,
-                                        body: richBody, // Use richBody for in-app view
-                                        read: false,
-                                        createdAt: new Date()
-                                    }
-                                });
-
                                 // Send Push
                                 await import('@/lib/firebase-admin').then(mod =>
                                     mod.sendPushNotification(tokenRecord.token, title, body)
                                 ).catch(err => console.error('Error sending push:', err));
-
-                                console.log(`✅ Notification sent to user ${userId} for ${userShifts.length} shifts.`);
                             }
+
+                            // Send Email
+                            const userEmail = userShifts[0]?.user?.email;
+                            if (userEmail) {
+                                const userName = userShifts[0]?.user?.firstname || 'User';
+                                const emailHtml = `
+                                      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                                        <h2 style="color: #ef5350;">${title}</h2>
+                                        <p>Hi ${userName},</p>
+                                        <p>${introText}</p>
+                                        <ul style="list-style-type: none; padding-left: 0;">
+                                          ${formattedShifts.map(shift => `
+                                            <li style="padding: 10px; border-bottom: 1px solid #eee;">
+                                              <strong>${shift.dateStr}</strong><br/>
+                                              <span style="color: #666;">${shift.positionName}</span> - <span>${shift.timeStr}</span>
+                                            </li>
+                                          `).join('')}
+                                        </ul>
+                                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999;">
+                                          This is an automated message from RosterLoop. Please do not reply to this email.
+                                        </div>
+                                      </div>
+                                    `;
+                                await import('@/lib/email').then(mod =>
+                                    mod.sendEmail(userEmail, title, body, emailHtml)
+                                ).catch(err => console.error('Error sending bulk cancel email:', err));
+                            }
+
+                            console.log(`✅ Notification sent to user ${userId} for ${userShifts.length} shifts.`);
                         } catch (userError) {
                             console.error(`❌ Error notifying user ${userId}:`, userError);
                         }

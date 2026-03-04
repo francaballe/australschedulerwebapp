@@ -59,7 +59,6 @@ model Position {
   color      String?
   starttime  DateTime? @db.Time(6)
   endtime    DateTime? @db.Time(6)
-  eliminated Boolean?  @default(false)
   siteid     Int?
   deleted    Boolean?
   shifts     Shift[]

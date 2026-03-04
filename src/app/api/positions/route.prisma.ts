@@ -12,7 +12,10 @@ export async function GET(request: NextRequest) {
         // Using Prisma ORM instead of raw SQL
         const positions = await prisma.position.findMany({
             where: {
-                eliminated: false
+                OR: [
+                    { deleted: false },
+                    { deleted: null }
+                ]
             },
             orderBy: {
                 id: 'asc'

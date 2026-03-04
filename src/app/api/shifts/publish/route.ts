@@ -78,16 +78,18 @@ export async function POST(request: NextRequest) {
         ...(siteId !== undefined && siteId !== null ? { siteid: Number(siteId) } : {})
       },
       include: {
-        position: true
+        position: true,
+        user: { select: { email: true, firstname: true } }
       },
-      orderBy: {
-        date: 'asc'
-      }
+      orderBy: [
+        { date: 'asc' },
+        { starttime: 'asc' }
+      ]
     });
 
     // 4. Group shifts by User ID
-    type ShiftWithPosition = typeof shiftsToNotify[0];
-    const shiftsByUser = new Map<number, ShiftWithPosition[]>();
+    type ShiftWithPositionAndUser = typeof shiftsToNotify[0];
+    const shiftsByUser = new Map<number, ShiftWithPositionAndUser[]>();
 
     shiftsToNotify.forEach(shift => {
       const existing = shiftsByUser.get(shift.userId) || [];
@@ -104,7 +106,7 @@ export async function POST(request: NextRequest) {
         const lines = userShifts.map(shift => {
           const dateObj = new Date(shift.date);
           const utcDate = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
-          const dateStr = utcDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'numeric' });
+          const dateStr = utcDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
           const formatTime = (d: Date | null) => {
             if (!d) return '??';
@@ -122,14 +124,14 @@ export async function POST(request: NextRequest) {
           return `📅 ${dateStr} - ${posName}: ${timeStr}`;
         });
 
-        const title = 'Nuevos turnos publicados';
-        const plainBody = 'Se han publicado los siguientes turnos:\n\n' + lines.join('\n');
+        const title = 'New shifts published';
+        const plainBody = 'The following shifts have been published:\n\n' + lines.join('\n');
 
         // Construct Rich Body for In-App (JSON)
         const richShifts = userShifts.map(shift => {
           const dateObj = new Date(shift.date);
           const utcDate = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
-          const dateStr = utcDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'numeric' });
+          const dateStr = utcDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
           const formatTime = (d: Date | null) => {
             if (!d) return '??';
@@ -151,7 +153,7 @@ export async function POST(request: NextRequest) {
 
         const richBody = JSON.stringify({
           isRich: true,
-          text: 'Se han publicado los siguientes turnos:',
+          text: 'The following shifts have been published:',
           shifts: richShifts
         });
 
@@ -176,6 +178,47 @@ export async function POST(request: NextRequest) {
           await import('@/lib/firebase-admin').then(mod =>
             mod.sendPushNotification(tokenRecord.token, title, plainBody)
           );
+        }
+
+        // Send Email Notification
+        const userEmail = userShifts[0]?.user?.email;
+        if (userEmail) {
+          const userName = userShifts[0]?.user?.firstname || 'Usuario';
+          const emailHtml = `
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #1976D2;">${title}</h2>
+              <p>Hi ${userName},</p>
+              <p>The following shifts have been published to your schedule:</p>
+              <ul style="list-style-type: none; padding-left: 0;">
+                ${userShifts.map(shift => {
+            const dateObj = new Date(shift.date);
+            const utcDate = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
+            const dateStr = utcDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const formatTime = (d: Date | null) => {
+              if (!d) return '??';
+              const h = d.getUTCHours();
+              const m = d.getUTCMinutes();
+              const period = h >= 12 ? 'PM' : 'AM';
+              const hour12 = h % 12 || 12;
+              const minStr = m === 0 ? '' : ':' + m.toString().padStart(2, '0');
+              return hour12 + minStr + ' ' + period;
+            };
+            const timeStr = formatTime(shift.starttime) + ' - ' + formatTime(shift.endtime);
+            const posName = shift.position?.name || 'General';
+            return '<li style="padding: 10px; border-bottom: 1px solid #eee;">' +
+              '<strong>' + dateStr + '</strong><br/>' +
+              '<span style="color: #666;">' + posName + '</span> - <span>' + timeStr + '</span>' +
+              '</li>';
+          }).join('')}
+              </ul>
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999;">
+                This is an automated message from RosterLoop. Please do not reply to this email.
+              </div>
+            </div>
+          `;
+          await import('@/lib/email').then(mod =>
+            mod.sendEmail(userEmail, title, plainBody, emailHtml)
+          ).catch(err => console.error('Error sending email:', err));
         }
       } catch (err) {
         console.error(`Failed to notify user ${userId}:`, err);
