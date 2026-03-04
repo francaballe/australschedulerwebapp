@@ -107,6 +107,12 @@ export default function SettingsPage() {
     const [confirmAction, setConfirmAction] = useState<{ user: ManagedUser; action: 'block' | 'unblock' } | null>(null);
     const [showBulkMenu, setShowBulkMenu] = useState(false);
     const bulkMenuRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Bulk Upload State
+    const [isUploadingBulk, setIsUploadingBulk] = useState(false);
+    const [bulkUploadError, setBulkUploadError] = useState<string | null>(null);
+    const [bulkUploadSuccess, setBulkUploadSuccess] = useState<string | null>(null);
 
     // Close bulk menu when clicking outside
     useEffect(() => {
@@ -118,6 +124,48 @@ export default function SettingsPage() {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const handleBulkUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Reset inputs and state
+        setBulkUploadError(null);
+        setBulkUploadSuccess(null);
+        setIsUploadingBulk(true);
+        setShowBulkMenu(false);
+
+        const formData = new FormData();
+        formData.append('file', file);
+        if (user?.id) {
+            formData.append('callerUserId', user.id.toString());
+        }
+
+        try {
+            const response = await fetch('/api/users/bulk', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                setBulkUploadSuccess(result.message);
+                await fetchUsers(); // Refresh the list
+            } else {
+                setBulkUploadError(result.error || (language === 'es' ? 'Error desconocido al procesar el archivo' : 'Unknown error processing file'));
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            setBulkUploadError(language === 'es' ? 'Error de conexión al servidor' : 'Server connection error');
+        } finally {
+            setIsUploadingBulk(false);
+            // Clear the input so the same file can be selected again if needed
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
 
     const validatePassword = (pass: string) => {
         return {
@@ -780,9 +828,28 @@ export default function SettingsPage() {
                                 {language === 'es' ? 'Gestión de usuarios del sistema' : 'System user management'}
                             </p>
 
+                            {isUploadingBulk && (
+                                <div className={styles.feedbackMessage} style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                    <div className={styles.spinner} style={{ width: '16px', height: '16px', borderTopColor: '#3b82f6', marginRight: '8px' }}></div>
+                                    {language === 'es' ? 'Procesando carga masiva... Por favor espera.' : 'Processing bulk upload... Please wait.'}
+                                </div>
+                            )}
+
                             {feedback && (
                                 <div className={`${styles.feedbackMessage} ${feedback.type === 'success' ? styles.feedbackSuccess : styles.feedbackError}`}>
                                     {feedback.message}
+                                </div>
+                            )}
+
+                            {bulkUploadSuccess && (
+                                <div className={`${styles.feedbackMessage} ${styles.feedbackSuccess}`}>
+                                    {bulkUploadSuccess}
+                                </div>
+                            )}
+
+                            {bulkUploadError && (
+                                <div className={`${styles.feedbackMessage} ${styles.feedbackError}`}>
+                                    {bulkUploadError}
                                 </div>
                             )}
 
@@ -841,6 +908,14 @@ export default function SettingsPage() {
                                             </svg>
                                         </button>
 
+                                        <input
+                                            type="file"
+                                            accept=".csv"
+                                            style={{ display: 'none' }}
+                                            ref={fileInputRef}
+                                            onChange={handleBulkUpload}
+                                        />
+
                                         {showBulkMenu && (
                                             <div className={styles.dropdownMenu}>
                                                 <button
@@ -873,7 +948,7 @@ export default function SettingsPage() {
                                                     className={styles.dropdownItem}
                                                     onClick={() => {
                                                         setShowBulkMenu(false);
-                                                        alert(language === 'es' ? 'Próximamente: Subir archivo y procesar transaccionalmente' : 'Coming soon: Upload file and process transactionally');
+                                                        fileInputRef.current?.click();
                                                     }}
                                                 >
                                                     ⬆️ {language === 'es' ? 'Subir Archivo CSV' : 'Upload CSV File'}
@@ -1403,69 +1478,94 @@ export default function SettingsPage() {
                         </div>
                     )}
                 </div>
-            </main>
+            </main >
 
             {/* Create/Edit User Modal */}
-            {showUserModal && (
-                <div className={styles.modalOverlay} onClick={() => setShowUserModal(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !formSaving) handleSaveUser(); }} tabIndex={-1}>
-                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.modalTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            {editingUser ? (language === 'es' ? '✏️ Editar Usuario' : '✏️ Edit User') : (language === 'es' ? '➕ Crear Usuario' : '➕ Create User')}
-                            <button
-                                className={styles.modalCloseButton}
-                                onClick={() => setShowUserModal(false)}
-                            >
-                                ×
-                            </button>
-                        </div>
-                        <div className={styles.modalForm}>
-                            <div className={styles.modalFormRow}>
-                                <div className={styles.modalField}>
-                                    <label>{language === 'es' ? 'Nombre *' : 'First Name *'}</label>
-                                    <input
-                                        type="text"
-                                        value={formData.firstName}
-                                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                        placeholder={language === 'es' ? "Nombre" : "First Name"}
-                                    />
-                                </div>
-                                <div className={styles.modalField}>
-                                    <label>{language === 'es' ? 'Apellido *' : 'Last Name *'}</label>
-                                    <input
-                                        type="text"
-                                        value={formData.lastName}
-                                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                        placeholder={language === 'es' ? "Apellido" : "Last Name"}
-                                    />
-                                </div>
+            {
+                showUserModal && (
+                    <div className={styles.modalOverlay} onClick={() => setShowUserModal(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !formSaving) handleSaveUser(); }} tabIndex={-1}>
+                        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.modalTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                {editingUser ? (language === 'es' ? '✏️ Editar Usuario' : '✏️ Edit User') : (language === 'es' ? '➕ Crear Usuario' : '➕ Create User')}
+                                <button
+                                    className={styles.modalCloseButton}
+                                    onClick={() => setShowUserModal(false)}
+                                >
+                                    ×
+                                </button>
                             </div>
+                            <div className={styles.modalForm}>
+                                <div className={styles.modalFormRow}>
+                                    <div className={styles.modalField}>
+                                        <label>{language === 'es' ? 'Nombre *' : 'First Name *'}</label>
+                                        <input
+                                            type="text"
+                                            value={formData.firstName}
+                                            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                            placeholder={language === 'es' ? "Nombre" : "First Name"}
+                                        />
+                                    </div>
+                                    <div className={styles.modalField}>
+                                        <label>{language === 'es' ? 'Apellido *' : 'Last Name *'}</label>
+                                        <input
+                                            type="text"
+                                            value={formData.lastName}
+                                            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                            placeholder={language === 'es' ? "Apellido" : "Last Name"}
+                                        />
+                                    </div>
+                                </div>
 
-                            <div className={styles.modalField}>
-                                <label>Email *</label>
-                                <input
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="usuario@ejemplo.com"
-                                />
-                            </div>
-
-                            <div className={styles.modalFormRow}>
                                 <div className={styles.modalField}>
-                                    <label>{language === 'es' ? 'Teléfono' : 'Phone'}</label>
+                                    <label>Email *</label>
                                     <input
-                                        type="tel"
-                                        value={formData.phone}
-                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        placeholder="+54 11 1234-5678"
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        placeholder="usuario@ejemplo.com"
                                     />
                                 </div>
-                                <div className={styles.modalField}>
-                                    <label>{language === 'es' ? 'Rol' : 'Role'}</label>
-                                    {/* Admins never change roles — only owner can promote/demote */}
-                                    {user?.roleId === 0 && (
-                                        editingUser && editingUser.id === user?.id ? (
-                                            // Owner self-edit: show role as read-only
+
+                                <div className={styles.modalFormRow}>
+                                    <div className={styles.modalField}>
+                                        <label>{language === 'es' ? 'Teléfono' : 'Phone'}</label>
+                                        <input
+                                            type="tel"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                            placeholder="+54 11 1234-5678"
+                                        />
+                                    </div>
+                                    <div className={styles.modalField}>
+                                        <label>{language === 'es' ? 'Rol' : 'Role'}</label>
+                                        {/* Admins never change roles — only owner can promote/demote */}
+                                        {user?.roleId === 0 && (
+                                            editingUser && editingUser.id === user?.id ? (
+                                                // Owner self-edit: show role as read-only
+                                                <div style={{
+                                                    padding: '10px 12px',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px',
+                                                    background: 'var(--background)',
+                                                    color: 'var(--foreground-secondary)',
+                                                    cursor: 'not-allowed'
+                                                }}>
+                                                    {editingUser.roleName ?? (language === 'es' ? `Rol ${editingUser.roleId}` : `Role ${editingUser.roleId}`)}
+                                                    <span style={{ fontSize: '12px', marginLeft: '8px', opacity: 0.7 }}>({language === 'es' ? 'no editable' : 'not editable'})</span>
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    value={formData.roleId}
+                                                    onChange={(e) => setFormData({ ...formData, roleId: Number(e.target.value) })}
+                                                >
+                                                    {availableRoles.map(r => (
+                                                        <option key={r.id} value={r.id}>{r.name ?? `Rol ${r.id}`}</option>
+                                                    ))}
+                                                </select>
+                                            )
+                                        )}
+                                        {user?.roleId !== 0 && (
                                             <div style={{
                                                 padding: '10px 12px',
                                                 border: '1px solid var(--border)',
@@ -1475,266 +1575,249 @@ export default function SettingsPage() {
                                                 color: 'var(--foreground-secondary)',
                                                 cursor: 'not-allowed'
                                             }}>
-                                                {editingUser.roleName ?? (language === 'es' ? `Rol ${editingUser.roleId}` : `Role ${editingUser.roleId}`)}
+                                                {editingUser?.roleName ?? roles.find(r => r.id === formData.roleId)?.name ?? (language === 'es' ? `Rol ${formData.roleId}` : `Role ${formData.roleId}`)}
                                                 <span style={{ fontSize: '12px', marginLeft: '8px', opacity: 0.7 }}>({language === 'es' ? 'no editable' : 'not editable'})</span>
                                             </div>
-                                        ) : (
-                                            <select
-                                                value={formData.roleId}
-                                                onChange={(e) => setFormData({ ...formData, roleId: Number(e.target.value) })}
-                                            >
-                                                {availableRoles.map(r => (
-                                                    <option key={r.id} value={r.id}>{r.name ?? `Rol ${r.id}`}</option>
-                                                ))}
-                                            </select>
-                                        )
-                                    )}
-                                    {user?.roleId !== 0 && (
-                                        <div style={{
-                                            padding: '10px 12px',
-                                            border: '1px solid var(--border)',
-                                            borderRadius: '8px',
-                                            fontSize: '14px',
-                                            background: 'var(--background)',
-                                            color: 'var(--foreground-secondary)',
-                                            cursor: 'not-allowed'
-                                        }}>
-                                            {editingUser?.roleName ?? roles.find(r => r.id === formData.roleId)?.name ?? (language === 'es' ? `Rol ${formData.roleId}` : `Role ${formData.roleId}`)}
-                                            <span style={{ fontSize: '12px', marginLeft: '8px', opacity: 0.7 }}>({language === 'es' ? 'no editable' : 'not editable'})</span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className={styles.modalField}>
+                                    <label>{editingUser ? (language === 'es' ? 'Contraseña (dejar vacío para no cambiar)' : 'Password (leave blank to keep current)') : (language === 'es' ? 'Contraseña *' : 'Password *')}</label>
+                                    <input
+                                        type="password"
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        placeholder={editingUser ? '••••••••' : (language === 'es' ? 'Ingresa una contraseña' : 'Enter a password')}
+                                    />
+                                    {formData.password && (
+                                        <div className={styles.passwordRequirements}>
+                                            <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).length ? '#10b981' : '#ef4444' }}>
+                                                {validatePassword(formData.password).length ? '✅' : '❌'} {language === 'es' ? 'Mínimo 8 caracteres' : 'Min 8 characters'}
+                                            </div>
+                                            <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).upper ? '#10b981' : '#ef4444' }}>
+                                                {validatePassword(formData.password).upper ? '✅' : '❌'} {language === 'es' ? 'Una mayúscula' : 'One uppercase'}
+                                            </div>
+                                            <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).lower ? '#10b981' : '#ef4444' }}>
+                                                {validatePassword(formData.password).lower ? '✅' : '❌'} {language === 'es' ? 'Una minúscula' : 'One lowercase'}
+                                            </div>
+                                            <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).number ? '#10b981' : '#ef4444' }}>
+                                                {validatePassword(formData.password).number ? '✅' : '❌'} {language === 'es' ? 'Un número' : 'One number'}
+                                            </div>
+                                            <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).special ? '#10b981' : '#ef4444' }}>
+                                                {validatePassword(formData.password).special ? '✅' : '❌'} {language === 'es' ? 'Un carácter especial' : 'One special char'}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                            <div className={styles.modalField}>
-                                <label>{editingUser ? (language === 'es' ? 'Contraseña (dejar vacío para no cambiar)' : 'Password (leave blank to keep current)') : (language === 'es' ? 'Contraseña *' : 'Password *')}</label>
-                                <input
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    placeholder={editingUser ? '••••••••' : (language === 'es' ? 'Ingresa una contraseña' : 'Enter a password')}
-                                />
-                                {formData.password && (
-                                    <div className={styles.passwordRequirements}>
-                                        <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).length ? '#10b981' : '#ef4444' }}>
-                                            {validatePassword(formData.password).length ? '✅' : '❌'} {language === 'es' ? 'Mínimo 8 caracteres' : 'Min 8 characters'}
+
+                                {/* Site Selection for Admins — Visible to Owners and the Admin themselves */}
+                                {(user?.roleId === 0 || (user?.roleId === 1 && editingUser?.id === user?.id)) && formData.roleId === 1 && (
+                                    <div className={styles.modalField} style={{ marginTop: '8px' }}>
+                                        <label style={{ marginBottom: '12px', display: 'block' }}>
+                                            🏢 {language === 'es' ? 'Acceso a Sitios (Admins) *' : 'Site Access (Admins) *'}
+                                            {user?.roleId !== 0 && (
+                                                <span style={{ fontSize: '11px', fontWeight: 'normal', opacity: 0.7, marginLeft: '8px' }}>
+                                                    ({language === 'es' ? 'solo lectura' : 'read-only'})
+                                                </span>
+                                            )}
+                                        </label>
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                                            gap: '10px',
+                                            padding: '12px',
+                                            background: 'var(--bg-secondary)',
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--border)',
+                                            maxHeight: '150px',
+                                            overflowY: 'auto',
+                                            opacity: user?.roleId !== 0 ? 0.7 : 1
+                                        }}>
+                                            {sites.map(site => (
+                                                <label key={site.id} style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    fontSize: '13px',
+                                                    cursor: 'pointer',
+                                                    color: 'var(--foreground)'
+                                                }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.siteIds.includes(site.id)}
+                                                        disabled={user?.roleId !== 0}
+                                                        onChange={(e) => {
+                                                            const checked = e.target.checked;
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                siteIds: checked
+                                                                    ? [...prev.siteIds, site.id]
+                                                                    : prev.siteIds.filter(id => id !== site.id)
+                                                            }));
+                                                        }}
+                                                        style={{ width: '16px', height: '16px' }}
+                                                    />
+                                                    {site.name}
+                                                </label>
+                                            ))}
                                         </div>
-                                        <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).upper ? '#10b981' : '#ef4444' }}>
-                                            {validatePassword(formData.password).upper ? '✅' : '❌'} {language === 'es' ? 'Una mayúscula' : 'One uppercase'}
-                                        </div>
-                                        <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).lower ? '#10b981' : '#ef4444' }}>
-                                            {validatePassword(formData.password).lower ? '✅' : '❌'} {language === 'es' ? 'Una minúscula' : 'One lowercase'}
-                                        </div>
-                                        <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).number ? '#10b981' : '#ef4444' }}>
-                                            {validatePassword(formData.password).number ? '✅' : '❌'} {language === 'es' ? 'Un número' : 'One number'}
-                                        </div>
-                                        <div className={styles.requirementItem} style={{ color: validatePassword(formData.password).special ? '#10b981' : '#ef4444' }}>
-                                            {validatePassword(formData.password).special ? '✅' : '❌'} {language === 'es' ? 'Un carácter especial' : 'One special char'}
-                                        </div>
+                                        {formData.siteIds.length === 0 && user?.roleId === 0 && (
+                                            <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '4px' }}>
+                                                {language === 'es' ? '⚠️ Debes seleccionar al menos un sitio para el Admin' : '⚠️ You must select at least one site for the Admin'}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
-                            </div>
 
-                            {/* Site Selection for Admins — Visible to Owners and the Admin themselves */}
-                            {(user?.roleId === 0 || (user?.roleId === 1 && editingUser?.id === user?.id)) && formData.roleId === 1 && (
-                                <div className={styles.modalField} style={{ marginTop: '8px' }}>
-                                    <label style={{ marginBottom: '12px', display: 'block' }}>
-                                        🏢 {language === 'es' ? 'Acceso a Sitios (Admins) *' : 'Site Access (Admins) *'}
-                                        {user?.roleId !== 0 && (
-                                            <span style={{ fontSize: '11px', fontWeight: 'normal', opacity: 0.7, marginLeft: '8px' }}>
-                                                ({language === 'es' ? 'solo lectura' : 'read-only'})
-                                            </span>
-                                        )}
-                                    </label>
-                                    <div style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                                        gap: '10px',
-                                        padding: '12px',
-                                        background: 'var(--bg-secondary)',
-                                        borderRadius: '8px',
-                                        border: '1px solid var(--border)',
-                                        maxHeight: '150px',
-                                        overflowY: 'auto',
-                                        opacity: user?.roleId !== 0 ? 0.7 : 1
-                                    }}>
-                                        {sites.map(site => (
-                                            <label key={site.id} style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                fontSize: '13px',
-                                                cursor: 'pointer',
-                                                color: 'var(--foreground)'
-                                            }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.siteIds.includes(site.id)}
-                                                    disabled={user?.roleId !== 0}
-                                                    onChange={(e) => {
-                                                        const checked = e.target.checked;
-                                                        setFormData(prev => ({
-                                                            ...prev,
-                                                            siteIds: checked
-                                                                ? [...prev.siteIds, site.id]
-                                                                : prev.siteIds.filter(id => id !== site.id)
-                                                        }));
-                                                    }}
-                                                    style={{ width: '16px', height: '16px' }}
-                                                />
-                                                {site.name}
-                                            </label>
-                                        ))}
-                                    </div>
-                                    {formData.siteIds.length === 0 && user?.roleId === 0 && (
-                                        <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '4px' }}>
-                                            {language === 'es' ? '⚠️ Debes seleccionar al menos un sitio para el Admin' : '⚠️ You must select at least one site for the Admin'}
-                                        </div>
-                                    )}
+                                {formError && (
+                                    <div className={styles.modalError}>{formError}</div>
+                                )}
+
+                                <div className={styles.modalActions} style={{ justifyContent: 'center' }}>
+                                    <button
+                                        className={styles.modalSaveButton}
+                                        onClick={handleSaveUser}
+                                        disabled={formSaving}
+                                    >
+                                        {formSaving ? (language === 'es' ? 'Guardando...' : 'Saving...') : (editingUser ? (language === 'es' ? 'Guardar Cambios' : 'Save Changes') : (language === 'es' ? 'Crear Usuario' : 'Create User'))}
+                                    </button>
                                 </div>
-                            )}
-
-                            {formError && (
-                                <div className={styles.modalError}>{formError}</div>
-                            )}
-
-                            <div className={styles.modalActions} style={{ justifyContent: 'center' }}>
-                                <button
-                                    className={styles.modalSaveButton}
-                                    onClick={handleSaveUser}
-                                    disabled={formSaving}
-                                >
-                                    {formSaving ? (language === 'es' ? 'Guardando...' : 'Saving...') : (editingUser ? (language === 'es' ? 'Guardar Cambios' : 'Save Changes') : (language === 'es' ? 'Crear Usuario' : 'Create User'))}
-                                </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Confirm Block/Unblock Modal */}
-            {confirmAction && (
-                <div className={styles.modalOverlay} onClick={() => setConfirmAction(null)} onKeyDown={(e) => { if (e.key === 'Enter') handleToggleBlock(); }} tabIndex={-1} ref={(el) => el?.focus()}>
-                    <div className={`${styles.modalContent} ${styles.confirmModal}`} onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
-                        <button
-                            className={styles.modalCloseButton}
-                            onClick={() => setConfirmAction(null)}
-                            style={{ position: 'absolute', top: '16px', right: '16px' }}
-                        >
-                            ×
-                        </button>
-                        <div className={styles.confirmIcon}>
-                            {confirmAction.action === 'block' ? '🔒' : '🔓'}
-                        </div>
-                        <div className={styles.confirmTitle}>
-                            {confirmAction.action === 'block' ? (language === 'es' ? '¿Bloquear usuario?' : 'Block user?') : (language === 'es' ? '¿Desbloquear usuario?' : 'Unblock user?')}
-                        </div>
-                        <div className={styles.confirmMessage}>
-                            {confirmAction.action === 'block'
-                                ? (language === 'es' ? `${confirmAction.user.firstName} ${confirmAction.user.lastName} no podrá iniciar sesión mientras esté bloqueado.` : `${confirmAction.user.firstName} ${confirmAction.user.lastName} will not be able to log in while blocked.`)
-                                : (language === 'es' ? `${confirmAction.user.firstName} ${confirmAction.user.lastName} volverá a poder iniciar sesión.` : `${confirmAction.user.firstName} ${confirmAction.user.lastName} will be able to log in again.`)
-                            }
-                        </div>
-                        <div className={styles.confirmActions} style={{ justifyContent: 'center' }}>
-                            {confirmAction.action === 'block' ? (
-                                <button
-                                    className={styles.confirmDangerButton}
-                                    onClick={handleToggleBlock}
-                                >
-                                    {language === 'es' ? 'Bloquear' : 'Block'}
-                                </button>
-                            ) : (
-                                <button
-                                    className={styles.confirmSuccessButton}
-                                    onClick={handleToggleBlock}
-                                >
-                                    {language === 'es' ? 'Desbloquear' : 'Unblock'}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Create/Edit Site Modal */}
-            {showSiteModal && (
-                <div className={styles.modalOverlay} onClick={() => setShowSiteModal(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !siteSaving && siteName.trim()) handleSaveSite(); }} tabIndex={-1}>
-                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.modalTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            {editingSite ? (language === 'es' ? '✏️ Editar Sitio' : '✏️ Edit Site') : (language === 'es' ? '➕ Crear Sitio' : '➕ Create Site')}
+            {
+                confirmAction && (
+                    <div className={styles.modalOverlay} onClick={() => setConfirmAction(null)} onKeyDown={(e) => { if (e.key === 'Enter') handleToggleBlock(); }} tabIndex={-1} ref={(el) => el?.focus()}>
+                        <div className={`${styles.modalContent} ${styles.confirmModal}`} onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
                             <button
                                 className={styles.modalCloseButton}
-                                onClick={() => setShowSiteModal(false)}
+                                onClick={() => setConfirmAction(null)}
+                                style={{ position: 'absolute', top: '16px', right: '16px' }}
                             >
                                 ×
                             </button>
-                        </div>
-                        <div className={styles.modalForm}>
-                            <div className={styles.modalField}>
-                                <label>{language === 'es' ? 'Nombre del Sitio *' : 'Site Name *'}</label>
-                                <input
-                                    type="text"
-                                    value={siteName}
-                                    onChange={(e) => setSiteName(e.target.value)}
-                                    placeholder={language === 'es' ? "Ej: Sede Central" : "Ex: Main Office"}
-                                />
+                            <div className={styles.confirmIcon}>
+                                {confirmAction.action === 'block' ? '🔒' : '🔓'}
                             </div>
+                            <div className={styles.confirmTitle}>
+                                {confirmAction.action === 'block' ? (language === 'es' ? '¿Bloquear usuario?' : 'Block user?') : (language === 'es' ? '¿Desbloquear usuario?' : 'Unblock user?')}
+                            </div>
+                            <div className={styles.confirmMessage}>
+                                {confirmAction.action === 'block'
+                                    ? (language === 'es' ? `${confirmAction.user.firstName} ${confirmAction.user.lastName} no podrá iniciar sesión mientras esté bloqueado.` : `${confirmAction.user.firstName} ${confirmAction.user.lastName} will not be able to log in while blocked.`)
+                                    : (language === 'es' ? `${confirmAction.user.firstName} ${confirmAction.user.lastName} volverá a poder iniciar sesión.` : `${confirmAction.user.firstName} ${confirmAction.user.lastName} will be able to log in again.`)
+                                }
+                            </div>
+                            <div className={styles.confirmActions} style={{ justifyContent: 'center' }}>
+                                {confirmAction.action === 'block' ? (
+                                    <button
+                                        className={styles.confirmDangerButton}
+                                        onClick={handleToggleBlock}
+                                    >
+                                        {language === 'es' ? 'Bloquear' : 'Block'}
+                                    </button>
+                                ) : (
+                                    <button
+                                        className={styles.confirmSuccessButton}
+                                        onClick={handleToggleBlock}
+                                    >
+                                        {language === 'es' ? 'Desbloquear' : 'Unblock'}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
 
-                            {siteError && (
-                                <div className={styles.modalError}>{siteError}</div>
-                            )}
-
-                            <div className={styles.modalActions} style={{ justifyContent: 'center' }}>
+            {/* Create/Edit Site Modal */}
+            {
+                showSiteModal && (
+                    <div className={styles.modalOverlay} onClick={() => setShowSiteModal(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !siteSaving && siteName.trim()) handleSaveSite(); }} tabIndex={-1}>
+                        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.modalTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                {editingSite ? (language === 'es' ? '✏️ Editar Sitio' : '✏️ Edit Site') : (language === 'es' ? '➕ Crear Sitio' : '➕ Create Site')}
                                 <button
-                                    className={styles.modalSaveButton}
-                                    onClick={handleSaveSite}
-                                    disabled={siteSaving}
+                                    className={styles.modalCloseButton}
+                                    onClick={() => setShowSiteModal(false)}
                                 >
-                                    {siteSaving ? (language === 'es' ? 'Guardando...' : 'Saving...') : (editingSite ? (language === 'es' ? 'Guardar Cambios' : 'Save Changes') : (language === 'es' ? 'Crear Sitio' : 'Create Site'))}
+                                    ×
+                                </button>
+                            </div>
+                            <div className={styles.modalForm}>
+                                <div className={styles.modalField}>
+                                    <label>{language === 'es' ? 'Nombre del Sitio *' : 'Site Name *'}</label>
+                                    <input
+                                        type="text"
+                                        value={siteName}
+                                        onChange={(e) => setSiteName(e.target.value)}
+                                        placeholder={language === 'es' ? "Ej: Sede Central" : "Ex: Main Office"}
+                                    />
+                                </div>
+
+                                {siteError && (
+                                    <div className={styles.modalError}>{siteError}</div>
+                                )}
+
+                                <div className={styles.modalActions} style={{ justifyContent: 'center' }}>
+                                    <button
+                                        className={styles.modalSaveButton}
+                                        onClick={handleSaveSite}
+                                        disabled={siteSaving}
+                                    >
+                                        {siteSaving ? (language === 'es' ? 'Guardando...' : 'Saving...') : (editingSite ? (language === 'es' ? 'Guardar Cambios' : 'Save Changes') : (language === 'es' ? 'Crear Sitio' : 'Create Site'))}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Confirm Delete Site Modal */}
+            {
+                confirmDeleteSite && (
+                    <div className={styles.modalOverlay} onClick={() => setConfirmDeleteSite(null)} onKeyDown={(e) => { if (e.key === 'Enter') handleDeleteSite(); }} tabIndex={-1} ref={(el) => el?.focus()}>
+                        <div className={`${styles.modalContent} ${styles.confirmModal}`} onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
+                            <button
+                                className={styles.modalCloseButton}
+                                onClick={() => setConfirmDeleteSite(null)}
+                                style={{ position: 'absolute', top: '16px', right: '16px' }}
+                            >
+                                ×
+                            </button>
+                            <div className={styles.confirmIcon}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32" style={{ color: 'var(--danger)' }}>
+                                    <path d="M3 6h18" />
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    <line x1="10" y1="11" x2="10" y2="17" />
+                                    <line x1="14" y1="11" x2="14" y2="17" />
+                                </svg>
+                            </div>
+                            <div className={styles.confirmTitle}>
+                                {language === 'es' ? '¿Eliminar sitio?' : 'Delete site?'}
+                            </div>
+                            <div className={styles.confirmMessage}>
+                                {language === 'es' ? '¿Estás seguro de que deseas eliminar el sitio' : 'Are you sure you want to delete the site'} <strong>{confirmDeleteSite.name}</strong>?
+                                <br />
+                                {language === 'es' ? 'Esta acción fallará si el sitio tiene turnos o posiciones asociados.' : 'This action will fail if the site has associated shifts or positions.'}
+                            </div>
+                            <div className={styles.confirmActions} style={{ justifyContent: 'center' }}>
+                                <button
+                                    className={styles.confirmDangerButton}
+                                    onClick={handleDeleteSite}
+                                >
+                                    {language === 'es' ? 'Eliminar' : 'Delete'}
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-
-            {/* Confirm Delete Site Modal */}
-            {confirmDeleteSite && (
-                <div className={styles.modalOverlay} onClick={() => setConfirmDeleteSite(null)} onKeyDown={(e) => { if (e.key === 'Enter') handleDeleteSite(); }} tabIndex={-1} ref={(el) => el?.focus()}>
-                    <div className={`${styles.modalContent} ${styles.confirmModal}`} onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
-                        <button
-                            className={styles.modalCloseButton}
-                            onClick={() => setConfirmDeleteSite(null)}
-                            style={{ position: 'absolute', top: '16px', right: '16px' }}
-                        >
-                            ×
-                        </button>
-                        <div className={styles.confirmIcon}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32" style={{ color: 'var(--danger)' }}>
-                                <path d="M3 6h18" />
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                <line x1="10" y1="11" x2="10" y2="17" />
-                                <line x1="14" y1="11" x2="14" y2="17" />
-                            </svg>
-                        </div>
-                        <div className={styles.confirmTitle}>
-                            {language === 'es' ? '¿Eliminar sitio?' : 'Delete site?'}
-                        </div>
-                        <div className={styles.confirmMessage}>
-                            {language === 'es' ? '¿Estás seguro de que deseas eliminar el sitio' : 'Are you sure you want to delete the site'} <strong>{confirmDeleteSite.name}</strong>?
-                            <br />
-                            {language === 'es' ? 'Esta acción fallará si el sitio tiene turnos o posiciones asociados.' : 'This action will fail if the site has associated shifts or positions.'}
-                        </div>
-                        <div className={styles.confirmActions} style={{ justifyContent: 'center' }}>
-                            <button
-                                className={styles.confirmDangerButton}
-                                onClick={handleDeleteSite}
-                            >
-                                {language === 'es' ? 'Eliminar' : 'Delete'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
