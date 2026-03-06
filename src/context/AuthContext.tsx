@@ -81,6 +81,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     };
 
+    // Background synchronization
+    useEffect(() => {
+        if (!user?.id) return;
+
+        const syncUser = async () => {
+            try {
+                const response = await fetch(`/api/auth/me?id=${user.id}`);
+                if (response.status === 403 || response.status === 404) {
+                    console.log("Session invalid or user blocked. Logging out...");
+                    logout();
+                    return;
+                }
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.user) {
+                        const newUser = data.user;
+                        // Only update if data changed to avoid unnecessary re-renders
+                        if (
+                            newUser.firstName !== user.firstName ||
+                            newUser.lastName !== user.lastName ||
+                            newUser.email !== user.email ||
+                            newUser.roleId !== user.roleId
+                        ) {
+                            console.log("Profile changes detected. Syncing...");
+                            updateUser(newUser);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Sync user error:", error);
+            }
+        };
+
+        // Run on mount or when window gains focus
+        const handleFocus = () => syncUser();
+        window.addEventListener("focus", handleFocus);
+
+        // Polling every 5 minutes
+        const interval = setInterval(syncUser, 300000);
+
+        return () => {
+            window.removeEventListener("focus", handleFocus);
+            clearInterval(interval);
+        };
+    }, [user?.id, user?.firstName, user?.lastName, user?.email, user?.roleId]);
+
     return (
         <AuthContext.Provider value={{ user, login, logout, updateUser, isLoading }}>
             {children}
