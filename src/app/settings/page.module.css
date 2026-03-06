@@ -10,7 +10,7 @@
 .main {
   flex: 1;
   padding: 20px;
-  max-width: 1200px;
+  max-width: 1250px;
   margin: 0 auto;
   width: 100%;
 }
@@ -521,7 +521,6 @@
 }
 
 .usersTableWrapper {
-  overflow-x: auto;
   border-radius: 10px;
   border: 1px solid var(--border);
 }
@@ -653,6 +652,7 @@
   font-size: 13px;
   color: var(--foreground-secondary);
   transition: all 0.15s;
+  flex-shrink: 0;
 }
 
 .editButton:hover {
@@ -670,6 +670,7 @@
   font-size: 13px;
   color: var(--foreground-secondary);
   transition: all 0.15s;
+  flex-shrink: 0;
 }
 
 .blockButton:hover {
@@ -687,6 +688,7 @@
   font-size: 13px;
   color: var(--foreground-secondary);
   transition: all 0.15s;
+  flex-shrink: 0;
 }
 
 .unblockButton:hover {
