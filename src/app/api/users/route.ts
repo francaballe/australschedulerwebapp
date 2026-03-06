@@ -91,8 +91,15 @@ export async function GET(request: NextRequest) {
             roleName: user.role?.name || null,
             siteIds: user.siteAccess.map((sa: any) => sa.siteId)
         })).sort((a: any, b: any) => {
+            // Sort by roleId first (ascending)
+            const roleSort = (a.roleId ?? 99) - (b.roleId ?? 99);
+            if (roleSort !== 0) return roleSort;
+
+            // Then by firstName
             const first = (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' });
             if (first !== 0) return first;
+
+            // Finally by lastName
             return (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' });
         });
 

@@ -65,7 +65,7 @@ const emptyForm: UserFormData = {
 };
 
 export default function SettingsPage() {
-    const { user, isLoading } = useAuth();
+    const { user, isLoading, updateUser } = useAuth();
     const { theme, setTheme, language, setLanguage, showOnlyActiveUsers, setShowOnlyActiveUsers } = useTheme();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('general');
@@ -79,7 +79,7 @@ export default function SettingsPage() {
     const [roles, setRoles] = useState<Role[]>([]);
     const [usersLoading, setUsersLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const [userViewFilter, setUserViewFilter] = useState<'active' | 'blocked' | 'all'>('active');
+    const [userViewFilter, setUserViewFilter] = useState<'active' | 'blocked' | 'all'>('all');
 
     // Logs state
     const [logs, setLogs] = useState<Log[]>([]);
@@ -422,6 +422,15 @@ export default function SettingsPage() {
             });
 
             if (response.ok) {
+                // If it's the current user being edited, update AuthContext
+                if (isEdit && editingUser?.id === user?.id && updateUser) {
+                    updateUser({
+                        firstName: payload.firstName,
+                        lastName: payload.lastName,
+                        email: payload.email
+                    });
+                }
+
                 setShowUserModal(false);
                 await fetchUsers();
                 showFeedback('success', isEdit ? '✅ Usuario actualizado correctamente' : '✅ Usuario creado correctamente');
@@ -822,354 +831,196 @@ export default function SettingsPage() {
 
                     {/* Administración de Usuarios Tab */}
                     {activeTab === 'users' && (
-                        <div className={styles.section}>
-                            <h2>👥 {language === 'es' ? 'Administración de Usuarios' : 'User Management'}</h2>
-                            <p className={styles.sectionDescription}>
-                                {language === 'es' ? 'Gestión de usuarios del sistema' : 'System user management'}
-                            </p>
+                        <div className={styles.wideContainer}>
+                            <div className={styles.section}>
+                                <h2>👥 {language === 'es' ? 'Administración de Usuarios' : 'User Management'}</h2>
+                                <p className={styles.sectionDescription}>
+                                    {language === 'es' ? 'Gestión de usuarios del sistema' : 'System user management'}
+                                </p>
 
-                            {isUploadingBulk && (
-                                <div className={styles.feedbackMessage} style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                                    <div className={styles.spinner} style={{ width: '16px', height: '16px', borderTopColor: '#3b82f6', marginRight: '8px' }}></div>
-                                    {language === 'es' ? 'Procesando carga masiva... Por favor espera.' : 'Processing bulk upload... Please wait.'}
-                                </div>
-                            )}
+                                {isUploadingBulk && (
+                                    <div className={styles.feedbackMessage} style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                        <div className={styles.spinner} style={{ width: '16px', height: '16px', borderTopColor: '#3b82f6', marginRight: '8px' }}></div>
+                                        {language === 'es' ? 'Procesando carga masiva... Por favor espera.' : 'Processing bulk upload... Please wait.'}
+                                    </div>
+                                )}
 
-                            {feedback && (
-                                <div className={`${styles.feedbackMessage} ${feedback.type === 'success' ? styles.feedbackSuccess : styles.feedbackError}`}>
-                                    {feedback.message}
-                                </div>
-                            )}
+                                {feedback && (
+                                    <div className={`${styles.feedbackMessage} ${feedback.type === 'success' ? styles.feedbackSuccess : styles.feedbackError}`}>
+                                        {feedback.message}
+                                    </div>
+                                )}
 
-                            {bulkUploadSuccess && (
-                                <div className={`${styles.feedbackMessage} ${styles.feedbackSuccess}`}>
-                                    {bulkUploadSuccess}
-                                </div>
-                            )}
+                                {bulkUploadSuccess && (
+                                    <div className={`${styles.feedbackMessage} ${styles.feedbackSuccess}`}>
+                                        {bulkUploadSuccess}
+                                    </div>
+                                )}
 
-                            {bulkUploadError && (
-                                <div className={`${styles.feedbackMessage} ${styles.feedbackError}`}>
-                                    {bulkUploadError}
-                                </div>
-                            )}
+                                {bulkUploadError && (
+                                    <div className={`${styles.feedbackMessage} ${styles.feedbackError}`}>
+                                        {bulkUploadError}
+                                    </div>
+                                )}
 
-                            {/* User Counter */}
-                            <div className={styles.userCounterCard}>
-                                <span className={styles.userCounterLabel}>
-                                    {userViewFilter === 'active'
-                                        ? (language === 'es' ? 'Usuarios activos' : 'Active users')
-                                        : userViewFilter === 'blocked'
-                                            ? (language === 'es' ? 'Usuarios bloqueados' : 'Blocked users')
-                                            : (language === 'es' ? 'Todos los usuarios' : 'All users')}
-                                </span>
-                                <div className={styles.userCounterActions}>
-                                    <button
-                                        className={styles.counterActionBtn}
-                                        onClick={() => {
-                                            setUserViewFilter(prev =>
-                                                prev === 'active' ? 'blocked' : prev === 'blocked' ? 'all' : 'active'
-                                            );
-                                        }}
-                                        title={language === 'es' ? 'Cambiar filtro de usuarios' : 'Change user filter'}
-                                    >
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            {userViewFilter === 'active' ? (
-                                                <>
-                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                    <circle cx="12" cy="7" r="4" />
-                                                </>
-                                            ) : userViewFilter === 'blocked' ? (
-                                                <>
-                                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                                    <circle cx="8.5" cy="7" r="4" />
-                                                    <line x1="18" y1="8" x2="23" y2="13" />
-                                                    <line x1="23" y1="8" x2="18" y2="13" />
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                                    <circle cx="9" cy="7" r="4" />
-                                                    <path d="M23 21v-2a4 4 0 0-3-3.87" />
-                                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                                                </>
-                                            )}
-                                        </svg>
-                                    </button>
-                                    <div className={styles.dropdownContainer} ref={bulkMenuRef}>
+                                {/* User Counter */}
+                                <div className={styles.userCounterCard}>
+                                    <span className={styles.userCounterLabel}>
+                                        {userViewFilter === 'active'
+                                            ? (language === 'es' ? 'Usuarios activos' : 'Active users')
+                                            : userViewFilter === 'blocked'
+                                                ? (language === 'es' ? 'Usuarios bloqueados' : 'Blocked users')
+                                                : (language === 'es' ? 'Todos los usuarios' : 'All users')}
+                                    </span>
+                                    <div className={styles.userCounterActions}>
                                         <button
                                             className={styles.counterActionBtn}
-                                            onClick={() => setShowBulkMenu(!showBulkMenu)}
-                                            title={language === 'es' ? 'Carga masiva de usuarios' : 'Bulk user upload'}
+                                            onClick={() => {
+                                                setUserViewFilter(prev =>
+                                                    prev === 'active' ? 'blocked' : prev === 'blocked' ? 'all' : 'active'
+                                                );
+                                            }}
+                                            title={language === 'es' ? 'Cambiar filtro de usuarios' : 'Change user filter'}
+                                        >
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                {userViewFilter === 'active' ? (
+                                                    <>
+                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                        <circle cx="12" cy="7" r="4" />
+                                                    </>
+                                                ) : userViewFilter === 'blocked' ? (
+                                                    <>
+                                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                                        <circle cx="8.5" cy="7" r="4" />
+                                                        <line x1="18" y1="8" x2="23" y2="13" />
+                                                        <line x1="23" y1="8" x2="18" y2="13" />
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                                        <circle cx="9" cy="7" r="4" />
+                                                        <path d="M23 21v-2a4 4 0 0-3-3.87" />
+                                                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                                    </>
+                                                )}
+                                            </svg>
+                                        </button>
+                                        <div className={styles.dropdownContainer} ref={bulkMenuRef}>
+                                            <button
+                                                className={styles.counterActionBtn}
+                                                onClick={() => setShowBulkMenu(!showBulkMenu)}
+                                                title={language === 'es' ? 'Carga masiva de usuarios' : 'Bulk user upload'}
+                                            >
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
+                                                    <polyline points="17,8 12,3 7,8" />
+                                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                                </svg>
+                                            </button>
+
+                                            <input
+                                                type="file"
+                                                accept=".csv"
+                                                style={{ display: 'none' }}
+                                                ref={fileInputRef}
+                                                onChange={handleBulkUpload}
+                                            />
+
+                                            {showBulkMenu && (
+                                                <div className={styles.dropdownMenu}>
+                                                    <button
+                                                        className={styles.dropdownItem}
+                                                        onClick={async () => {
+                                                            setShowBulkMenu(false);
+                                                            try {
+                                                                const XLSX = await import('xlsx');
+                                                                const wsData = [
+                                                                    [
+                                                                        language === 'es' ? 'Nombre' : 'First Name',
+                                                                        language === 'es' ? 'Apellido' : 'Last Name',
+                                                                        'Email',
+                                                                        language === 'es' ? 'Teléfono' : 'Phone',
+                                                                        language === 'es' ? 'Contraseña' : 'Password'
+                                                                    ]
+                                                                ];
+                                                                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                                                                const wb = XLSX.utils.book_new();
+                                                                XLSX.utils.book_append_sheet(wb, ws, 'Template');
+                                                                XLSX.writeFile(wb, `RosterLoop_Users_Template_${new Date().toISOString().split('T')[0]}.csv`);
+                                                            } catch (err) {
+                                                                console.error('Error exporting Template:', err);
+                                                            }
+                                                        }}
+                                                    >
+                                                        📄 {language === 'es' ? 'Descargar Plantilla' : 'Download Template'}
+                                                    </button>
+                                                    <button
+                                                        className={styles.dropdownItem}
+                                                        onClick={() => {
+                                                            setShowBulkMenu(false);
+                                                            fileInputRef.current?.click();
+                                                        }}
+                                                    >
+                                                        ⬆️ {language === 'es' ? 'Subir Archivo CSV' : 'Upload CSV File'}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <button
+                                            className={styles.counterActionBtn}
+                                            onClick={async () => {
+                                                try {
+                                                    const XLSX = await import('xlsx');
+                                                    const wsData = [
+                                                        [language === 'es' ? 'Nombre' : 'Name', 'Email', language === 'es' ? 'Teléfono' : 'Phone', language === 'es' ? 'Rol' : 'Role', 'Status'],
+                                                        ...filteredUsers.map(u => [
+                                                            `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+                                                            u.email || '',
+                                                            u.phone || '',
+                                                            u.roleName || '',
+                                                            u.isBlocked ? (language === 'es' ? 'Bloqueado' : 'Blocked') : (language === 'es' ? 'Activo' : 'Active')
+                                                        ])
+                                                    ];
+                                                    const ws = XLSX.utils.aoa_to_sheet(wsData);
+                                                    // Auto-fit column widths
+                                                    ws['!cols'] = wsData[0].map((_, i) => ({
+                                                        wch: Math.max(...wsData.map(row => (row[i]?.toString() || '').length), 10)
+                                                    }));
+                                                    const wb = XLSX.utils.book_new();
+                                                    XLSX.utils.book_append_sheet(wb, ws, 'Users');
+                                                    XLSX.writeFile(wb, `RosterLoop_Users_${new Date().toISOString().split('T')[0]}.xlsx`);
+                                                } catch (err) {
+                                                    console.error('Error exporting Excel:', err);
+                                                }
+                                            }}
+                                            title={language === 'es' ? 'Exportar usuarios' : 'Export users'}
                                         >
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
-                                                <polyline points="17,8 12,3 7,8" />
-                                                <line x1="12" y1="3" x2="12" y2="15" />
+                                                <polyline points="7,10 12,15 17,10" />
+                                                <line x1="12" y1="15" x2="12" y2="3" />
                                             </svg>
                                         </button>
-
-                                        <input
-                                            type="file"
-                                            accept=".csv"
-                                            style={{ display: 'none' }}
-                                            ref={fileInputRef}
-                                            onChange={handleBulkUpload}
-                                        />
-
-                                        {showBulkMenu && (
-                                            <div className={styles.dropdownMenu}>
-                                                <button
-                                                    className={styles.dropdownItem}
-                                                    onClick={async () => {
-                                                        setShowBulkMenu(false);
-                                                        try {
-                                                            const XLSX = await import('xlsx');
-                                                            const wsData = [
-                                                                [
-                                                                    language === 'es' ? 'Nombre' : 'First Name',
-                                                                    language === 'es' ? 'Apellido' : 'Last Name',
-                                                                    'Email',
-                                                                    language === 'es' ? 'Teléfono' : 'Phone',
-                                                                    language === 'es' ? 'Contraseña' : 'Password'
-                                                                ]
-                                                            ];
-                                                            const ws = XLSX.utils.aoa_to_sheet(wsData);
-                                                            const wb = XLSX.utils.book_new();
-                                                            XLSX.utils.book_append_sheet(wb, ws, 'Template');
-                                                            XLSX.writeFile(wb, `RosterLoop_Users_Template_${new Date().toISOString().split('T')[0]}.csv`);
-                                                        } catch (err) {
-                                                            console.error('Error exporting Template:', err);
-                                                        }
-                                                    }}
-                                                >
-                                                    📄 {language === 'es' ? 'Descargar Plantilla' : 'Download Template'}
-                                                </button>
-                                                <button
-                                                    className={styles.dropdownItem}
-                                                    onClick={() => {
-                                                        setShowBulkMenu(false);
-                                                        fileInputRef.current?.click();
-                                                    }}
-                                                >
-                                                    ⬆️ {language === 'es' ? 'Subir Archivo CSV' : 'Upload CSV File'}
-                                                </button>
-                                            </div>
-                                        )}
                                     </div>
-                                    <button
-                                        className={styles.counterActionBtn}
-                                        onClick={async () => {
-                                            try {
-                                                const XLSX = await import('xlsx');
-                                                const wsData = [
-                                                    [language === 'es' ? 'Nombre' : 'Name', 'Email', language === 'es' ? 'Teléfono' : 'Phone', language === 'es' ? 'Rol' : 'Role', 'Status'],
-                                                    ...filteredUsers.map(u => [
-                                                        `${u.firstName || ''} ${u.lastName || ''}`.trim(),
-                                                        u.email || '',
-                                                        u.phone || '',
-                                                        u.roleName || '',
-                                                        u.isBlocked ? (language === 'es' ? 'Bloqueado' : 'Blocked') : (language === 'es' ? 'Activo' : 'Active')
-                                                    ])
-                                                ];
-                                                const ws = XLSX.utils.aoa_to_sheet(wsData);
-                                                // Auto-fit column widths
-                                                ws['!cols'] = wsData[0].map((_, i) => ({
-                                                    wch: Math.max(...wsData.map(row => (row[i]?.toString() || '').length), 10)
-                                                }));
-                                                const wb = XLSX.utils.book_new();
-                                                XLSX.utils.book_append_sheet(wb, ws, 'Users');
-                                                XLSX.writeFile(wb, `RosterLoop_Users_${new Date().toISOString().split('T')[0]}.xlsx`);
-                                            } catch (err) {
-                                                console.error('Error exporting Excel:', err);
-                                            }
-                                        }}
-                                        title={language === 'es' ? 'Exportar usuarios' : 'Export users'}
-                                    >
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
-                                            <polyline points="7,10 12,15 17,10" />
-                                            <line x1="12" y1="15" x2="12" y2="3" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div className={styles.userCounterBadge}>
-                                    {usersLoading ? '…' : displayedUsersCount}
-                                </div>
-                            </div>
-
-                            {/* Toolbar */}
-                            <div className={styles.toolbar}>
-                                <div className={styles.searchWrapper}>
-                                    <input
-                                        type="text"
-                                        placeholder={language === 'es' ? "🔍 Buscar por nombre, email o teléfono..." : "🔍 Search by name, email or phone..."}
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className={styles.searchInput}
-                                    />
-                                    {searchQuery && (
-                                        <button
-                                            className={styles.clearButton}
-                                            onClick={() => setSearchQuery('')}
-                                            title={language === 'es' ? 'Limpiar búsqueda' : 'Clear search'}
-                                        >
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                                <line x1="18" y1="6" x2="6" y2="18" />
-                                                <line x1="6" y1="6" x2="18" y2="18" />
-                                            </svg>
-                                        </button>
-                                    )}
-                                </div>
-                                <button
-                                    className={styles.createButton}
-                                    onClick={handleCreateUser}
-                                >
-                                    ➕ {language === 'es' ? 'Crear Usuario' : 'Create User'}
-                                </button>
-                            </div>
-
-                            {/* Search results count */}
-                            {!usersLoading && searchQuery.trim() && (
-                                <div className={styles.userCount}>
-                                    {filteredUsers.length} {language === 'es' ? 'resultado' : 'result'}{filteredUsers.length !== 1 ? 's' : ''} {language === 'es' ? 'para' : 'for'} &quot;{searchQuery}&quot;
-                                </div>
-                            )}
-
-                            {/* Users table */}
-                            {usersLoading ? (
-                                <div className={styles.loadingTable}>
-                                    <div className={styles.spinner}></div>
-                                </div>
-                            ) : filteredUsers.length === 0 ? (
-                                <div className={styles.emptyState}>
-                                    <div className={styles.emptyIcon}>👥</div>
-                                    <div className={styles.emptyTitle}>
-                                        {searchQuery ? (language === 'es' ? 'Sin resultados' : 'No results') : (language === 'es' ? 'No hay usuarios' : 'No users')}
-                                    </div>
-                                    <div className={styles.emptyDescription}>
-                                        {searchQuery
-                                            ? (language === 'es' ? `No se encontraron usuarios para "${searchQuery}"` : `No users found for "${searchQuery}"`)
-                                            : (language === 'es' ? 'Crea el primer usuario con el botón de arriba' : 'Create the first user with the button above')
-                                        }
+                                    <div className={styles.userCounterBadge}>
+                                        {usersLoading ? '…' : displayedUsersCount}
                                     </div>
                                 </div>
-                            ) : (
-                                <div className={styles.usersTableWrapper}>
-                                    <table className={styles.usersTable}>
-                                        <thead>
-                                            <tr>
-                                                <th>{language === 'es' ? 'Nombre' : 'Name'}</th>
-                                                <th>Email</th>
-                                                <th>{language === 'es' ? 'Teléfono' : 'Phone'}</th>
-                                                <th>{language === 'es' ? 'Rol' : 'Role'}</th>
-                                                <th>{language === 'es' ? 'Estado' : 'Status'}</th>
-                                                <th>{language === 'es' ? 'Último Login' : 'Last Login'}</th>
-                                                <th>{language === 'es' ? 'Acciones' : 'Actions'}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {filteredUsers.map((u) => (
-                                                <tr key={u.id}>
-                                                    <td>
-                                                        <span className={styles.userName}>
-                                                            {u.firstName} {u.lastName}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <span className={styles.userEmail}>{u.email || '—'}</span>
-                                                    </td>
-                                                    <td>{u.phone || '—'}</td>
-                                                    <td>
-                                                        <span className={`${styles.badge} ${styles.badgeEmployee}`} style={{
-                                                            background: u.roleId === 0 ? '#F3E8FF' : u.roleId === 1 ? '#FEF3C7' : '#DBEAFE',
-                                                            color: u.roleId === 0 ? '#6B21A8' : u.roleId === 1 ? '#92400E' : '#1E40AF'
-                                                        }}>
-                                                            {u.roleName || (language === 'es' ? `Rol ${u.roleId}` : `Role ${u.roleId}`)}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <span className={`${styles.badge} ${u.isBlocked ? styles.badgeBlocked : styles.badgeActive}`}>
-                                                            {u.isBlocked ? (language === 'es' ? '🚫 Bloqueado' : '🚫 Blocked') : (language === 'es' ? '✅ Activo' : '✅ Active')}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <span className={styles.lastLoginText}>
-                                                            {formatDateTime(u.lastLogin)}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <div className={styles.actionsCell}>
-                                                            {canEditUser(u) ? (
-                                                                <button
-                                                                    className={styles.editButton}
-                                                                    onClick={() => handleEditUser(u)}
-                                                                    title={language === 'es' ? 'Editar usuario' : 'Edit user'}
-                                                                >
-                                                                    ✏️ {language === 'es' ? 'Editar' : 'Edit'}
-                                                                </button>
-                                                            ) : (
-                                                                <button className={styles.editButton} disabled style={{ opacity: 0.3, cursor: 'not-allowed' }} title={language === 'es' ? 'Sin permisos' : 'No permissions'}>
-                                                                    ✏️ {language === 'es' ? 'Editar' : 'Edit'}
-                                                                </button>
-                                                            )}
-                                                            {canBlockUser(u) && (
-                                                                u.isBlocked ? (
-                                                                    <button
-                                                                        className={styles.unblockButton}
-                                                                        onClick={() => setConfirmAction({ user: u, action: 'unblock' })}
-                                                                        title={language === 'es' ? 'Desbloquear usuario' : 'Unblock user'}
-                                                                    >
-                                                                        🔓 {language === 'es' ? 'Activar' : 'Activate'}
-                                                                    </button>
-                                                                ) : (
-                                                                    <button
-                                                                        className={styles.blockButton}
-                                                                        onClick={() => setConfirmAction({ user: u, action: 'block' })}
-                                                                        title={language === 'es' ? 'Bloquear usuario' : 'Block user'}
-                                                                    >
-                                                                        🔒 {language === 'es' ? 'Bloquear' : 'Block'}
-                                                                    </button>
-                                                                )
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    )}
 
-                    {/* Logs del Sistema Tab */}
-                    {activeTab === 'logs' && user?.roleId === 0 && (
-                        <div className={styles.section}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-                                <div>
-                                    <h2 style={{ margin: 0 }}>📜 {language === 'es' ? 'Logs del Sistema' : 'System Logs'}</h2>
-                                    <p className={styles.sectionDescription} style={{ margin: 0 }}>
-                                        {language === 'es' ? 'Seguimiento de eventos y auditoría de la plataforma' : 'Event tracking and platform auditing'}
-                                    </p>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                    <div className={styles.searchWrapper} style={{ margin: 0, minWidth: '400px' }}>
+                                {/* Toolbar */}
+                                <div className={styles.toolbar}>
+                                    <div className={styles.searchWrapper}>
                                         <input
                                             type="text"
-                                            placeholder={language === 'es' ? "🔍 Buscar por usuario, acción o fecha (DD/MM/AAAA)..." : "🔍 Search by user, action or date (YYYY-MM-DD)..."}
-                                            value={logsSearchQuery}
-                                            onChange={(e) => setLogsSearchQuery(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === '/') {
-                                                    e.stopPropagation();
-                                                }
-                                            }}
+                                            placeholder={language === 'es' ? "🔍 Buscar por nombre, email o teléfono..." : "🔍 Search by name, email or phone..."}
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
                                             className={styles.searchInput}
                                         />
-                                        {logsSearchQuery && (
+                                        {searchQuery && (
                                             <button
                                                 className={styles.clearButton}
-                                                onClick={() => setLogsSearchQuery('')}
+                                                onClick={() => setSearchQuery('')}
                                                 title={language === 'es' ? 'Limpiar búsqueda' : 'Clear search'}
                                             >
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1180,119 +1031,281 @@ export default function SettingsPage() {
                                         )}
                                     </div>
                                     <button
-                                        className={styles.counterActionBtn}
-                                        onClick={async () => {
-                                            try {
-                                                const XLSX = await import('xlsx');
-                                                const wsData = [
-                                                    [language === 'es' ? 'Fecha y Hora' : 'Date & Time', language === 'es' ? 'Usuario' : 'User', 'Email', language === 'es' ? 'Acción' : 'Action'],
-                                                    ...logs.map(l => [
-                                                        formatDateTime(l.createddate),
-                                                        `${l.user.firstname} ${l.user.lastname}`,
-                                                        l.user.email,
-                                                        l.action
-                                                    ])
-                                                ];
-                                                const ws = XLSX.utils.aoa_to_sheet(wsData);
-                                                // Auto-fit column widths
-                                                ws['!cols'] = wsData[0].map((_, i) => ({
-                                                    wch: Math.max(...wsData.map(row => (row[i]?.toString() || '').length), 15)
-                                                }));
-                                                const wb = XLSX.utils.book_new();
-                                                XLSX.utils.book_append_sheet(wb, ws, 'Logs');
-                                                XLSX.writeFile(wb, `RosterLoop_Logs_Page${logsPage}_${new Date().toISOString().split('T')[0]}.xlsx`);
-                                            } catch (err) {
-                                                console.error('Error exporting Logs:', err);
-                                            }
-                                        }}
-                                        title={language === 'es' ? 'Exportar logs' : 'Export logs'}
-                                        style={{ margin: 0 }}
+                                        className={styles.createButton}
+                                        onClick={handleCreateUser}
                                     >
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
-                                            <polyline points="7,10 12,15 17,10" />
-                                            <line x1="12" y1="15" x2="12" y2="3" />
-                                        </svg>
+                                        ➕ {language === 'es' ? 'Crear Usuario' : 'Create User'}
                                     </button>
                                 </div>
-                            </div>
 
-                            <div className={styles.placeholder} style={{ marginTop: '20px', padding: '0', background: 'transparent', textAlign: 'left', border: 'none' }}>
-                                {logsLoading ? (
+                                {/* Search results count */}
+                                {!usersLoading && searchQuery.trim() && (
+                                    <div className={styles.userCount}>
+                                        {filteredUsers.length} {language === 'es' ? 'resultado' : 'result'}{filteredUsers.length !== 1 ? 's' : ''} {language === 'es' ? 'para' : 'for'} &quot;{searchQuery}&quot;
+                                    </div>
+                                )}
+
+                                {/* Users table */}
+                                {usersLoading ? (
                                     <div className={styles.loadingTable}>
                                         <div className={styles.spinner}></div>
                                     </div>
-                                ) : logs.length === 0 ? (
+                                ) : filteredUsers.length === 0 ? (
                                     <div className={styles.emptyState}>
-                                        <div className={styles.emptyIcon}>📜</div>
+                                        <div className={styles.emptyIcon}>👥</div>
                                         <div className={styles.emptyTitle}>
-                                            {language === 'es' ? 'No hay logs registrados' : 'No logs recorded'}
+                                            {searchQuery ? (language === 'es' ? 'Sin resultados' : 'No results') : (language === 'es' ? 'No hay usuarios' : 'No users')}
+                                        </div>
+                                        <div className={styles.emptyDescription}>
+                                            {searchQuery
+                                                ? (language === 'es' ? `No se encontraron usuarios para "${searchQuery}"` : `No users found for "${searchQuery}"`)
+                                                : (language === 'es' ? 'Crea el primer usuario con el botón de arriba' : 'Create the first user with the button above')
+                                            }
                                         </div>
                                     </div>
                                 ) : (
-                                    <>
-                                        <div className={styles.usersTableWrapper}>
-                                            <table className={styles.usersTable}>
-                                                <thead>
-                                                    <tr>
-                                                        <th style={{ width: '200px' }}>{language === 'es' ? 'Fecha y Hora' : 'Date & Time'}</th>
-                                                        <th style={{ width: '250px' }}>{language === 'es' ? 'Usuario' : 'User'}</th>
-                                                        <th>{language === 'es' ? 'Acción' : 'Action'}</th>
+                                    <div className={styles.usersTableWrapper}>
+                                        <table className={styles.usersTable}>
+                                            <thead>
+                                                <tr>
+                                                    <th>{language === 'es' ? 'Nombre' : 'Name'}</th>
+                                                    <th>Email</th>
+                                                    <th>{language === 'es' ? 'Teléfono' : 'Phone'}</th>
+                                                    <th>{language === 'es' ? 'Rol' : 'Role'}</th>
+                                                    <th>{language === 'es' ? 'Estado' : 'Status'}</th>
+                                                    <th>{language === 'es' ? 'Último Login' : 'Last Login'}</th>
+                                                    <th>{language === 'es' ? 'Acciones' : 'Actions'}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filteredUsers.map((u) => (
+                                                    <tr key={u.id}>
+                                                        <td>
+                                                            <span className={styles.userName}>
+                                                                {u.firstName} {u.lastName}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span className={styles.userEmail}>{u.email || '—'}</span>
+                                                        </td>
+                                                        <td>{u.phone || '—'}</td>
+                                                        <td>
+                                                            <span className={`${styles.badge} ${styles.badgeEmployee}`} style={{
+                                                                background: u.roleId === 0 ? '#F3E8FF' : u.roleId === 1 ? '#FEF3C7' : '#DBEAFE',
+                                                                color: u.roleId === 0 ? '#6B21A8' : u.roleId === 1 ? '#92400E' : '#1E40AF'
+                                                            }}>
+                                                                {u.roleName || (language === 'es' ? `Rol ${u.roleId}` : `Role ${u.roleId}`)}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span className={`${styles.badge} ${u.isBlocked ? styles.badgeBlocked : styles.badgeActive}`}>
+                                                                {u.isBlocked ? (language === 'es' ? '🚫 Bloqueado' : '🚫 Blocked') : (language === 'es' ? '✅ Activo' : '✅ Active')}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span className={styles.lastLoginText}>
+                                                                {formatDateTime(u.lastLogin)}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <div className={styles.actionsCell}>
+                                                                {canEditUser(u) ? (
+                                                                    <button
+                                                                        className={styles.editButton}
+                                                                        onClick={() => handleEditUser(u)}
+                                                                        title={language === 'es' ? 'Editar usuario' : 'Edit user'}
+                                                                    >
+                                                                        ✏️ {language === 'es' ? 'Editar' : 'Edit'}
+                                                                    </button>
+                                                                ) : (
+                                                                    <button className={styles.editButton} disabled style={{ opacity: 0.3, cursor: 'not-allowed' }} title={language === 'es' ? 'Sin permisos' : 'No permissions'}>
+                                                                        ✏️ {language === 'es' ? 'Editar' : 'Edit'}
+                                                                    </button>
+                                                                )}
+                                                                {canBlockUser(u) && (
+                                                                    u.isBlocked ? (
+                                                                        <button
+                                                                            className={styles.unblockButton}
+                                                                            onClick={() => setConfirmAction({ user: u, action: 'unblock' })}
+                                                                            title={language === 'es' ? 'Desbloquear usuario' : 'Unblock user'}
+                                                                        >
+                                                                            🔓 {language === 'es' ? 'Activar' : 'Activate'}
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button
+                                                                            className={styles.blockButton}
+                                                                            onClick={() => setConfirmAction({ user: u, action: 'block' })}
+                                                                            title={language === 'es' ? 'Bloquear usuario' : 'Block user'}
+                                                                        >
+                                                                            🔒 {language === 'es' ? 'Bloquear' : 'Block'}
+                                                                        </button>
+                                                                    )
+                                                                )}
+                                                            </div>
+                                                        </td>
                                                     </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {logs.map((log) => (
-                                                        <tr key={log.id}>
-                                                            <td>
-                                                                <span className={styles.lastLoginText} style={{ whiteSpace: 'nowrap' }}>
-                                                                    {formatDateTime(log.createddate)}
-                                                                </span>
-                                                            </td>
-                                                            <td>
-                                                                <span className={styles.userName}>
-                                                                    {log.user.firstname} {log.user.lastname}
-                                                                </span>
-                                                                <div className={styles.userEmail} style={{ fontSize: '12px' }}>
-                                                                    {log.user.email}
-                                                                </div>
-                                                            </td>
-                                                            <td>
-                                                                <div className={styles.logActionCell}>
-                                                                    {log.action}
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-
-                                        {/* Logs Pagination */}
-                                        <div className={styles.toolbar} style={{ justifyContent: 'space-between', marginTop: '16px', borderTop: 'none', padding: '0' }}>
-                                            <div style={{ fontSize: '14px', color: '#64748b' }}>
-                                                {language === 'es' ? 'Página' : 'Page'} {logsPage} {language === 'es' ? 'de' : 'of'} {logsTotalPages}
-                                            </div>
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                <button
-                                                    className={styles.modalCancelButton}
-                                                    onClick={handlePrevLogsPage}
-                                                    disabled={logsPage <= 1 || logsLoading}
-                                                    style={{ padding: '6px 12px' }}
-                                                >
-                                                    {language === 'es' ? 'Anterior' : 'Previous'}
-                                                </button>
-                                                <button
-                                                    className={styles.modalCancelButton}
-                                                    onClick={handleNextLogsPage}
-                                                    disabled={logsPage >= logsTotalPages || logsLoading}
-                                                    style={{ padding: '6px 12px' }}
-                                                >
-                                                    {language === 'es' ? 'Siguiente' : 'Next'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Logs del Sistema Tab */}
+                    {activeTab === 'logs' && user?.roleId === 0 && (
+                        <div className={styles.wideContainer}>
+                            <div className={styles.section}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                                    <div>
+                                        <h2 style={{ margin: 0 }}>📜 {language === 'es' ? 'Logs del Sistema' : 'System Logs'}</h2>
+                                        <p className={styles.sectionDescription} style={{ margin: 0 }}>
+                                            {language === 'es' ? 'Seguimiento de eventos y auditoría de la plataforma' : 'Event tracking and platform auditing'}
+                                        </p>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                        <div className={styles.searchWrapper} style={{ margin: 0, minWidth: '400px' }}>
+                                            <input
+                                                type="text"
+                                                placeholder={language === 'es' ? "🔍 Buscar por usuario, acción o fecha (DD/MM/AAAA)..." : "🔍 Search by user, action or date (YYYY-MM-DD)..."}
+                                                value={logsSearchQuery}
+                                                onChange={(e) => setLogsSearchQuery(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === '/') {
+                                                        e.stopPropagation();
+                                                    }
+                                                }}
+                                                className={styles.searchInput}
+                                            />
+                                            {logsSearchQuery && (
+                                                <button
+                                                    className={styles.clearButton}
+                                                    onClick={() => setLogsSearchQuery('')}
+                                                    title={language === 'es' ? 'Limpiar búsqueda' : 'Clear search'}
+                                                >
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                                    </svg>
+                                                </button>
+                                            )}
+                                        </div>
+                                        <button
+                                            className={styles.counterActionBtn}
+                                            onClick={async () => {
+                                                try {
+                                                    const XLSX = await import('xlsx');
+                                                    const wsData = [
+                                                        [language === 'es' ? 'Fecha y Hora' : 'Date & Time', language === 'es' ? 'Usuario' : 'User', 'Email', language === 'es' ? 'Acción' : 'Action'],
+                                                        ...logs.map(l => [
+                                                            formatDateTime(l.createddate),
+                                                            `${l.user.firstname} ${l.user.lastname}`,
+                                                            l.user.email,
+                                                            l.action
+                                                        ])
+                                                    ];
+                                                    const ws = XLSX.utils.aoa_to_sheet(wsData);
+                                                    // Auto-fit column widths
+                                                    ws['!cols'] = wsData[0].map((_, i) => ({
+                                                        wch: Math.max(...wsData.map(row => (row[i]?.toString() || '').length), 15)
+                                                    }));
+                                                    const wb = XLSX.utils.book_new();
+                                                    XLSX.utils.book_append_sheet(wb, ws, 'Logs');
+                                                    XLSX.writeFile(wb, `RosterLoop_Logs_Page${logsPage}_${new Date().toISOString().split('T')[0]}.xlsx`);
+                                                } catch (err) {
+                                                    console.error('Error exporting Logs:', err);
+                                                }
+                                            }}
+                                            title={language === 'es' ? 'Exportar logs' : 'Export logs'}
+                                            style={{ margin: 0 }}
+                                        >
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" />
+                                                <polyline points="7,10 12,15 17,10" />
+                                                <line x1="12" y1="15" x2="12" y2="3" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className={styles.placeholder} style={{ marginTop: '20px', padding: '0', background: 'transparent', textAlign: 'left', border: 'none' }}>
+                                    {logsLoading ? (
+                                        <div className={styles.loadingTable}>
+                                            <div className={styles.spinner}></div>
+                                        </div>
+                                    ) : logs.length === 0 ? (
+                                        <div className={styles.emptyState}>
+                                            <div className={styles.emptyIcon}>📜</div>
+                                            <div className={styles.emptyTitle}>
+                                                {language === 'es' ? 'No hay logs registrados' : 'No logs recorded'}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className={styles.usersTableWrapper}>
+                                                <table className={styles.usersTable}>
+                                                    <thead>
+                                                        <tr>
+                                                            <th style={{ width: '200px' }}>{language === 'es' ? 'Fecha y Hora' : 'Date & Time'}</th>
+                                                            <th style={{ width: '250px' }}>{language === 'es' ? 'Usuario' : 'User'}</th>
+                                                            <th>{language === 'es' ? 'Acción' : 'Action'}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {logs.map((log) => (
+                                                            <tr key={log.id}>
+                                                                <td>
+                                                                    <span className={styles.lastLoginText} style={{ whiteSpace: 'nowrap' }}>
+                                                                        {formatDateTime(log.createddate)}
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    <span className={styles.userName}>
+                                                                        {log.user.firstname} {log.user.lastname}
+                                                                    </span>
+                                                                    <div className={styles.userEmail} style={{ fontSize: '12px' }}>
+                                                                        {log.user.email}
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <div className={styles.logActionCell}>
+                                                                        {log.action}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {/* Logs Pagination */}
+                                            <div className={styles.toolbar} style={{ justifyContent: 'space-between', marginTop: '16px', borderTop: 'none', padding: '0' }}>
+                                                <div style={{ fontSize: '14px', color: '#64748b' }}>
+                                                    {language === 'es' ? 'Página' : 'Page'} {logsPage} {language === 'es' ? 'de' : 'of'} {logsTotalPages}
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <button
+                                                        className={styles.modalCancelButton}
+                                                        onClick={handlePrevLogsPage}
+                                                        disabled={logsPage <= 1 || logsLoading}
+                                                        style={{ padding: '6px 12px' }}
+                                                    >
+                                                        {language === 'es' ? 'Anterior' : 'Previous'}
+                                                    </button>
+                                                    <button
+                                                        className={styles.modalCancelButton}
+                                                        onClick={handleNextLogsPage}
+                                                        disabled={logsPage >= logsTotalPages || logsLoading}
+                                                        style={{ padding: '6px 12px' }}
+                                                    >
+                                                        {language === 'es' ? 'Siguiente' : 'Next'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
