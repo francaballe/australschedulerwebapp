@@ -134,9 +134,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   // Clear clipboard when Control is released
   useEffect(() => {
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Control') {
+      if (e.key === 'Control' || e.key === 'Meta') {
         setCopiedShift(null);
-        console.log('🧹 Clipboard cleared (Control released)');
+        console.log(`🧹 Clipboard cleared (${e.key} released)`);
       }
     };
 
@@ -1023,11 +1023,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     // Don't open modal if we just finished a drag
     if (draggedShift) return;
 
-    // Check for "Quick Paste" (Ctrl + Click on empty cell)
+    // Check for "Quick Paste" (Ctrl/Cmd + Click on empty cell)
     const existingShift = getShiftForUserAndDay(userId, date);
-
-    if (!existingShift && e?.ctrlKey && copiedShift) {
-      console.log('📋 Quick Pasting shift (Ctrl):', copiedShift);
+    const isControlPressed = e?.ctrlKey || e?.metaKey;
+    if (!existingShift && isControlPressed && copiedShift) {
+      console.log('📋 Quick Pasting shift:', copiedShift);
       createShiftAssignment(
         userId,
         date,
@@ -1038,8 +1038,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       return;
     }
 
-    // New Guard: If Control is pressed but cell is NOT empty, do nothing.
-    if (existingShift && e?.ctrlKey) {
+    // New Guard: If Control/Cmd is pressed but cell is NOT empty, do nothing.
+    if (existingShift && isControlPressed) {
       return;
     }
 
@@ -1076,8 +1076,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   const handlePositionSelect = async (positionId: number, e?: React.MouseEvent) => {
     if (!selectedCell) return;
 
-    // Check for "Quick Copy" (Ctrl + Click on position)
-    if (e?.ctrlKey) {
+    // Check for "Quick Copy" (Ctrl/Cmd + Click on position)
+    if (e?.ctrlKey || e?.metaKey) {
       const pos = positions.find(p => p.id === positionId);
       if (pos) {
         setCopiedShift({
@@ -1085,7 +1085,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
           startTime: pos.starttime,
           endTime: pos.endtime
         });
-        console.log('📌 Shift Copied to clipboard (Ctrl):', { positionId: pos.id, name: pos.name });
+        console.log('📌 Shift Copied to clipboard:', { positionId: pos.id, name: pos.name });
         // Optional: User feedback could go here (toast, etc.)
       }
     }
