@@ -19,61 +19,46 @@ export async function POST(request: NextRequest) {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    // Delete shifts marked for deletion in the range
+    // 1. BEFORE publishing, identify users who have UNPUBLISHED shifts (the truly affected ones)
+    const siteFilter = siteId !== undefined && siteId !== null ? { siteid: Number(siteId) } : {};
 
+    const affectedUsers = await prisma.shift.findMany({
+      where: {
+        date: { gte: start, lte: end },
+        published: false,
+        user: { isblocked: false },
+        ...siteFilter
+      },
+      select: { userId: true },
+      distinct: ['userId']
+    });
 
-    // Build update filter: if type === 'changes' update only unpublished shifts, otherwise update all
-    // Build update filter: if type === 'changes' update only unpublished shifts, otherwise update all
+    const targetUserIds = affectedUsers.map(u => u.userId);
+
+    // 2. Build update filter and publish shifts
     const updateWhere: any = {
-      date: {
-        gte: start,
-        lte: end
-      }
+      date: { gte: start, lte: end },
+      ...siteFilter
     };
-    if (siteId !== undefined && siteId !== null) {
-      updateWhere.siteid = Number(siteId);
-    }
     if (type === 'changes') {
       updateWhere.published = false;
     }
 
-    // 2. Update shifts to published
-    // If type === 'changes', updateWhere already targets unpublished.
-    // If type === 'all', updateWhere targets all.
-    // We only publish shifts for users who are NOT blocked.
     const updated = await prisma.shift.updateMany({
       where: {
         ...updateWhere,
-        user: {
-          isblocked: false
-        }
+        user: { isblocked: false }
       },
       data: { published: true }
     });
 
-    // 1. Identify users who need to be notified (who have published shifts in range)
-    // Exclude blocked users from notifications.
-    const usersToNotify = await prisma.shift.findMany({
-      where: {
-        date: { gte: start, lte: end },
-        published: true, // They were either already published or just published
-        user: {
-          isblocked: false
-        },
-        ...(siteId !== undefined && siteId !== null ? { siteid: Number(siteId) } : {})
-      },
-      select: {
-        userId: true
-      },
-      distinct: ['userId']
-    });
-
-    const targetUserIds = usersToNotify.map(u => u.userId);
-
+    // 3. If no users were affected, skip notifications
     if (targetUserIds.length === 0) {
-      console.log('No users with published shifts found. No notifications sent.');
+      console.log('No users with unpublished shifts found. No notifications sent.');
       return NextResponse.json({ updated: updated.count, notifiedUsers: 0 }, { headers: corsHeaders });
     }
+
+    console.log(`📢 ${targetUserIds.length} users had unpublished shifts and will be notified.`);
 
     // 3. Fetch FULL schedule for the target users
     // We want to send them the complete picture for the range, even if some parts were already published.
@@ -81,7 +66,7 @@ export async function POST(request: NextRequest) {
       where: {
         userId: { in: targetUserIds },
         date: { gte: start, lte: end },
-        ...(siteId !== undefined && siteId !== null ? { siteid: Number(siteId) } : {})
+        ...siteFilter
       },
       include: {
         position: true,
