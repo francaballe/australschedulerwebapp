@@ -297,14 +297,21 @@ export default function SettingsPage() {
         // Apply view filter first
         if (userViewFilter === 'active' && u.isBlocked) return false;
         if (userViewFilter === 'blocked' && !u.isBlocked) return false;
+
         // Then apply search
-        if (!searchQuery.trim()) return true;
-        const term = searchQuery.toLowerCase();
-        return (
-            (u.firstName?.toLowerCase().includes(term)) ||
-            (u.lastName?.toLowerCase().includes(term)) ||
-            (u.email?.toLowerCase().includes(term)) ||
-            (u.phone?.toLowerCase().includes(term))
+        const query = searchQuery.trim().toLowerCase();
+        if (!query) return true;
+
+        const words = query.split(/\s+/);
+        const fullName = `${u.firstName || ""} ${u.lastName || ""}`.toLowerCase();
+        const email = (u.email || "").toLowerCase();
+        const phone = (u.phone || "").toLowerCase();
+
+        // All words in the query must match at least one field
+        return words.every(word =>
+            fullName.includes(word) ||
+            email.includes(word) ||
+            phone.includes(word)
         );
     });
 
