@@ -216,6 +216,13 @@
   height: auto;
 }
 
+.blockedRow {
+  opacity: 0.6;
+  pointer-events: none;
+  filter: grayscale(0.5);
+  background: var(--background-secondary) !important;
+}
+
 .userRow:nth-child(even) {
   background: var(--background);
 }

@@ -41,15 +41,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Verificar que el usuario existe usando Prisma
+        // Verificar que el usuario existe usando Prisma y no está bloqueado
         const user = await prisma.user.findFirst({
             where: { email },
-            select: { id: true }
+            select: { id: true, isblocked: true }
         });
 
-        if (!user) {
+        if (!user || user.isblocked) {
             return NextResponse.json(
-                { error: 'User not found' },
+                { error: 'User not found or is blocked' },
                 { status: 404, headers }
             );
         }

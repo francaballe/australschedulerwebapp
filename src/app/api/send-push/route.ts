@@ -11,9 +11,9 @@ export async function POST(request: NextRequest) {
         'file://', // Para APK
         'null' // Para APK también
     ];
-    
+
     const corsOrigin = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-    
+
     const headers = {
         'Access-Control-Allow-Origin': corsOrigin || '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -30,12 +30,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Obtener el token FCM del usuario
+        // Obtener el token FCM del usuario (si no está bloqueado)
         const result = await sql`
             SELECT upt.token 
             FROM app.user_push_tokens upt
             JOIN app.users u ON upt.user_id = u.id
-            WHERE u.email = ${email}
+            WHERE u.email = ${email} AND u.isblocked = false
             ORDER BY upt.created_at DESC
             LIMIT 1
         `;
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
         } catch (firebaseError: any) {
             console.error('Firebase error:', firebaseError);
-            
+
             // Si es un token inválido, eliminarlo de la base de datos
             if (firebaseError.message?.includes('invalid') || firebaseError.message?.includes('not registered')) {
                 await sql`
@@ -69,22 +69,22 @@ export async function POST(request: NextRequest) {
                     USING app.users u
                     WHERE upt.user_id = u.id AND u.email = ${email}
                 `;
-                
+
                 return NextResponse.json(
                     { error: 'Token is invalid or expired. Token has been removed.' },
                     { status: 410, headers }
                 );
             }
-            
+
             throw firebaseError;
         }
 
     } catch (error: any) {
         console.error('Error sending push notification:', error);
         return NextResponse.json(
-            { 
+            {
                 error: 'Failed to send push notification',
-                details: error.message 
+                details: error.message
             },
             { status: 500, headers }
         );

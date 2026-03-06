@@ -33,7 +33,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         // 1. Fetch the shift to check its status (include position for notification details)
         const shift = await prisma.shift.findUnique({
             where: { id: idNumber },
-            include: { position: true, user: { select: { email: true, firstname: true } } }
+            include: { position: true, user: { select: { email: true, firstname: true, isblocked: true } } }
         });
 
         if (!shift) {
@@ -43,8 +43,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
             );
         }
 
-        // 2. Notification Logic (if published and requested)
-        if (shift.published && shouldNotify) {
+        // 2. Notification Logic (if published, requested, and user is NOT blocked)
+        if (shift.published && shouldNotify && !shift.user?.isblocked) {
             try {
                 // Formatting Date and Time for Notifications (both Push and Email)
                 const dateObj = new Date(shift.date);

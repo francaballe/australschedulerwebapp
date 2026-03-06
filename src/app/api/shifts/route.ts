@@ -366,7 +366,10 @@ export async function DELETE(request: NextRequest) {
                 const shiftsToDelete = await prisma.shift.findMany({
                     where: {
                         ...whereClause,
-                        published: true
+                        published: true,
+                        user: {
+                            isblocked: false
+                        }
                     },
                     include: {
                         position: true,

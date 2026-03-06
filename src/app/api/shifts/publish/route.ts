@@ -37,14 +37,29 @@ export async function POST(request: NextRequest) {
       updateWhere.published = false;
     }
 
-    // 1. Identify users who need to be notified (users with at least one UNPUBLISHED shift in range)
-    // regardless of 'type' (all or changes), we only notify if there's something new to show.
-    // If type is 'changes', updateWhere handles it. If type is 'all', we still only care about users with *unpublished* items
-    // effectively, we want to know whose schedule CHANGED/IS NEW.
+    // 2. Update shifts to published
+    // If type === 'changes', updateWhere already targets unpublished.
+    // If type === 'all', updateWhere targets all.
+    // We only publish shifts for users who are NOT blocked.
+    const updated = await prisma.shift.updateMany({
+      where: {
+        ...updateWhere,
+        user: {
+          isblocked: false
+        }
+      },
+      data: { published: true }
+    });
+
+    // 1. Identify users who need to be notified (who have published shifts in range)
+    // Exclude blocked users from notifications.
     const usersToNotify = await prisma.shift.findMany({
       where: {
         date: { gte: start, lte: end },
-        published: false,
+        published: true, // They were either already published or just published
+        user: {
+          isblocked: false
+        },
         ...(siteId !== undefined && siteId !== null ? { siteid: Number(siteId) } : {})
       },
       select: {
@@ -55,17 +70,8 @@ export async function POST(request: NextRequest) {
 
     const targetUserIds = usersToNotify.map(u => u.userId);
 
-    // 2. Update shifts to published
-    // If type === 'changes', updateWhere already targets unpublished.
-    // If type === 'all', updateWhere targets all.
-    // We proceed with the update as requested.
-    const updated = await prisma.shift.updateMany({
-      where: updateWhere,
-      data: { published: true }
-    });
-
     if (targetUserIds.length === 0) {
-      console.log('No users with unpublished shifts found. No notifications sent.');
+      console.log('No users with published shifts found. No notifications sent.');
       return NextResponse.json({ updated: updated.count, notifiedUsers: 0 }, { headers: corsHeaders });
     }
 

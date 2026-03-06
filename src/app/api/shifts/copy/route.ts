@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
                 gte: sDate,
                 lte: sourceEnd
             },
-            NOT: { positionId: 1 }
+            NOT: { positionId: 1 },
+            user: { isblocked: false }
         };
 
         if (siteId) {

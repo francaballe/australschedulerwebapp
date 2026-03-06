@@ -919,6 +919,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   };
 
   const handleDragStart = (e: React.DragEvent, shift: Shift) => {
+    const user = users.find(u => u.id === shift.userId);
+    if (user?.isBlocked) {
+      e.preventDefault();
+      return;
+    }
     if (!isShiftDraggable(shift)) {
       e.preventDefault();
       return;
@@ -955,6 +960,13 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   };
 
   const handleDrop = async (e: React.DragEvent, targetUserId: number, targetDate: Date) => {
+    const targetUser = users.find(u => u.id === targetUserId);
+    if (targetUser?.isBlocked) {
+      e.preventDefault();
+      e.stopPropagation();
+      setDropTarget(null);
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     setDropTarget(null);
@@ -1006,6 +1018,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
   // Manejar click en celda
   const handleCellClick = (userId: number, date: Date, e?: React.MouseEvent) => {
+    const user = users.find(u => u.id === userId);
+    if (user?.isBlocked) return;
     // Don't open modal if we just finished a drag
     if (draggedShift) return;
 
@@ -1802,7 +1816,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
           // filter users by selected site if available -> REMOVED per requirement
           filteredUsers
             .map((user: User, userIndex: number) => (
-              <div key={user.id} className={styles.userRow}>
+              <div key={user.id} className={`${styles.userRow} ${user.isBlocked ? styles.blockedRow : ''}`}>
                 {/* Columna de usuario */}
                 <div className={`${styles.userCell} ${view === 'twoWeeks' ? styles.userCellNarrow : ''}`}>
                   <div className={styles.userName}>
