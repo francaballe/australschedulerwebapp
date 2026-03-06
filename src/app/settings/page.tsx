@@ -1256,7 +1256,7 @@ export default function SettingsPage() {
                                                         {logs.map((log) => (
                                                             <tr key={log.id}>
                                                                 <td>
-                                                                    <span className={styles.lastLoginText} style={{ whiteSpace: 'nowrap' }}>
+                                                                    <span className={styles.lastLoginText}>
                                                                         {formatDateTime(log.createddate)}
                                                                     </span>
                                                                 </td>

@@ -16,7 +16,7 @@
 }
 
 .wideContainer {
-  max-width: 1600px;
+  max-width: 1800px;
   margin: 0 auto;
   width: 100%;
 }
@@ -574,6 +574,12 @@
 }
 
 .userEmail {
+  font-size: 13px;
+  color: var(--foreground-secondary);
+}
+
+.lastLoginText {
+  white-space: nowrap;
   font-size: 13px;
   color: var(--foreground-secondary);
 }
