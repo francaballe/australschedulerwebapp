@@ -1483,7 +1483,7 @@ export default function SettingsPage() {
             {/* Create/Edit User Modal */}
             {
                 showUserModal && (
-                    <div className={styles.modalOverlay} onClick={() => setShowUserModal(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !formSaving) handleSaveUser(); }} tabIndex={-1}>
+                    <div className={styles.modalOverlay} onKeyDown={(e) => { if (e.key === 'Enter' && !formSaving) handleSaveUser(); }} tabIndex={-1}>
                         <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                             <div className={styles.modalTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 {editingUser ? (language === 'es' ? '✏️ Editar Usuario' : '✏️ Edit User') : (language === 'es' ? '➕ Crear Usuario' : '➕ Create User')}
@@ -1691,7 +1691,7 @@ export default function SettingsPage() {
             {/* Confirm Block/Unblock Modal */}
             {
                 confirmAction && (
-                    <div className={styles.modalOverlay} onClick={() => setConfirmAction(null)} onKeyDown={(e) => { if (e.key === 'Enter') handleToggleBlock(); }} tabIndex={-1} ref={(el) => el?.focus()}>
+                    <div className={styles.modalOverlay} onKeyDown={(e) => { if (e.key === 'Enter') handleToggleBlock(); }} tabIndex={-1} ref={(el) => el?.focus()}>
                         <div className={`${styles.modalContent} ${styles.confirmModal}`} onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
                             <button
                                 className={styles.modalCloseButton}
@@ -1737,7 +1737,7 @@ export default function SettingsPage() {
             {/* Create/Edit Site Modal */}
             {
                 showSiteModal && (
-                    <div className={styles.modalOverlay} onClick={() => setShowSiteModal(false)} onKeyDown={(e) => { if (e.key === 'Enter' && !siteSaving && siteName.trim()) handleSaveSite(); }} tabIndex={-1}>
+                    <div className={styles.modalOverlay} onKeyDown={(e) => { if (e.key === 'Enter' && !siteSaving && siteName.trim()) handleSaveSite(); }} tabIndex={-1}>
                         <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                             <div className={styles.modalTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 {editingSite ? (language === 'es' ? '✏️ Editar Sitio' : '✏️ Edit Site') : (language === 'es' ? '➕ Crear Sitio' : '➕ Create Site')}
@@ -1781,7 +1781,7 @@ export default function SettingsPage() {
             {/* Confirm Delete Site Modal */}
             {
                 confirmDeleteSite && (
-                    <div className={styles.modalOverlay} onClick={() => setConfirmDeleteSite(null)} onKeyDown={(e) => { if (e.key === 'Enter') handleDeleteSite(); }} tabIndex={-1} ref={(el) => el?.focus()}>
+                    <div className={styles.modalOverlay} onKeyDown={(e) => { if (e.key === 'Enter') handleDeleteSite(); }} tabIndex={-1} ref={(el) => el?.focus()}>
                         <div className={`${styles.modalContent} ${styles.confirmModal}`} onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
                             <button
                                 className={styles.modalCloseButton}
