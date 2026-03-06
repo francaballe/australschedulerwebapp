@@ -4,8 +4,8 @@ import nodemailer from 'nodemailer';
 const transporter = nodemailer.createTransport({
     service: 'gmail', // Use 'gmail' or configure host/port for other providers
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.NOTIFICATIONS_EMAIL_USER,
+        pass: process.env.NOTIFICATIONS_EMAIL_PASS,
     },
 });
 
@@ -19,13 +19,13 @@ const transporter = nodemailer.createTransport({
  * @returns a promise that resolves when the email is sent
  */
 export async function sendEmail(to: string, subject: string, text: string, html?: string) {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        console.warn('EMAIL_USER or EMAIL_PASS not set in environment. Skipping email sending.');
+    if (!process.env.NOTIFICATIONS_EMAIL_USER || !process.env.NOTIFICATIONS_EMAIL_PASS) {
+        console.warn('NOTIFICATIONS_EMAIL_USER or NOTIFICATIONS_EMAIL_PASS not set in environment. Skipping email sending.');
         return;
     }
 
     const mailOptions = {
-        from: `"RosterLoop" <${process.env.EMAIL_USER}>`,
+        from: `"RosterLoop" <${process.env.NOTIFICATIONS_EMAIL_USER}>`,
         to,
         subject,
         text,

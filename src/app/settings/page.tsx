@@ -109,10 +109,48 @@ export default function SettingsPage() {
     const bulkMenuRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Bulk Upload State
-    const [isUploadingBulk, setIsUploadingBulk] = useState(false);
     const [bulkUploadError, setBulkUploadError] = useState<string | null>(null);
     const [bulkUploadSuccess, setBulkUploadSuccess] = useState<string | null>(null);
+    const [isUploadingBulk, setIsUploadingBulk] = useState(false);
+
+    // Support Contact Modal State
+    const [showContactModal, setShowContactModal] = useState(false);
+    const [contactFormData, setContactFormData] = useState({
+        fullName: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "",
+        email: user?.email || "",
+        phone: (user as any)?.phone || "",
+        category: "General Inquiry",
+        message: ""
+    });
+    const [captchaCode, setCaptchaCode] = useState("");
+    const [captchaInput, setCaptchaInput] = useState("");
+    const [isSendingContact, setIsSendingContact] = useState(false);
+    const [contactError, setContactError] = useState<string | null>(null);
+
+    // Generate Captcha
+    const generateCaptcha = useCallback(() => {
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+        let result = "";
+        for (let i = 0; i < 6; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        setCaptchaCode(result);
+        setCaptchaInput("");
+    }, []);
+
+    useEffect(() => {
+        if (showContactModal) {
+            generateCaptcha();
+            setContactFormData({
+                fullName: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "",
+                email: user?.email || "",
+                phone: (user as any)?.phone || "",
+                category: language === 'es' ? "Consulta General" : "General Inquiry",
+                message: ""
+            });
+            setContactError(null);
+        }
+    }, [showContactModal, user, language, generateCaptcha]);
 
     // Close bulk menu when clicking outside
     useEffect(() => {
@@ -452,6 +490,42 @@ export default function SettingsPage() {
         }
     };
 
+    const handleSendContact = async () => {
+        if (!contactFormData.fullName.trim() || !contactFormData.email.trim() || !contactFormData.message.trim()) {
+            setContactError(language === 'es' ? "Nombre, email y mensaje son requeridos" : "Name, email and message are required");
+            return;
+        }
+
+        if (captchaInput !== captchaCode) {
+            setContactError(language === 'es' ? "Código de verificación incorrecto" : "Incorrect verification code");
+            return;
+        }
+
+        setIsSendingContact(true);
+        setContactError(null);
+
+        try {
+            const response = await fetch('/api/support/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(contactFormData),
+            });
+
+            if (response.ok) {
+                showFeedback('success', language === 'es' ? "¡Mensaje enviado!" : "Message sent!");
+                setShowContactModal(false);
+            } else {
+                const data = await response.json();
+                setContactError(data.error || (language === 'es' ? "Error al enviar el mensaje" : "Failed to send message"));
+            }
+        } catch (error) {
+            console.error('Error sending contact form:', error);
+            setContactError(language === 'es' ? "Error de conexión" : "Connection error");
+        } finally {
+            setIsSendingContact(false);
+        }
+    };
+
     // Toggle block/unblock
     const handleToggleBlock = async () => {
         if (!confirmAction) return;
@@ -742,6 +816,12 @@ export default function SettingsPage() {
                                 🧪 {language === 'es' ? 'Tests de Mensajería' : 'Messaging Tests'}
                             </button>
                         )}
+                        <button
+                            className={`${styles.tab} ${activeTab === 'help' ? styles.active : ''}`}
+                            onClick={() => setActiveTab('help')}
+                        >
+                            📩 {language === 'es' ? 'Ayuda y Soporte' : 'Help & Support'}
+                        </button>
                     </div>
                 </div>
 
@@ -1497,6 +1577,76 @@ export default function SettingsPage() {
                             )}
                         </div>
                     )}
+
+                    {/* Ayuda y Soporte Tab */}
+                    {activeTab === 'help' && (
+                        <div className={styles.section}>
+                            <h2>📩 {language === 'es' ? 'Ayuda y Soporte' : 'Help & Support'}</h2>
+                            <p className={styles.sectionDescription}>
+                                {language === 'es' ? 'Información de contacto y preguntas frecuentes' : 'Contact information and frequently asked questions'}
+                            </p>
+
+                            {feedback && (
+                                <div className={`${styles.feedbackMessage} ${feedback.type === 'success' ? styles.feedbackSuccess : styles.feedbackError}`}>
+                                    {feedback.message}
+                                </div>
+                            )}
+
+                            <div className={styles.settingsList}>
+                                <div className={styles.settingItem}>
+                                    <div className={styles.settingInfo}>
+                                        <span className={styles.settingLabel}>ℹ️ {language === 'es' ? 'Versión del Software' : 'Software Version'}</span>
+                                        <span className={styles.settingDescription}>
+                                            v1.9.0
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className={styles.settingItem}>
+                                    <div className={styles.settingInfo}>
+                                        <span className={styles.settingLabel}>📧 {language === 'es' ? 'Soporte Técnico' : 'Technical Support'}</span>
+                                        <span className={styles.settingDescription}>
+                                            {language === 'es' ? '¿Tienes problemas o sugerencias? Escríbenos.' : 'Having issues or suggestions? Write to us.'}
+                                        </span>
+                                    </div>
+                                    <div className={styles.settingControl}>
+                                        <button
+                                            onClick={() => setShowContactModal(true)}
+                                            className={styles.createButton}
+                                            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                                        >
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                                <polyline points="22,6 12,13 2,6" />
+                                            </svg>
+                                            {language === 'es' ? 'Contactar Soporte' : 'Contact Support'}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className={styles.settingItem} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '16px' }}>
+                                    <div className={styles.settingInfo}>
+                                        <span className={styles.settingLabel}>❓ {language === 'es' ? 'Información Útil' : 'Useful Information'}</span>
+                                    </div>
+                                    <div style={{ color: 'var(--foreground-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                        {language === 'es' ? (
+                                            <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                                                <li><strong>Sincronización:</strong> Si los cambios no se ven reflejados, intenta refrescar la página.</li>
+                                                <li><strong>Sesión:</strong> Por seguridad, la sesión caduca tras un periodo de inactividad.</li>
+                                                <li><strong>Calendario:</strong> Puedes usar Control/Cmd + Click para copiar y pegar turnos rápidamente.</li>
+                                            </ul>
+                                        ) : (
+                                            <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                                                <li><strong>Synchronization:</strong> If changes are not reflected, try refreshing the page.</li>
+                                                <li><strong>Session:</strong> For security, the session expires after a period of inactivity.</li>
+                                                <li><strong>Calendar:</strong> You can use Control/Cmd + Click to quickly copy and paste shifts.</li>
+                                            </ul>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main >
 
@@ -1833,6 +1983,130 @@ export default function SettingsPage() {
                                 >
                                     {language === 'es' ? 'Eliminar' : 'Delete'}
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+            {/* Support Contact Modal */}
+            {
+                showContactModal && (
+                    <div className={styles.modalOverlay} onKeyDown={(e) => { if (e.key === 'Enter' && !isSendingContact) handleSendContact(); }} tabIndex={-1}>
+                        <div className={`${styles.modalContent} ${styles.contactModal}`} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.modalTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>📩 {language === 'es' ? 'Contactar Soporte' : 'Contact Support'}</span>
+                                <button
+                                    className={styles.modalCloseButton}
+                                    onClick={() => setShowContactModal(false)}
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            <div className={styles.modalForm}>
+                                <div className={styles.modalField}>
+                                    <label>👤 {language === 'es' ? 'Nombre completo *' : 'Full Name *'}</label>
+                                    <input
+                                        type="text"
+                                        value={contactFormData.fullName}
+                                        onChange={(e) => setContactFormData({ ...contactFormData, fullName: e.target.value })}
+                                        placeholder={language === 'es' ? "Tu nombre y apellido" : "Your full name"}
+                                    />
+                                </div>
+
+                                <div className={styles.modalField}>
+                                    <label>✉️ Email *</label>
+                                    <input
+                                        type="email"
+                                        value={contactFormData.email}
+                                        onChange={(e) => setContactFormData({ ...contactFormData, email: e.target.value })}
+                                        placeholder="usuario@ejemplo.com"
+                                    />
+                                </div>
+
+                                <div className={styles.modalField}>
+                                    <label>📞 {language === 'es' ? 'Teléfono (opcional)' : 'Phone (optional)'}</label>
+                                    <input
+                                        type="tel"
+                                        value={contactFormData.phone}
+                                        onChange={(e) => setContactFormData({ ...contactFormData, phone: e.target.value })}
+                                        placeholder="+54 11 1234-5678"
+                                    />
+                                </div>
+
+                                <div className={styles.modalField}>
+                                    <label>📋 {language === 'es' ? 'Categoría *' : 'Category *'}</label>
+                                    <select
+                                        value={contactFormData.category}
+                                        onChange={(e) => setContactFormData({ ...contactFormData, category: e.target.value })}
+                                    >
+                                        <option value={language === 'es' ? "Consulta General" : "General Inquiry"}>
+                                            {language === 'es' ? 'Consulta General' : 'General Inquiry'}
+                                        </option>
+                                        <option value={language === 'es' ? "Problema Técnico" : "Technical Issue"}>
+                                            {language === 'es' ? 'Problema Técnico' : 'Technical Issue'}
+                                        </option>
+                                        <option value={language === 'es' ? "Sugerencia" : "Suggestion"}>
+                                            {language === 'es' ? 'Sugerencia' : 'Suggestion'}
+                                        </option>
+                                        <option value={language === 'es' ? "Otro" : "Other"}>
+                                            {language === 'es' ? 'Otro' : 'Other'}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div className={styles.modalField}>
+                                    <label>💬 {language === 'es' ? 'Consulta *' : 'Inquiry *'}</label>
+                                    <textarea
+                                        value={contactFormData.message}
+                                        onChange={(e) => setContactFormData({ ...contactFormData, message: e.target.value })}
+                                        placeholder={language === 'es' ? "Detalle su consulta o comentario" : "Detail your inquiry or comment"}
+                                        className={styles.textarea}
+                                        rows={4}
+                                    />
+                                </div>
+
+                                <div className={styles.captchaSection}>
+                                    <div className={styles.modalField} style={{ flex: 1 }}>
+                                        <label>🛡️ {language === 'es' ? 'Verificación *' : 'Verification *'}</label>
+                                        <input
+                                            type="text"
+                                            value={captchaInput}
+                                            onChange={(e) => setCaptchaInput(e.target.value)}
+                                            placeholder={language === 'es' ? "Escriba el código" : "Type the code"}
+                                        />
+                                    </div>
+                                    <div className={styles.captchaDisplayWrapper}>
+                                        <div className={styles.captchaDisplay}>
+                                            {captchaCode}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className={styles.captchaRefresh}
+                                            onClick={generateCaptcha}
+                                            title={language === 'es' ? "Refrescar captcha" : "Refresh captcha"}
+                                        >
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
+                                                <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {contactError && (
+                                    <div className={styles.modalError}>{contactError}</div>
+                                )}
+
+                                <div className={styles.modalActions} style={{ justifyContent: 'center', marginTop: '10px' }}>
+                                    <button
+                                        className={styles.modalSaveButton}
+                                        onClick={handleSendContact}
+                                        disabled={isSendingContact}
+                                        style={{ width: '100%', padding: '12px', fontSize: '16px' }}
+                                    >
+                                        {isSendingContact ? (language === 'es' ? 'Enviando...' : 'Sending...') : (language === 'es' ? 'ENVIAR' : 'SEND')}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
