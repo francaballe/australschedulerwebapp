@@ -848,11 +848,13 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       return 0;
     }
 
+    const relevantDateStr = view === 'day' ? formatDateLocal(currentDate) : null;
+
     // Group shifts by date to detect duplicates
     const shiftsByDate = new Map<string, Shift[]>();
 
     shifts
-      .filter(s => s.userId === userId)
+      .filter(s => s.userId === userId && (!relevantDateStr || s.date === relevantDateStr))
       .forEach(shift => {
         const date = shift.date;
         if (!shiftsByDate.has(date)) {
@@ -2109,7 +2111,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 key={`footer-${index}`}
                 className={`${styles.footerCell} ${isAdjacentDay(date) ? styles.adjacentDayHeader : ''}`}
               >
-                {totalHours > 0 ? `${totalHours.toFixed(1)}` : '-'}
+                {(totalHours > 0 && !isAdjacentDay(date)) ? `${totalHours.toFixed(1)}` : '-'}
               </div>
             );
           })}
