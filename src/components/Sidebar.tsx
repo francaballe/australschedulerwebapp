@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styles from './Sidebar.module.css';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
+import { useCalendar } from '@/context/CalendarContext';
 
 interface Position {
     id: string | number;
@@ -35,9 +36,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     unpublishedCount = 0,
     view = 'week'
 }) => {
-    // Site selector state
+    // Site selector state from context (persists across navigation)
+    const { selectedSiteId: selectedSite, setSelectedSiteId: setSelectedSite, enabledPositions } = useCalendar();
     const [sites, setSites] = useState<{ id: number; name: string }[]>([]);
-    const [selectedSite, setSelectedSite] = useState<number | null>(null);
 
     const { language } = useTheme();
     const { user } = useAuth();
@@ -78,8 +79,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                     throw new Error('Error al cargar posiciones');
                 }
                 const data = await response.json();
-                // Initialize with checked: true
-                const initialized = data.map((p: Position) => ({ ...p, checked: true }));
+                // Initialize checked state: use context's enabledPositions if available,
+                // otherwise default to all checked (first visit)
+                const hasPersistedFilters = enabledPositions.size > 0;
+                const initialized = data.map((p: Position) => ({
+                    ...p,
+                    checked: hasPersistedFilters ? enabledPositions.has(Number(p.id)) : true
+                }));
                 // Keep first 2 system positions fixed, sort the rest alphabetically
                 const fixed = initialized.filter((p: Position) => Number(p.id) <= 1);
                 const sortable = initialized.filter((p: Position) => Number(p.id) > 1);
@@ -180,13 +186,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                 const data = await res.json();
                 setSites(data);
 
-                // Initialize selected site to the lowest ID (ignoring localStorage)
+                // Only set default site if context doesn't already have a valid one
                 if (data.length > 0) {
-                    const minId = data.reduce((acc: number, s: { id: number }) => Math.min(acc, s.id), data[0].id);
-                    setSelectedSite(minId);
-                    try { window.localStorage.setItem('selectedSiteId', String(minId)); } catch { }
-                    // notify other components
-                    try { window.dispatchEvent(new CustomEvent('siteChanged', { detail: minId })); } catch { }
+                    const siteIds = data.map((s: { id: number }) => s.id);
+                    if (selectedSite === null || !siteIds.includes(selectedSite)) {
+                        const minId = Math.min(...siteIds);
+                        setSelectedSite(minId);
+                        try { window.localStorage.setItem('selectedSiteId', String(minId)); } catch { }
+                        try { window.dispatchEvent(new CustomEvent('siteChanged', { detail: minId })); } catch { }
+                    } else {
+                        // Context already has a valid site, just sync localStorage
+                        // Do NOT dispatch siteChanged - site hasn't changed, avoid resetting filters
+                        try { window.localStorage.setItem('selectedSiteId', String(selectedSite)); } catch { }
+                    }
                 }
             } catch (err) {
                 console.warn('Could not fetch sites', err);

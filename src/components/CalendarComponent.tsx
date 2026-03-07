@@ -7,6 +7,7 @@ import { es, enUS } from "date-fns/locale";
 import "react-datepicker/dist/react-datepicker.css";
 import styles from "./CalendarComponent.module.css";
 import { useTheme } from "@/context/ThemeContext";
+import { useCalendar } from "@/context/CalendarContext";
 
 // Register locales
 registerLocale('es', es);
@@ -179,19 +180,17 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     }
   };
 
-  // Selected site filtering: read initial value from localStorage and listen to site changes
-  const [selectedSiteId, setSelectedSiteId] = useState<number | null>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = window.localStorage.getItem('selectedSiteId');
-      return stored ? Number(stored) : null;
-    }
-    return null;
-  });
+  // Selected site filtering: read from context (persisted across navigation)
+  const { selectedSiteId } = useCalendar();
 
+  // Also listen to siteChanged events to stay in sync with Sidebar
+  // (the context is the source of truth, but Sidebar dispatches this event
+  //  and CalendarPage's useEffect also reads from it)
   useEffect(() => {
     const handler = (e: any) => {
-      const id = e?.detail ?? null;
-      setSelectedSiteId(id);
+      // No-op: context is already updated by Sidebar via setSelectedSiteId
+      // This listener is kept for backwards compatibility with any
+      // other component that might rely on the event.
     };
 
     window.addEventListener('siteChanged', handler as EventListener);

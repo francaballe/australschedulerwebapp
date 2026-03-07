@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useCalendar } from "@/context/CalendarContext";
 import { useDraggable } from "@/hooks/useDraggable";
 import { useTheme } from "@/context/ThemeContext";
 import Navbar from "@/components/Navbar";
@@ -36,11 +37,8 @@ export default function CalendarPage() {
   const [newEndTime, setNewEndTime] = useState('');
   const [editLoading, setEditLoading] = useState(false);
   const [editWarning, setEditWarning] = useState<string | null>(null);
-  const [enabledPositions, setEnabledPositions] = useState<Set<number>>(new Set());
-
-  // Lifted state from CalendarComponent
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<'week' | 'day' | 'twoWeeks'>('week');
+  // Calendar state from context (persists across navigation)
+  const { currentDate, setCurrentDate, view, setView, enabledPositions, setEnabledPositions } = useCalendar();
   const [unpublishedCount, setUnpublishedCount] = useState(0);
 
   // Draggable Modal State
@@ -91,9 +89,12 @@ export default function CalendarPage() {
       fetchAndSetPositions(newSiteId);
     };
 
-    // Initial load
-    const savedSiteId = typeof window !== 'undefined' ? localStorage.getItem('selectedSiteId') : null;
-    fetchAndSetPositions(savedSiteId);
+    // Initial load: only reset positions if context doesn't already have them
+    // (i.e., first visit vs. returning from settings)
+    if (enabledPositions.size === 0) {
+      const savedSiteId = typeof window !== 'undefined' ? localStorage.getItem('selectedSiteId') : null;
+      fetchAndSetPositions(savedSiteId);
+    }
 
     window.addEventListener('siteChanged', handleSiteChanged);
     return () => {
