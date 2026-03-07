@@ -493,27 +493,30 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     // 2. If "Unavailable" (1) is enabled and user has unavailability, show.
     // 3. If user has any shift matching an enabled position in the CURRENT site, show.
 
-    const weekStart = formatDateLocal(weekDates[0]);
-    const weekEnd = formatDateLocal(weekDates[weekDates.length - 1]);
+    // Use only currentDate for filtering in daily view, or the full range (week/2weeks) otherwise.
+    const filterStartDate = view === 'day' ? formatDateLocal(currentDate) : formatDateLocal(weekDates[0]);
+    const filterEndDate = view === 'day' ? formatDateLocal(currentDate) : formatDateLocal(weekDates[weekDates.length - 1]);
 
     if (enabledPositions.has(0)) {
       const hasAnyShift = shifts.some(shift =>
         shift.userId === user.id &&
-        shift.date >= weekStart &&
-        shift.date <= weekEnd &&
+        shift.date >= filterStartDate &&
+        shift.date <= filterEndDate &&
         Number(shift.siteId) === Number(selectedSiteId)
       );
       if (!hasAnyShift) return true;
     }
 
-    if (enabledPositions.has(1) && weekDates.some(d => unavailableSet.has(`${user.id}-${formatDateLocal(d)}`))) {
+    if (enabledPositions.has(1) && (view === 'day'
+      ? unavailableSet.has(`${user.id}-${formatDateLocal(currentDate)}`)
+      : weekDates.some(d => unavailableSet.has(`${user.id}-${formatDateLocal(d)}`)))) {
       return true;
     }
 
     const hasVisibleShifts = shifts.some(shift =>
       shift.userId === user.id &&
-      shift.date >= weekStart &&
-      shift.date <= weekEnd &&
+      shift.date >= filterStartDate &&
+      shift.date <= filterEndDate &&
       Number(shift.siteId) === Number(selectedSiteId) &&
       enabledPositions.has(Number(shift.positionId))
     );
@@ -707,14 +710,18 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
   // Calculate unpublished count explicitly for parent
   useEffect(() => {
+    const currentDateStr = formatDateLocal(currentDate);
     const unpublished = shifts.filter(s => {
       if (s.published) return false;
       if (!selectedSiteId) return false;
-      return Number(s.siteId) === Number(selectedSiteId);
+      if (Number(s.siteId) !== Number(selectedSiteId)) return false;
+      // In daily view, only count unpublished shifts for the current day (ignore adjacent decorative days)
+      if (view === 'day' && s.date !== currentDateStr) return false;
+      return true;
     });
 
     onStatsUpdate?.({ unpublishedCount: unpublished.length });
-  }, [shifts, selectedSiteId, onStatsUpdate]);
+  }, [shifts, selectedSiteId, onStatsUpdate, view, currentDate]);
 
   const today = new Date();
 
@@ -1855,7 +1862,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 {weekDates.map((date: Date, dayIndex: number) => {
                   const shift = getShiftForUserAndDay(user.id, date);
                   const shiftTimeText = shift ? formatShiftTime(shift.startTime, shift.endTime) : "";
-                  const isFilteredOut = shift ? (!shift.positionDeleted && !enabledPositions.has(Number(shift.positionId))) : false;
+                  const isFilteredOut = shift ? (!shift.positionDeleted && !isAdjacentDay(date) && !enabledPositions.has(Number(shift.positionId))) : false;
                   const isOtherSite = shift && shift.siteId && selectedSiteId && shift.siteId !== selectedSiteId;
                   const dateStr = formatDateLocal(date);
                   const isDropTarget = dropTarget?.userId === user.id && dropTarget?.dateStr === dateStr;

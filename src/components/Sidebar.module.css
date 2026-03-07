@@ -173,23 +173,24 @@
     }
 
     .primaryBtn {
-        padding: 10px;
+        padding: 20px;
         background: #0f172a;
         /* Darker blue/black from screenshot */
         color: white;
-        border: none;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 4px;
         /* More squared off from screenshot */
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
         text-transform: uppercase;
-        font-size: 0.8rem;
+        font-size: 0.95rem;
         letter-spacing: 0.05em;
     }
 
     .primaryBtn:hover {
-        background: #1e293b;
+        background: #334155;
+        border-color: rgba(255, 255, 255, 0.3);
         transform: translateY(-1px);
     }
 
@@ -625,7 +626,11 @@
             font-size: 0.85rem;
         }
 
-        .section .primaryBtn,
+        .section .primaryBtn {
+            padding: 16px;
+            font-size: 0.85rem;
+        }
+
         .section .secondaryBtn {
             padding: 8px;
             font-size: 0.75rem;
