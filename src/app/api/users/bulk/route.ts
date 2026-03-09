@@ -184,6 +184,18 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Send welcome emails to all created users (await before returning response)
+        try {
+            const { sendWelcomeEmail } = await import('@/lib/email');
+            await Promise.allSettled(
+                parsedUsers.map(userData =>
+                    sendWelcomeEmail(userData.email, userData.password, userData.firstName)
+                )
+            );
+        } catch (err) {
+            console.error('Error sending bulk welcome emails:', err);
+        }
+
         return NextResponse.json({
             message: `Proceso completado exitosamente. Se crearon ${createdCount} usuarios.`,
             count: createdCount

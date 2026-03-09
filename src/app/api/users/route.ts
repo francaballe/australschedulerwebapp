@@ -187,6 +187,12 @@ export async function POST(request: NextRequest) {
             }).catch(() => { });
         }
 
+        // Send welcome email with credentials (fire-and-forget)
+        import('@/lib/email').then(mod =>
+            mod.sendWelcomeEmail(email.toLowerCase().trim(), password, firstName?.trim())
+        ).catch(err => console.error('Error sending welcome email:', err));
+
+
         return NextResponse.json({
             id: newUser.id,
             email: newUser.email,
