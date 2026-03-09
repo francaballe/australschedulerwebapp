@@ -516,7 +516,7 @@
 }
 
 /* Responsive */
-@media (max-width: 1536px) {
+@media (max-width: 1800px) {
   .calendarHeader {
     padding: 12px 10px;
   }
