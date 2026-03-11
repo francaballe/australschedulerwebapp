@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         // Log site creation (fire-and-forget)
         if (callerUserId) {
             (prisma as any).log.create({
-                data: { userId: callerUserId, action: `created_site: ${newSite.name} (id: ${newSite.id})` }
+                data: { userId: callerUserId, action: `created_site: ${newSite.name} (id: ${newSite.id})`, companyId: newSite.companyId }
             }).catch(() => { });
         }
 
@@ -171,7 +171,7 @@ export async function PUT(request: NextRequest) {
         // Log site update (fire-and-forget)
         if (callerUserId) {
             (prisma as any).log.create({
-                data: { userId: callerUserId, action: `updated_site: ${updatedSite.name} (id: ${updatedSite.id})` }
+                data: { userId: callerUserId, action: `updated_site: ${updatedSite.name} (id: ${updatedSite.id})`, companyId: updatedSite.companyId }
             }).catch(() => { });
         }
 
@@ -224,7 +224,7 @@ export async function DELETE(request: NextRequest) {
         }
 
         // Get site name before deleting for the log
-        const siteToDelete = await prisma.site.findUnique({ where: { id }, select: { name: true } });
+        const siteToDelete = await prisma.site.findUnique({ where: { id }, select: { name: true, companyId: true } });
 
         await prisma.site.delete({
             where: { id }
@@ -233,7 +233,7 @@ export async function DELETE(request: NextRequest) {
         // Log site deletion (fire-and-forget)
         if (callerUserId) {
             (prisma as any).log.create({
-                data: { userId: callerUserId, action: `deleted_site: ${siteToDelete?.name || 'unknown'} (id: ${id})` }
+                data: { userId: callerUserId, action: `deleted_site: ${siteToDelete?.name || 'unknown'} (id: ${id})`, companyId: siteToDelete?.companyId }
             }).catch(() => { });
         }
 

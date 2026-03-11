@@ -197,7 +197,7 @@ export async function GET(request: NextRequest) {
         if (callerUserId) {
             const newName = `${newUser.firstname || ''} ${newUser.lastname || ''}`.trim();
             (prisma as any).log.create({
-                data: { userId: callerUserId, action: `created_user: ${newName} (id: ${newUser.id}, email: ${(newUser as any).email})` }
+                data: { userId: callerUserId, action: `created_user: ${newName} (id: ${newUser.id}, email: ${(newUser as any).email})`, companyId: newUser.companyId }
             }).catch(() => { });
         }
 
@@ -413,7 +413,7 @@ export async function PUT(request: NextRequest) {
                 const action = isBlocked
                     ? `blocked_user: ${targetName} (id: ${id})`
                     : `unblocked_user: ${targetName} (id: ${id})`;
-                (prisma as any).log.create({ data: { userId: callerUserId, action } }).catch(() => { });
+                (prisma as any).log.create({ data: { userId: callerUserId, action, companyId: (updatedUser as any).companyId } }).catch(() => { });
             }
 
             // 2. Log password change specifically
@@ -421,7 +421,8 @@ export async function PUT(request: NextRequest) {
                 (prisma as any).log.create({
                     data: {
                         userId: callerUserId,
-                        action: `changed_password: ${targetName} (id: ${id})`
+                        action: `changed_password: ${targetName} (id: ${id})`,
+                        companyId: (updatedUser as any).companyId
                     }
                 }).catch(() => { });
             }
@@ -440,7 +441,8 @@ export async function PUT(request: NextRequest) {
                 (prisma as any).log.create({
                     data: {
                         userId: callerUserId,
-                        action: `updated_user_profile: ${targetName} (id: ${id})`
+                        action: `updated_user_profile: ${targetName} (id: ${id})`,
+                        companyId: (updatedUser as any).companyId
                     }
                 }).catch(() => { });
             }

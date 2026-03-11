@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
                     if (callerUserId) {
                         const newName = `${newUser.firstname || ''} ${newUser.lastname || ''}`.trim();
                         await (tx as any).log.create({
-                            data: { userId: callerUserId, action: `[BULK] created_user: ${newName} (id: ${newUser.id}, email: ${(newUser as any).email})` }
+                            data: { userId: callerUserId, action: `[BULK] created_user: ${newName} (id: ${newUser.id}, email: ${(newUser as any).email})`, companyId: companyId }
                         });
                     }
                 }

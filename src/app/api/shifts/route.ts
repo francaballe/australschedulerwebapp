@@ -240,7 +240,8 @@ export async function POST(request: NextRequest) {
                     starttime: shiftData.starttime,
                     endtime: shiftData.endtime,
                     published: published ?? false,
-                    siteid: parsedSiteId
+                    siteid: parsedSiteId,
+                    companyId: parsedCompanyId
                 } as any,
                 select: {
                     id: true,
@@ -250,7 +251,8 @@ export async function POST(request: NextRequest) {
                     starttime: true,
                     endtime: true,
                     published: true,
-                    siteid: true
+                    siteid: true,
+                    companyId: true
                 } as any
             });
         } else {
@@ -276,7 +278,8 @@ export async function POST(request: NextRequest) {
                     starttime: true,
                     endtime: true,
                     published: true,
-                    siteid: true
+                    siteid: true,
+                    companyId: true
                 } as any
             });
         }
@@ -527,10 +530,13 @@ export async function DELETE(request: NextRequest) {
 
         // Log the delete action
         if (callerUserIdParam) {
+            const callerId = parseInt(callerUserIdParam);
+            const caller = await prisma.user.findUnique({ where: { id: callerId }, select: { companyId: true } });
             (prisma as any).log.create({
                 data: {
-                    userId: parseInt(callerUserIdParam),
+                    userId: callerId,
                     action: `deleted_shifts: ${startDate} to ${endDate} (${result.count} shifts)`,
+                    companyId: caller?.companyId
                 }
             }).catch(() => { });
         }

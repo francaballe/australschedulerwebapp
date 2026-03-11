@@ -197,7 +197,7 @@ export async function DELETE(
         // Get position name for logging before we potentially delete it
         const positionToDelete = await prisma.position.findUnique({
             where: { id: positionId },
-            select: { name: true }
+            select: { name: true, companyId: true }
         });
 
         // Check for any shifts associated with this position
@@ -216,7 +216,8 @@ export async function DELETE(
                 (prisma as any).log.create({
                     data: {
                         userId: callerUserId,
-                        action: `deleted_position_permanently: ${positionToDelete?.name || 'Unknown'} (id: ${positionId})`
+                        action: `deleted_position_permanently: ${positionToDelete?.name || 'Unknown'} (id: ${positionId})`,
+                        companyId: positionToDelete?.companyId
                     }
                 }).catch((e: any) => console.error('Error logging position delete:', e));
             }
@@ -274,7 +275,8 @@ export async function DELETE(
             (prisma as any).log.create({
                 data: {
                     userId: callerUserId,
-                    action: `deleted_position_soft: ${positionToDelete?.name || 'Unknown'} (id: ${positionId}${futureShiftsCount > 0 ? `, wiped ${futureShiftsCount} future shifts` : ''})`
+                    action: `deleted_position_soft: ${positionToDelete?.name || 'Unknown'} (id: ${positionId}${futureShiftsCount > 0 ? `, wiped ${futureShiftsCount} future shifts` : ''})`,
+                    companyId: positionToDelete?.companyId
                 }
             }).catch((e: any) => console.error('Error logging position soft-delete:', e));
         }

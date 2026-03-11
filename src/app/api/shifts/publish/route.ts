@@ -220,10 +220,12 @@ export async function POST(request: NextRequest) {
 
     // Log the publish action
     if (callerUserId) {
+      const caller = await prisma.user.findUnique({ where: { id: callerUserId }, select: { companyId: true } });
       (prisma as any).log.create({
         data: {
           userId: callerUserId,
           action: `published_shifts: ${startDate} to ${endDate} (${updated.count} shifts, type: ${type || 'all'})`,
+          companyId: caller?.companyId
         }
       }).catch(() => { });
     }
