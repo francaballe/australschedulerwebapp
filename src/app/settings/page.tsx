@@ -841,6 +841,20 @@ export default function SettingsPage() {
                             </p>
 
                             <div className={styles.settingsList}>
+                                {/* Información de la Empresa */}
+                                <div className={styles.settingItem}>
+                                    <div className={styles.settingInfo}>
+                                        <span className={styles.settingLabel}>🏢 {language === 'es' ? 'Empresa Actual' : 'Current Company'}</span>
+                                        <span className={styles.settingDescription}>
+                                            {language === 'es' ? 'Estás visualizando los datos de esta compañía' : 'You are currently viewing data for this company'}
+                                        </span>
+                                    </div>
+                                    <div className={styles.settingControl}>
+                                        <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>
+                                            {user?.companyName || (language === 'es' ? 'Empresa Principal' : 'Default Company')}
+                                        </span>
+                                    </div>
+                                </div>
                                 {/* Modo Oscuro/Claro */}
                                 <div className={styles.settingItem}>
                                     <div className={styles.settingInfo}>
@@ -1603,7 +1617,7 @@ export default function SettingsPage() {
                                     <div className={styles.settingInfo}>
                                         <span className={styles.settingLabel}>ℹ️ {language === 'es' ? 'Versión del Software' : 'Software Version'}</span>
                                         <span className={styles.settingDescription}>
-                                            v1.10.0
+                                            v1.10.1
                                         </span>
                                     </div>
                                 </div>

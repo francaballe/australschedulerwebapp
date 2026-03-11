@@ -10,6 +10,7 @@ interface User {
     lastName: string;
     roleId: number;
     companyId: number;
+    companyName?: string;
 }
 
 interface AuthContextType {
@@ -105,7 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             newUser.lastName !== user.lastName ||
                             newUser.email !== user.email ||
                             newUser.roleId !== user.roleId ||
-                            newUser.companyId !== user.companyId
+                            newUser.companyId !== user.companyId ||
+                            newUser.companyName !== user.companyName
                         ) {
                             console.log("Profile changes detected. Syncing...");
                             updateUser(newUser);
@@ -128,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             window.removeEventListener("focus", handleFocus);
             clearInterval(interval);
         };
-    }, [user?.id, user?.firstName, user?.lastName, user?.email, user?.roleId, user?.companyId]);
+    }, [user?.id, user?.firstName, user?.lastName, user?.email, user?.roleId, user?.companyId, user?.companyName]);
 
     return (
         <AuthContext.Provider value={{ user, login, logout, updateUser, isLoading }}>

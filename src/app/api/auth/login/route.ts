@@ -38,7 +38,10 @@ export async function POST(request: NextRequest) {
         const user = await prisma.user.findFirst({
             where: {
                 email: email.toLowerCase().trim()
-            }
+            },
+            include: {
+                company: true
+            } as any
         });
 
         if (!user) {
@@ -102,7 +105,8 @@ export async function POST(request: NextRequest) {
                 firstName: user.firstname,
                 lastName: user.lastname,
                 roleId: user.userroleid,
-                companyId: user.companyId
+                companyId: (user as any).companyId,
+                companyName: (user as any).company?.name || null
             }
         }, { headers: corsHeaders });
 

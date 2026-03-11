@@ -14,7 +14,10 @@ export async function GET(request: NextRequest) {
         const user = await prisma.user.findFirst({
             where: {
                 id: parseInt(id)
-            }
+            },
+            include: {
+                company: true
+            } as any
         });
 
         if (!user) {
@@ -33,7 +36,8 @@ export async function GET(request: NextRequest) {
                 firstName: user.firstname,
                 lastName: user.lastname,
                 roleId: user.userroleid,
-                companyId: user.companyId
+                companyId: (user as any).companyId,
+                companyName: (user as any).company?.name || null
             }
         });
 
