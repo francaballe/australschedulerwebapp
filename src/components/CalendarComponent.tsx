@@ -8,6 +8,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import styles from "./CalendarComponent.module.css";
 import { useTheme } from "@/context/ThemeContext";
 import { useCalendar } from "@/context/CalendarContext";
+import { useAuth } from '@/context/AuthContext';
 
 // Register locales
 registerLocale('es', es);
@@ -64,6 +65,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   managerName
 }) => {
   const { showOnlyActiveUsers, language } = useTheme();
+  const { user } = useAuth();
 
   const t = (key: string | undefined | null) => {
     if (!key) return '';
@@ -163,7 +165,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const url = `/api/users?includeBlocked=${!showOnlyActiveUsers}`;
+      const url = `/api/users?includeBlocked=${!showOnlyActiveUsers}&companyId=${user?.companyId || ''}`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Error al cargar usuarios');
@@ -206,7 +208,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       const q = e?.detail ?? '';
       (async () => {
         try {
-          let url = `/api/users?includeBlocked=${!showOnlyActiveUsers}&q=${encodeURIComponent(q)}`;
+          let url = `/api/users?includeBlocked=${!showOnlyActiveUsers}&q=${encodeURIComponent(q)}&companyId=${user?.companyId || ''}`;
           if (selectedSiteId) url += `&siteId=${selectedSiteId}`;
           const resp = await fetch(url);
           if (!resp.ok) return;
@@ -257,7 +259,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       const startDate = formatDateLocal(dates[0]);
       const endDate = formatDateLocal(dates[dates.length - 1]);
 
-      const response = await fetch(`/api/shifts?startDate=${startDate}&endDate=${endDate}`);
+      const response = await fetch(`/api/shifts?startDate=${startDate}&endDate=${endDate}&companyId=${user?.companyId || ''}`);
       if (!response.ok) {
         throw new Error('Error al cargar turnos');
       }
@@ -298,7 +300,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   const fetchPositions = async () => {
     try {
       setModalLoading(true);
-      let url = '/api/positions?adminOnly=true';
+      let url = `/api/positions?adminOnly=true&companyId=${user?.companyId || ''}`;
       if (selectedSiteId) {
         url += `&siteId=${selectedSiteId}`;
       }
@@ -337,7 +339,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
           positionId,
           published: false,
           startTime: useStartTime,
-          endTime: useEndTime
+          endTime: useEndTime,
+          companyId: user?.companyId
         };
 
         console.log(`🔄 PATCHing existing shift ${existingShift.id} for user ${userId} on ${dateStr}:`, patchData);
@@ -366,7 +369,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
           date: dateStr,
           positionId,
           published: false,
-          siteId: selectedSiteId
+          siteId: selectedSiteId,
+          companyId: user?.companyId
         };
 
         console.log('📤 Creating new shift:', requestData);
@@ -411,9 +415,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       const confirmationsMap = new Map<number, boolean>();
 
       // Fetch all confirmations at once for better performance
-      const promises = usersData.map(async (user) => {
+      const promises = usersData.map(async (userObj) => {
         try {
-          const url = `/api/confirm-weeks?userId=${user.id}&date=${weekStartDate}`;
+          const url = `/api/confirm-weeks?userId=${userObj.id}&date=${weekStartDate}&companyId=${user?.companyId || ''}`;
           const response = await fetch(url);
           if (response.ok) {
             const confirmations = await response.json();
@@ -421,12 +425,12 @@ const CalendarComponent: React.FC<CalendarProps> = ({
             // Just check if there's any record for this user/week, don't check .confirmed field
             const isConfirmed = confirmations.length > 0;
 
-            return { userId: user.id, confirmed: isConfirmed };
+            return { userId: userObj.id, confirmed: isConfirmed };
           }
         } catch (error) {
-          console.error(`Error fetching confirmation for user ${user.id}:`, error);
+          console.error(`Error fetching confirmation for user ${userObj.id}:`, error);
         }
-        return { userId: user.id, confirmed: false };
+        return { userId: userObj.id, confirmed: false };
       });
 
       const results = await Promise.all(promises);
@@ -545,7 +549,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         try {
           const startDate = formatDateLocal(weekDates[0]);
           const endDate = formatDateLocal(weekDates[weekDates.length - 1]);
-          const availResp = await fetch(`/api/availability?startDate=${startDate}&endDate=${endDate}`);
+          const availResp = await fetch(`/api/availability?startDate=${startDate}&endDate=${endDate}&companyId=${user?.companyId || ''}`);
           if (availResp.ok) {
             const availData = await availResp.json();
             const newSet = new Set<string>(availData.map((a: any) => `${a.userId}-${a.date}`));
@@ -594,7 +598,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         if (weekDates.length > 0) {
           const startDate = formatDateLocal(weekDates[0]);
           const endDate = formatDateLocal(weekDates[weekDates.length - 1]);
-          const availResp = await fetch(`/api/availability?startDate=${startDate}&endDate=${endDate}`);
+          const availResp = await fetch(`/api/availability?startDate=${startDate}&endDate=${endDate}&companyId=${user?.companyId || ''}`);
           if (availResp.ok) {
             const availData = await availResp.json();
             const newSet = new Set<string>(availData.map((a: any) => `${a.userId}-${a.date}`));
@@ -1002,7 +1006,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         body: JSON.stringify({
           userId: targetUserId,
           date: new Date(targetDateStr),
-          published: false // Explicitly unpublish when moving
+          published: false, // Explicitly unpublish when moving
+          companyId: user?.companyId
         })
       });
 
@@ -1180,6 +1185,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       // Delete the shift (availability is managed separately)
       // Pass notification preference if confirmed (for published shifts)
       let queryParams = confirmed && notifyUserOnDelete ? '?notify=true' : '?notify=false';
+      queryParams += `&companyId=${user?.companyId || ''}`;
       if (confirmed && notifyUserOnDelete && managerName) {
         queryParams += `&managerName=${encodeURIComponent(managerName)}`;
       }
@@ -1548,7 +1554,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       const response = await fetch('/api/shifts/copy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetDate, sourceDate, siteId: selectedSiteId })
+        body: JSON.stringify({ targetDate, sourceDate, siteId: selectedSiteId, companyId: user?.companyId })
       });
 
       if (!response.ok) {
@@ -1605,7 +1611,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
       console.log(`🗑️ Deleting week from ${weekStart} to ${weekEnd}`);
 
-      let url = `/api/shifts?startDate=${weekStart}&endDate=${weekEnd}`;
+      let url = `/api/shifts?startDate=${weekStart}&endDate=${weekEnd}&companyId=${user?.companyId || ''}`;
       if (selectedSiteId) {
         url += `&siteId=${selectedSiteId}`;
       }

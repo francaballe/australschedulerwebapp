@@ -178,6 +178,9 @@ export default function SettingsPage() {
         if (user?.id) {
             formData.append('callerUserId', user.id.toString());
         }
+        if (user?.companyId) {
+            formData.append('companyId', user.companyId.toString());
+        }
 
         try {
             const response = await fetch('/api/users/bulk', {
@@ -243,7 +246,7 @@ export default function SettingsPage() {
     // Fetch roles
     const fetchRoles = useCallback(async () => {
         try {
-            const response = await fetch('/api/roles');
+            const response = await fetch(`/api/roles?companyId=${user?.companyId || ''}`);
             if (response.ok) {
                 const data = await response.json();
                 setRoles(data);
@@ -261,7 +264,7 @@ export default function SettingsPage() {
     const fetchUsers = useCallback(async () => {
         setUsersLoading(true);
         try {
-            const response = await fetch('/api/users?includeBlocked=true', { cache: 'no-store' });
+            const response = await fetch(`/api/users?includeBlocked=true&companyId=${user?.companyId || ''}`, { cache: 'no-store' });
             if (response.ok) {
                 const data = await response.json();
                 setUsers(data);
@@ -278,7 +281,7 @@ export default function SettingsPage() {
         if (!user) return;
         setSitesLoading(true);
         try {
-            const response = await fetch(`/api/sites?userId=${user.id}&roleId=${user.roleId}`, { cache: 'no-store' });
+            const response = await fetch(`/api/sites?userId=${user.id}&roleId=${user.roleId}&companyId=${user.companyId || ''}`, { cache: 'no-store' });
             if (response.ok) {
                 const data = await response.json();
                 setSites(data);
@@ -294,7 +297,7 @@ export default function SettingsPage() {
     const fetchLogs = useCallback(async (page = 1, search = "") => {
         setLogsLoading(true);
         try {
-            const url = `/api/logs?page=${page}&limit=50${search ? `&search=${encodeURIComponent(search)}` : ''}`;
+            const url = `/api/logs?page=${page}&limit=50&companyId=${user?.companyId || ''}${search ? `&search=${encodeURIComponent(search)}` : ''}`;
             const response = await fetch(url, { cache: 'no-store' });
             if (response.ok) {
                 const data = await response.json();
@@ -443,6 +446,7 @@ export default function SettingsPage() {
                 email: formData.email.trim(),
                 phone: formData.phone.trim() || null,
                 callerUserId: user?.id,
+                companyId: user?.companyId
             };
 
             if (isEdit) {
@@ -536,7 +540,7 @@ export default function SettingsPage() {
             const response = await fetch('/api/users', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: targetUser.id, isBlocked: newBlocked, callerUserId: user?.id }),
+                body: JSON.stringify({ id: targetUser.id, isBlocked: newBlocked, callerUserId: user?.id, companyId: user?.companyId }),
             });
 
             if (response.ok) {
@@ -583,7 +587,7 @@ export default function SettingsPage() {
 
         try {
             const isEdit = !!editingSite;
-            const payload: any = { name: siteName.trim(), callerUserId: user?.id };
+            const payload: any = { name: siteName.trim(), callerUserId: user?.id, companyId: user?.companyId };
 
             if (isEdit) {
                 payload.id = editingSite!.id;
@@ -615,7 +619,7 @@ export default function SettingsPage() {
         if (!confirmDeleteSite) return;
 
         try {
-            const response = await fetch(`/api/sites?id=${confirmDeleteSite.id}&callerUserId=${user?.id}`, {
+            const response = await fetch(`/api/sites?id=${confirmDeleteSite.id}&callerUserId=${user?.id}&companyId=${user?.companyId || ''}`, {
                 method: 'DELETE',
             });
 
@@ -683,7 +687,8 @@ export default function SettingsPage() {
                 body: JSON.stringify({
                     email: customEmail,
                     title: customTitle,
-                    body: customBody
+                    body: customBody,
+                    companyId: user?.companyId
                 })
             });
 
@@ -732,7 +737,8 @@ export default function SettingsPage() {
                 body: JSON.stringify({
                     email: targetEmail,
                     title: `¡Saludo desde el Dashboard!`,
-                    body: `${user?.firstName} te ha enviado un saludo desde la aplicación web 👋 (Usuario ${userId})`
+                    body: `${user?.firstName} te ha enviado un saludo desde la aplicación web 👋 (Usuario ${userId})`,
+                    companyId: user?.companyId
                 })
             });
 
@@ -1597,7 +1603,7 @@ export default function SettingsPage() {
                                     <div className={styles.settingInfo}>
                                         <span className={styles.settingLabel}>ℹ️ {language === 'es' ? 'Versión del Software' : 'Software Version'}</span>
                                         <span className={styles.settingDescription}>
-                                            v1.9.5
+                                            v1.10.0
                                         </span>
                                     </div>
                                 </div>

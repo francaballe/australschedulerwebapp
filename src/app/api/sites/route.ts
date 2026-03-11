@@ -12,8 +12,9 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const userIdParam = searchParams.get('userId');
         const roleIdParam = searchParams.get('roleId');
+        const companyIdParam = searchParams.get('companyId');
 
-        if (!userIdParam || !roleIdParam) {
+        if (!userIdParam || !roleIdParam || !companyIdParam) {
             return NextResponse.json(
                 { error: 'userId y roleId son requeridos' },
                 { status: 400, headers: corsHeaders }
@@ -22,13 +23,24 @@ export async function GET(request: NextRequest) {
 
         const userId = parseInt(userIdParam, 10);
         const roleId = parseInt(roleIdParam, 10);
+        const companyId = parseInt(companyIdParam, 10);
 
-        let whereClause = {};
+        if (isNaN(companyId)) {
+            return NextResponse.json(
+                { error: 'ID de empresa inválido' },
+                { status: 400, headers: corsHeaders }
+            );
+        }
+
+        let whereClause: any = {
+            companyId: companyId
+        };
 
         // If roleId is 1 (Admin), filter by UserSiteAccess
         // If roleId is 0 (Owner), no filter (all sites)
         if (roleId === 1) {
             whereClause = {
+                ...whereClause,
                 userAccess: {
                     some: {
                         userId: userId
@@ -68,9 +80,9 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { name, callerUserId } = body;
+        const { name, callerUserId, companyId } = body;
 
-        if (!name?.trim()) {
+        if (!name?.trim() || !companyId) {
             return NextResponse.json(
                 { error: 'El nombre del sitio es requerido' },
                 { status: 400, headers: corsHeaders }
@@ -79,7 +91,7 @@ export async function POST(request: NextRequest) {
 
         // Check for duplicates
         const existing = await prisma.site.findFirst({
-            where: { name: { equals: name.trim(), mode: 'insensitive' } }
+            where: { name: { equals: name.trim(), mode: 'insensitive' }, companyId: parseInt(companyId) }
         });
 
         if (existing) {
@@ -91,7 +103,8 @@ export async function POST(request: NextRequest) {
 
         const newSite = await prisma.site.create({
             data: {
-                name: name.trim()
+                name: name.trim(),
+                companyId: parseInt(companyId)
             }
         });
 
@@ -122,9 +135,9 @@ export async function PUT(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { id, name, callerUserId } = body;
+        const { id, name, callerUserId, companyId } = body;
 
-        if (!id || !name?.trim()) {
+        if (!id || !name?.trim() || !companyId) {
             return NextResponse.json(
                 { error: 'ID y nombre son requeridos' },
                 { status: 400, headers: corsHeaders }
@@ -135,7 +148,8 @@ export async function PUT(request: NextRequest) {
         const existing = await prisma.site.findFirst({
             where: {
                 name: { equals: name.trim(), mode: 'insensitive' },
-                id: { not: id }
+                id: { not: id },
+                companyId: parseInt(companyId)
             }
         });
 
@@ -148,7 +162,10 @@ export async function PUT(request: NextRequest) {
 
         const updatedSite = await prisma.site.update({
             where: { id },
-            data: { name: name.trim() }
+            data: { 
+                name: name.trim(),
+                companyId: parseInt(companyId)
+             }
         });
 
         // Log site update (fire-and-forget)

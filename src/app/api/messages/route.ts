@@ -32,11 +32,11 @@ export async function POST(request: NextRequest) {
     const headers = getCorsHeaders(request.headers.get('origin'));
 
     try {
-        const { email, title, body } = await request.json();
+        const { email, title, body, companyId } = await request.json();
 
-        if (!email || !title || !body) {
+        if (!email || !title || !body || !companyId) {
             return NextResponse.json(
-                { error: 'Email, title, and body are required' },
+                { error: 'Email, title, body, and companyId are required' },
                 { status: 400, headers }
             );
         }
@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
                 title,
                 body,
                 read: false,
+                companyId: parseInt(companyId),
                 createdAt: new Date()
             }
         });
@@ -121,10 +122,11 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const email = searchParams.get('email');
+        const companyId = searchParams.get('companyId');
 
-        if (!email) {
+        if (!email || !companyId) {
             return NextResponse.json(
-                { error: 'Email parameter is required' },
+                { error: 'Email and companyId parameters are required' },
                 { status: 400, headers }
             );
         }
@@ -146,13 +148,13 @@ export async function GET(request: NextRequest) {
 
         // Obtener mensajes del usuario usando Prisma
         const messages = await prisma.message.findMany({
-            where: { userId },
+            where: { userId, companyId: parseInt(companyId) },
             orderBy: { createdAt: 'desc' }
         });
 
         // Contar mensajes no leídos usando Prisma
         const unreadCount = await prisma.message.count({
-            where: { userId, read: false }
+            where: { userId, read: false, companyId: parseInt(companyId) }
         });
 
         return NextResponse.json({

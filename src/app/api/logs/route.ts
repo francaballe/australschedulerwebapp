@@ -32,11 +32,11 @@ export async function POST(request: NextRequest) {
     const headers = getCorsHeaders(request.headers.get('origin'));
 
     try {
-        const { userId, action } = await request.json();
+        const { userId, action, companyId } = await request.json();
 
-        if (!userId || !action) {
+        if (!userId || !action || !companyId) {
             return NextResponse.json(
-                { error: 'userId and action are required' },
+                { error: 'userId, action, and companyId are required' },
                 { status: 400, headers }
             );
         }
@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
             data: {
                 userId,
                 action,
+                companyId: parseInt(companyId),
             },
         });
 
@@ -69,10 +70,18 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const userId = searchParams.get('userId');
+        const companyId = searchParams.get('companyId');
         const search = searchParams.get('search') || '';
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '50');
         const skip = (page - 1) * limit;
+
+        if (!companyId) {
+            return NextResponse.json(
+                { error: 'companyId is required' },
+                { status: 400, headers }
+            );
+        }
 
         let logs: any[] = [];
         let total = 0;
@@ -80,6 +89,8 @@ export async function GET(request: NextRequest) {
         if (search.trim()) {
             const terms = search.trim().split(/\s+/).filter(Boolean);
             const conditions: any[] = [];
+
+            conditions.push(Prisma.sql`l.company_id = ${parseInt(companyId)}`);
 
             if (userId) {
                 conditions.push(Prisma.sql`l.user_id = ${parseInt(userId)}`);
@@ -149,7 +160,7 @@ export async function GET(request: NextRequest) {
 
         } else {
             // No search, standard Prisma query
-            const where: any = {};
+            const where: any = { companyId: parseInt(companyId) };
             if (userId) {
                 where.userId = parseInt(userId);
             }

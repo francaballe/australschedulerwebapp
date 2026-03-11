@@ -37,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     view = 'week'
 }) => {
     // Site selector state from context (persists across navigation)
-    const { selectedSiteId: selectedSite, setSelectedSiteId: setSelectedSite, enabledPositions } = useCalendar();
+    const { selectedSiteId: selectedSite, setSelectedSiteId: setSelectedSite, enabledPositions, setEnabledPositions } = useCalendar();
     const [sites, setSites] = useState<{ id: number; name: string }[]>([]);
 
     const { language } = useTheme();
@@ -73,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
             try {
                 setLoading(true);
-                const url = `/api/positions?siteId=${selectedSite}`;
+                const url = `/api/positions?siteId=${selectedSite}&companyId=${user?.companyId || ''}`;
                 const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error('Error al cargar posiciones');
@@ -181,7 +181,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         const fetchSites = async () => {
             if (!user) return;
             try {
-                const res = await fetch(`/api/sites?userId=${user.id}&roleId=${user.roleId}`);
+                const res = await fetch(`/api/sites?userId=${user.id}&roleId=${user.roleId}&companyId=${user.companyId || ''}`);
                 if (!res.ok) return;
                 const data = await res.json();
                 setSites(data);
@@ -211,6 +211,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const onSiteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const id = Number(e.target.value) || null;
         setSelectedSite(id);
+        setEnabledPositions(new Set()); // Clear persisted filters when switching sites
         try { window.localStorage.setItem('selectedSiteId', String(id)); } catch { }
         try { window.dispatchEvent(new CustomEvent('siteChanged', { detail: id })); } catch { }
     };
@@ -304,7 +305,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     const handleDeletePosition = async (id: number, name: string) => {
         try {
-            const url = `/api/positions/${id}?callerUserId=${user?.id || ''}`;
+            const url = `/api/positions/${id}?callerUserId=${user?.id || ''}&companyId=${user?.companyId || ''}`;
             let res = await fetch(url, { method: 'DELETE' });
 
             if (res.status === 409) {
@@ -337,7 +338,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         try {
             setDeleteLoading(true);
-            const res = await fetch(`/api/positions/${id}?confirm=true&callerUserId=${user?.id || ''}`, { method: 'DELETE' });
+            const res = await fetch(`/api/positions/${id}?confirm=true&callerUserId=${user?.id || ''}&companyId=${user?.companyId || ''}`, { method: 'DELETE' });
 
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));

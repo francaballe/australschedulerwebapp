@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
                 email: user.email,
                 firstName: user.firstname,
                 lastName: user.lastname,
-                roleId: user.userroleid
+                roleId: user.userroleid,
+                companyId: user.companyId
             }
         });
 

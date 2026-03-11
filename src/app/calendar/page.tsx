@@ -65,7 +65,7 @@ export default function CalendarPage() {
   useEffect(() => {
     const fetchAndSetPositions = async (siteId?: string | number | null) => {
       try {
-        const url = siteId ? `/api/positions?siteId=${siteId}` : '/api/positions';
+        const url = siteId ? `/api/positions?siteId=${siteId}&companyId=${user?.companyId || ''}` : `/api/positions?companyId=${user?.companyId || ''}`;
         const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
@@ -179,7 +179,8 @@ export default function CalendarPage() {
           endDate: endDateStr,
           type: 'all',
           siteId: siteId ? Number(siteId) : undefined,
-          callerUserId: user.id
+          callerUserId: user.id,
+          companyId: user?.companyId
         })
       });
 
@@ -343,7 +344,8 @@ export default function CalendarPage() {
           color: newPositionColor,
           starttime: newStartTime.trim(),
           endtime: newEndTime.trim(),
-          siteId: siteId
+          siteId: siteId,
+          companyId: user?.companyId
         };
 
         const response = await fetch('/api/positions', {

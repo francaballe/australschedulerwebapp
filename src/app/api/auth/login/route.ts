@@ -101,7 +101,8 @@ export async function POST(request: NextRequest) {
                 email: user.email,
                 firstName: user.firstname,
                 lastName: user.lastname,
-                roleId: user.userroleid
+                roleId: user.userroleid,
+                companyId: user.companyId
             }
         }, { headers: corsHeaders });
 

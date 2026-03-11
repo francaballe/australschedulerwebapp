@@ -23,8 +23,13 @@ export async function GET(request: NextRequest) {
     try {
         const q = request.nextUrl.searchParams.get('q');
         const includeBlocked = request.nextUrl.searchParams.get('includeBlocked') === 'true';
+        const companyIdParam = request.nextUrl.searchParams.get('companyId');
 
         const whereClause: any = {};
+
+        if (companyIdParam) {
+            whereClause.companyId = parseInt(companyIdParam);
+        }
 
         if (!includeBlocked) {
             whereClause.isblocked = false;
@@ -64,6 +69,7 @@ export async function GET(request: NextRequest) {
                 isblocked: true,
                 lastlogin: true,
                 createddate: true,
+                companyId: true,
                 role: {
                     select: {
                         id: true,
@@ -88,6 +94,7 @@ export async function GET(request: NextRequest) {
             isBlocked: user.isblocked,
             lastLogin: user.lastlogin,
             createdDate: user.createddate,
+            companyId: user.companyId,
             roleName: user.role?.name || null,
             siteIds: user.siteAccess.map((sa: any) => sa.siteId)
         })).sort((a: any, b: any) => {
@@ -114,28 +121,28 @@ export async function GET(request: NextRequest) {
     }
 }
 
-export async function POST(request: NextRequest) {
-    try {
-        const body = await request.json();
-        const { email, password, firstName, lastName, phone, roleId, siteIds, callerUserId } = body;
-
-        if (!email || !password || !firstName || !lastName) {
-            return NextResponse.json(
-                { error: 'Email, contraseña, nombre y apellido son requeridos' },
-                { status: 400, headers: corsHeaders }
-            );
-        }
-
-        // Validate password complexity
-        const passwordValidation = validatePassword(password);
-        if (!passwordValidation.isValid) {
-            return NextResponse.json({ error: passwordValidation.message }, { status: 400, headers: corsHeaders });
-        }
-
-        // Check if email already exists
-        const existing = await prisma.user.findFirst({
-            where: { email: email.toLowerCase().trim() }
-        });
+    export async function POST(request: NextRequest) {
+        try {
+            const body = await request.json();
+            const { email, password, firstName, lastName, phone, roleId, siteIds, callerUserId, companyId } = body;
+    
+            if (!email || !password || !firstName || !lastName || !companyId) {
+                return NextResponse.json(
+                    { error: 'Email, contraseña, nombre, apellido y empresa son requeridos' },
+                    { status: 400, headers: corsHeaders }
+                );
+            }
+    
+            // Validate password complexity
+            const passwordValidation = validatePassword(password);
+            if (!passwordValidation.isValid) {
+                return NextResponse.json({ error: passwordValidation.message }, { status: 400, headers: corsHeaders });
+            }
+    
+            // Check if email already exists
+            const existing = await prisma.user.findFirst({
+                where: { email: email.toLowerCase().trim() } // Emails might need to be globally unique still for login purposes unless company is specified at login
+            });
 
         if (existing) {
             return NextResponse.json(
@@ -156,6 +163,7 @@ export async function POST(request: NextRequest) {
                 userroleid: roleId || 2,
                 isblocked: false,
                 createddate: new Date(),
+                companyId: parseInt(companyId),
                 siteAccess: (roleId === 1 && siteIds && Array.isArray(siteIds)) ? {
                     create: siteIds.map((sid: number) => ({ siteId: sid }))
                 } : undefined
@@ -170,10 +178,16 @@ export async function POST(request: NextRequest) {
                 isblocked: true,
                 lastlogin: true,
                 createddate: true,
+                companyId: true,
                 role: {
                     select: {
                         id: true,
                         name: true
+                    }
+                },
+                siteAccess: {
+                    select: {
+                        siteId: true
                     }
                 }
             }
@@ -203,10 +217,11 @@ export async function POST(request: NextRequest) {
             isBlocked: newUser.isblocked,
             lastLogin: newUser.lastlogin,
             createdDate: newUser.createddate,
+            companyId: newUser.companyId,
             roleName: (newUser as any).role?.name || null,
             siteIds: (newUser as any).siteAccess ? (newUser as any).siteAccess.map((sa: any) => sa.siteId) : []
         }, { status: 201, headers: corsHeaders });
-
+    
     } catch (error: any) {
         console.error('API Users POST Error:', error);
         return NextResponse.json(
@@ -219,7 +234,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
     try {
         const body = await request.json();
-        const { id, email, password, firstName, lastName, phone, roleId, isBlocked, siteIds } = body;
+        const { id, email, password, firstName, lastName, phone, roleId, isBlocked, siteIds, companyId } = body;
 
         if (password) {
             const passwordValidation = validatePassword(password);
@@ -269,6 +284,7 @@ export async function PUT(request: NextRequest) {
         if (email !== undefined) updateData.email = email.toLowerCase().trim();
         if (phone !== undefined) updateData.phone = phone?.trim() || null;
         if (isBlocked !== undefined) updateData.isblocked = isBlocked;
+        if (companyId !== undefined) updateData.companyId = parseInt(companyId);
         if (password) {
             updateData.password = await bcrypt.hash(password, 10);
         }
@@ -342,6 +358,7 @@ export async function PUT(request: NextRequest) {
                         isblocked: true,
                         lastlogin: true,
                         createddate: true,
+                        companyId: true,
                         role: { select: { id: true, name: true } },
                         siteAccess: { select: { siteId: true } }
                     }
@@ -358,6 +375,7 @@ export async function PUT(request: NextRequest) {
                 isBlocked: updatedUser.isblocked,
                 lastLogin: updatedUser.lastlogin,
                 createdDate: updatedUser.createddate,
+                companyId: updatedUser.companyId,
                 roleName: (updatedUser as any).role?.name || null,
                 siteIds: (updatedUser as any).siteAccess.map((sa: any) => sa.siteId)
             }, { headers: corsHeaders });
@@ -376,6 +394,7 @@ export async function PUT(request: NextRequest) {
                 isblocked: true,
                 lastlogin: true,
                 createddate: true,
+                companyId: true,
                 role: {
                     select: {
                         id: true,
@@ -437,6 +456,7 @@ export async function PUT(request: NextRequest) {
             isBlocked: updatedUser.isblocked,
             lastLogin: updatedUser.lastlogin,
             createdDate: updatedUser.createddate,
+            companyId: updatedUser.companyId,
             roleName: updatedUser.role?.name || null
         }, { headers: corsHeaders });
 

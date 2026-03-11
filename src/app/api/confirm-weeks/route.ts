@@ -26,10 +26,11 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');
     const date = searchParams.get('date');
+    const companyId = searchParams.get('companyId');
 
-    if (!userId) {
+    if (!userId || !companyId) {
         return NextResponse.json(
-            { error: 'userId parameter is required' },
+            { error: 'userId and companyId parameters are required' },
             { status: 400, headers: corsHeaders }
         );
     }
@@ -46,6 +47,7 @@ export async function GET(request: NextRequest) {
             queryResult = await prisma.confirmedWeek.findMany({
                 where: {
                     userId: parsedUserId,
+                    companyId: parseInt(companyId),
                     date: weekStartDate
                 },
                 orderBy: {
@@ -55,7 +57,8 @@ export async function GET(request: NextRequest) {
         } else {
             queryResult = await prisma.confirmedWeek.findMany({
                 where: {
-                    userId: parsedUserId
+                    userId: parsedUserId,
+                    companyId: parseInt(companyId)
                 },
                 orderBy: {
                     date: 'desc'
@@ -78,14 +81,14 @@ export async function POST(request: NextRequest) {
         console.log('📅 POST /api/confirm-weeks - Starting...');
 
         const body = await request.json();
-        const { userId, date } = body;
+        const { userId, date, companyId } = body;
 
-        console.log('📅 Received data:', { userId, date });
+        console.log('📅 Received data:', { userId, date, companyId });
 
-        if (!userId || !date) {
+        if (!userId || !date || !companyId) {
             console.log('❌ Missing required fields');
             return NextResponse.json(
-                { error: 'userId and date are required' },
+                { error: 'userId, date, and companyId are required' },
                 { status: 400, headers: corsHeaders }
             );
         }
@@ -99,7 +102,8 @@ export async function POST(request: NextRequest) {
         const existing = await prisma.confirmedWeek.findFirst({
             where: {
                 userId: parsedUserId,
-                date: weekStartDate
+                date: weekStartDate,
+                companyId: parseInt(companyId)
             }
         });
 
@@ -124,7 +128,8 @@ export async function POST(request: NextRequest) {
                 data: {
                     userId: parsedUserId,
                     date: weekStartDate,
-                    confirmed: true
+                    confirmed: true,
+                    companyId: parseInt(companyId)
                 }
             });
 

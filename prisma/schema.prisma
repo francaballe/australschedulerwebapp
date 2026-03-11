@@ -9,6 +9,24 @@ datasource db {
   schemas           = ["app"]
 }
 
+model Company {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  users            User[]
+  sites            Site[]
+  positions        Position[]
+  shifts           Shift[]
+  unavailabilities UserUnavailability[]
+  pushTokens       UserPushToken[]
+  messages         Message[]
+  confirmedWeeks   ConfirmedWeek[]
+  logs             Log[]
+
+  @@map("companies")
+  @@schema("app")
+}
+
 model User {
   id             Int                  @id @default(autoincrement())
   email          String?              @unique
@@ -20,6 +38,7 @@ model User {
   isblocked      Boolean?             @default(false)
   userroleid     Int?
   phone          String?
+  companyId      Int?                 @map("company_id")
   confirmedWeeks ConfirmedWeek[]
   logs           Log[]
   messages       Message[]
@@ -27,6 +46,7 @@ model User {
   pushTokens     UserPushToken[]
   unavailability UserUnavailability[]
   role           Role?                @relation(fields: [userroleid], references: [id])
+  company        Company?             @relation(fields: [companyId], references: [id])
   siteAccess     UserSiteAccess[]
 
   @@map("users")
@@ -43,26 +63,30 @@ model Role {
 }
 
 model Site {
-  id   Int     @id @default(autoincrement())
-  name String?
-  positions Position[]
-  shifts    Shift[]
+  id         Int              @id @default(autoincrement())
+  name       String?
+  companyId  Int?             @map("company_id")
+  positions  Position[]
+  shifts     Shift[]
   userAccess UserSiteAccess[]
+  company    Company?         @relation(fields: [companyId], references: [id])
 
   @@map("sites")
   @@schema("app")
 }
 
 model Position {
-  id         Int       @id @default(autoincrement())
-  name       String?
-  color      String?
-  starttime  DateTime? @db.Time(6)
-  endtime    DateTime? @db.Time(6)
-  siteid     Int?
-  deleted    Boolean?
-  shifts     Shift[]
-  site       Site?     @relation(fields: [siteid], references: [id])
+  id        Int       @id @default(autoincrement())
+  name      String?
+  color     String?
+  starttime DateTime? @db.Time(6)
+  endtime   DateTime? @db.Time(6)
+  siteid    Int?
+  deleted   Boolean?
+  companyId Int?      @map("company_id")
+  shifts    Shift[]
+  site      Site?     @relation(fields: [siteid], references: [id])
+  company   Company?  @relation(fields: [companyId], references: [id])
 
   @@map("positions")
   @@schema("app")
@@ -77,19 +101,23 @@ model Shift {
   starttime  DateTime? @db.Time(6)
   endtime    DateTime? @db.Time(6)
   siteid     Int?
+  companyId  Int?      @map("company_id")
   position   Position? @relation(fields: [positionId], references: [id])
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   site       Site?     @relation(fields: [siteid], references: [id])
+  company    Company?  @relation(fields: [companyId], references: [id])
 
   @@map("shifts")
   @@schema("app")
 }
 
 model UserUnavailability {
-  id     Int      @id @default(autoincrement())
-  userId Int      @map("user_id")
-  date   DateTime @db.Date
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  date      DateTime @db.Date
+  companyId Int?     @map("company_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company? @relation(fields: [companyId], references: [id])
 
   @@unique([userId, date])
   @@map("user_unavailability")
@@ -101,7 +129,9 @@ model UserPushToken {
   userId    Int?      @map("user_id")
   token     String
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  companyId Int?      @map("company_id")
   user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company?  @relation(fields: [companyId], references: [id])
 
   @@unique([userId, token])
   @@map("user_push_tokens")
@@ -115,7 +145,9 @@ model Message {
   body      String
   read      Boolean?  @default(false)
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  companyId Int?      @map("company_id")
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company?  @relation(fields: [companyId], references: [id])
 
   @@index([createdAt(sort: Desc)], map: "idx_messages_created_at")
   @@index([userId], map: "idx_messages_user_id")
@@ -129,7 +161,9 @@ model ConfirmedWeek {
   date      DateTime @db.Date
   confirmed Boolean  @default(false)
   userId    Int      @map("user_id")
+  companyId Int?     @map("company_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company? @relation(fields: [companyId], references: [id])
 
   @@map("confirmedweeks")
   @@schema("app")
@@ -140,7 +174,9 @@ model Log {
   createddate DateTime? @default(now()) @db.Timestamptz(6)
   userId      Int       @map("user_id")
   action      String?
+  companyId   Int?      @map("company_id")
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company     Company?  @relation(fields: [companyId], references: [id])
 
   @@map("logs")
   @@schema("app")

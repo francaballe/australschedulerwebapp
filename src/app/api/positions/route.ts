@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
         // Get query parameter to determine if we want admin positions only
         const adminOnly = request.nextUrl.searchParams.get('adminOnly') === 'true';
         const siteId = request.nextUrl.searchParams.get('siteId');
+        const companyId = request.nextUrl.searchParams.get('companyId');
 
         // Build where clause - admin only positions exclude id <= 1
         const whereClause: any = {
@@ -29,6 +30,10 @@ export async function GET(request: NextRequest) {
 
         if (siteId) {
             whereClause.siteid = Number(siteId);
+        }
+
+        if (companyId) {
+            whereClause.companyId = Number(companyId);
         }
 
         // Using Prisma ORM instead of raw SQL
@@ -95,11 +100,11 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { name, color, starttime, endtime, siteId } = body;
+        const { name, color, starttime, endtime, siteId, companyId } = body;
 
-        if (!name || !siteId) {
+        if (!name || !siteId || !companyId) {
             return NextResponse.json(
-                { error: 'Name and Site ID are required' },
+                { error: 'Name, Site ID, and Company ID are required' },
                 { status: 400, headers: corsHeaders }
             );
         }
@@ -109,6 +114,7 @@ export async function POST(request: NextRequest) {
             where: {
                 name: { equals: name.trim(), mode: 'insensitive' },
                 siteid: Number(siteId),
+                companyId: Number(companyId),
                 OR: [
                     { deleted: false },
                     { deleted: null }
@@ -144,7 +150,8 @@ export async function POST(request: NextRequest) {
                 color: color || '#94a3b8', // Default color if not provided
                 starttime: startDateTime,
                 endtime: endDateTime,
-                siteid: Number(siteId)
+                siteid: Number(siteId),
+                companyId: Number(companyId)
             }
         });
 

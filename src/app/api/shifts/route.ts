@@ -13,10 +13,11 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const userId = searchParams.get('userId');
+    const companyId = searchParams.get('companyId');
 
-    if (!startDate || !endDate) {
+    if (!startDate || !endDate || !companyId) {
         return NextResponse.json(
-            { error: 'startDate and endDate parameters are required' },
+            { error: 'startDate, endDate, and companyId parameters are required' },
             { status: 400, headers: corsHeaders }
         );
     }
@@ -27,7 +28,8 @@ export async function GET(request: NextRequest) {
             date: {
                 gte: new Date(startDate),
                 lte: new Date(endDate)
-            }
+            },
+            companyId: parseInt(companyId)
         };
 
         if (userId) {
@@ -108,7 +110,8 @@ export async function GET(request: NextRequest) {
                 siteName: (shift as any).site?.name,
                 position: shift.position?.name ?? (shift.positionId === null ? 'No Position' : null),
                 positionColor: shift.position?.color ?? (shift.positionId === null ? '#FFFFFF00' : null),
-                positionDeleted: shift.position?.deleted ?? false
+                positionDeleted: shift.position?.deleted ?? false,
+                companyId: shift.companyId
             };
         });
 
@@ -135,26 +138,27 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         console.log('📝 Shift POST request body:', body);
 
-        const { userId, date, positionId, startTime, endTime, published, siteId } = body;
+        const { userId, date, positionId, startTime, endTime, published, siteId, companyId } = body;
 
         // Basic validation
-        if (userId == null || !date || positionId == null) {
-            console.error('❌ Missing required fields:', { userId, date, positionId });
+        if (userId == null || !date || positionId == null || !companyId) {
+            console.error('❌ Missing required fields:', { userId, date, positionId, companyId });
             return NextResponse.json(
-                { error: 'Missing required fields: userId, date, positionId' },
+                { error: 'Missing required fields: userId, date, positionId, companyId' },
                 { status: 400, headers: corsHeaders }
             );
         }
 
         // Parse and validate data
         const parsedUserId = parseInt(userId);
+        const parsedCompanyId = parseInt(companyId);
         let parsedPositionId: number | null = parseInt(positionId);
         const parsedSiteId: number | null = siteId ? parseInt(siteId) : null;
 
-        if (isNaN(parsedUserId) || isNaN(parsedPositionId!)) {
-            console.error('❌ Invalid IDs:', { userId, positionId });
+        if (isNaN(parsedUserId) || isNaN(parsedPositionId!) || isNaN(parsedCompanyId)) {
+            console.error('❌ Invalid IDs:', { userId, positionId, companyId });
             return NextResponse.json(
-                { error: 'Invalid userId or positionId' },
+                { error: 'Invalid userId, positionId, or companyId' },
                 { status: 400, headers: corsHeaders }
             );
         }
@@ -197,6 +201,7 @@ export async function POST(request: NextRequest) {
         // Prepare shift data
         const shiftData: any = {
             userId: parsedUserId,
+            companyId: parsedCompanyId,
             positionId: parsedPositionId,
             date: new Date(date),
             published: published ?? false,
@@ -250,10 +255,10 @@ export async function POST(request: NextRequest) {
             });
         } else {
             console.log('📝 No existing shift found, creating new one');
-            // Ensure no ID is included in create data
             const createData = {
                 userId: parsedUserId,
                 positionId: parsedPositionId,
+                companyId: parsedCompanyId,
                 date: new Date(date),
                 published: published ?? false,
                 starttime: shiftData.starttime,
@@ -283,6 +288,7 @@ export async function POST(request: NextRequest) {
             id: newShift.id,
             user_id: newShift.userId,
             position_id: newShift.positionId ?? 0, // Map null back to 0
+            companyId: (newShift as any).companyId,
             date: newShift.date,
             starttime: newShift.starttime,
             endtime: newShift.endtime,

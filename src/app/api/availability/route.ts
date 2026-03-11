@@ -14,10 +14,11 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const companyId = searchParams.get('companyId');
 
-    if (!startDate || !endDate) {
+    if (!startDate || !endDate || !companyId) {
         return NextResponse.json(
-            { error: 'startDate and endDate are required' },
+            { error: 'startDate, endDate, and companyId are required' },
             { status: 400, headers: corsHeaders }
         );
     }
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest) {
                 gte: new Date(startDate),
                 lte: new Date(endDate),
             },
+            companyId: parseInt(companyId),
         };
 
         if (userId) {
@@ -63,11 +65,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { userId, date, available } = body;
+        const { userId, date, available, companyId } = body;
 
-        if (userId == null || !date || available == null) {
+        if (userId == null || !date || available == null || !companyId) {
             return NextResponse.json(
-                { error: 'Missing required fields: userId, date, available' },
+                { error: 'Missing required fields: userId, date, available, companyId' },
                 { status: 400, headers: corsHeaders }
             );
         }
@@ -112,6 +114,7 @@ export async function POST(request: NextRequest) {
                 create: {
                     userId: parsedUserId,
                     date: parsedDate,
+                    companyId: parseInt(companyId),
                 },
             });
 
