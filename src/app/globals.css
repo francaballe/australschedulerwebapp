@@ -77,6 +77,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
   transition: background-color 0.3s ease, color 0.3s ease;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
 }
 
 a {

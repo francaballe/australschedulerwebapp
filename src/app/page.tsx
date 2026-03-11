@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import styles from "./page.module.css";
@@ -81,14 +82,18 @@ export default function LoginPage() {
         <div className={styles.loginCard}>
           <div className={styles.logoSection}>
             <div className={styles.logoIcon}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
+              <Image 
+                src="/RosterLoop.png" 
+                alt="RosterLoop Logo" 
+                width={90} 
+                height={90}
+                priority
+              />
             </div>
-            <h1 className={styles.title}>{t.title}</h1>
+            <h1 className={styles.title}>
+              <span className={styles.rosterText}>Roster</span>
+              <span className={styles.loopText}>Loop</span>
+            </h1>
             <p className={styles.subtitle}>{t.subtitle}</p>
           </div>
 

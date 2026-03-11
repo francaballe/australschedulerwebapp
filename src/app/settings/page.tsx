@@ -1617,7 +1617,7 @@ export default function SettingsPage() {
                                     <div className={styles.settingInfo}>
                                         <span className={styles.settingLabel}>ℹ️ {language === 'es' ? 'Versión del Software' : 'Software Version'}</span>
                                         <span className={styles.settingDescription}>
-                                            v1.10.3
+                                            v1.10.4
                                         </span>
                                     </div>
                                 </div>
