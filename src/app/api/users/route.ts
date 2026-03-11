@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
                 userroleid: roleId || 2,
                 isblocked: false,
                 createddate: new Date(),
-                companyId: parseInt(companyId),
+                companyId: typeof companyId === 'string' ? parseInt(companyId, 10) : companyId,
                 siteAccess: (roleId === 1 && siteIds && Array.isArray(siteIds)) ? {
                     create: siteIds.map((sid: number) => ({ siteId: sid }))
                 } : undefined
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
                         siteId: true
                     }
                 }
-            }
+            } as any
         });
 
         // Log user creation (fire-and-forget)
@@ -284,7 +284,7 @@ export async function PUT(request: NextRequest) {
         if (email !== undefined) updateData.email = email.toLowerCase().trim();
         if (phone !== undefined) updateData.phone = phone?.trim() || null;
         if (isBlocked !== undefined) updateData.isblocked = isBlocked;
-        if (companyId !== undefined) updateData.companyId = parseInt(companyId);
+        if (companyId !== undefined) updateData.companyId = typeof companyId === 'string' ? parseInt(companyId, 10) : companyId;
         if (password) {
             updateData.password = await bcrypt.hash(password, 10);
         }
@@ -361,8 +361,8 @@ export async function PUT(request: NextRequest) {
                         companyId: true,
                         role: { select: { id: true, name: true } },
                         siteAccess: { select: { siteId: true } }
-                    }
-                } as any);
+                    } as any
+                }) as any;
             }) as any;
 
             return NextResponse.json({
@@ -456,8 +456,8 @@ export async function PUT(request: NextRequest) {
             isBlocked: updatedUser.isblocked,
             lastLogin: updatedUser.lastlogin,
             createdDate: updatedUser.createddate,
-            companyId: updatedUser.companyId,
-            roleName: updatedUser.role?.name || null
+            companyId: (updatedUser as any).companyId,
+            roleName: (updatedUser as any).role?.name || null
         }, { headers: corsHeaders });
 
     } catch (error: any) {

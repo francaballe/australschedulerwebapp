@@ -26,6 +26,15 @@ export async function POST(request: NextRequest) {
         const file = formData.get('file') as File;
         const callerUserIdStr = formData.get('callerUserId') as string;
         const callerUserId = callerUserIdStr ? parseInt(callerUserIdStr, 10) : null;
+        const companyIdStr = formData.get('companyId') as string;
+        const companyId = companyIdStr ? parseInt(companyIdStr, 10) : null;
+
+        if (!companyId) {
+            return NextResponse.json(
+                { error: 'El ID de la empresa es requerido.' },
+                { status: 400, headers: corsHeaders }
+            );
+        }
 
         if (!file) {
             return NextResponse.json(
@@ -161,6 +170,7 @@ export async function POST(request: NextRequest) {
                             userroleid: 2, // Always Regular user
                             isblocked: false,
                             createddate: new Date(),
+                            companyId: companyId,
                         } as any
                     });
 

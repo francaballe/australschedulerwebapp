@@ -333,8 +333,8 @@ export default function CalendarPage() {
         const siteId = localStorage.getItem('selectedSiteId');
         console.log('Creating position for siteId:', siteId);
 
-        if (!siteId) {
-          setEditWarning(language === 'es' ? 'Error: No hay un sitio seleccionado. Por favor recarga la página.' : 'Error: No site selected. Please reload the page.');
+        if (!siteId || siteId === 'null' || siteId === 'undefined') {
+          setEditWarning(language === 'es' ? 'Error: No tienes ningún sitio creado. Por favor, crea un sitio antes de agregar una posición.' : 'Error: You do not have any site created. Please create a site before adding a position.');
           setEditLoading(false);
           return;
         }

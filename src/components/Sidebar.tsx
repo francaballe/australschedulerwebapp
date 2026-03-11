@@ -39,6 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     // Site selector state from context (persists across navigation)
     const { selectedSiteId: selectedSite, setSelectedSiteId: setSelectedSite, enabledPositions, setEnabledPositions } = useCalendar();
     const [sites, setSites] = useState<{ id: number; name: string }[]>([]);
+    const [sitesLoaded, setSitesLoaded] = useState(false);
 
     const { language } = useTheme();
     const { user } = useAuth();
@@ -180,6 +181,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     useEffect(() => {
         const fetchSites = async () => {
             if (!user) return;
+            setSitesLoaded(false);
             try {
                 const res = await fetch(`/api/sites?userId=${user.id}&roleId=${user.roleId}&companyId=${user.companyId || ''}`);
                 if (!res.ok) return;
@@ -199,9 +201,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                         // Do NOT dispatch siteChanged - site hasn't changed, avoid resetting filters
                         try { window.localStorage.setItem('selectedSiteId', String(selectedSite)); } catch { }
                     }
+                } else {
+                    // No sites available for this company/user
+                    setSelectedSite(null);
+                    setPositions([]);
+                    setLoading(false);
                 }
             } catch (err) {
                 console.warn('Could not fetch sites', err);
+            } finally {
+                setSitesLoaded(true);
             }
         };
 
@@ -392,8 +401,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         onChange={onSiteChange}
                                         disabled={sites.length === 0}
                                     >
-                                        {sites.length === 0 ? (
-                                            <option value="">Cargando sitios...</option>
+                                        {!sitesLoaded ? (
+                                            <option value="">{language === 'es' ? 'Cargando sitios...' : 'Loading sites...'}</option>
+                                        ) : sites.length === 0 ? (
+                                            <option value="">{language === 'es' ? 'No hay sitios' : 'No sites available'}</option>
                                         ) : (
                                             sites.map(site => (
                                                 <option key={site.id} value={site.id}>{site.name}</option>
@@ -471,11 +482,11 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                             <div className={styles.positionList}>
                                 {loading ? (
-                                    <div className={styles.loadingState}>Cargando posiciones...</div>
+                                    <div className={styles.loadingState}>{language === 'es' ? 'Cargando posiciones...' : 'Loading positions...'}</div>
                                 ) : error ? (
                                     <div className={styles.errorState}>{error}</div>
                                 ) : positions.length === 0 ? (
-                                    <div className={styles.emptyState}>No hay posiciones</div>
+                                    <div className={styles.emptyState}>{language === 'es' ? 'No hay posiciones' : 'No positions'}</div>
                                 ) : (
                                     positions.map((pos) => (
                                         <div key={pos.id} className={styles.positionItem}>
@@ -512,8 +523,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     ))
                                 )}
                             </div>
-
-                            <button className={styles.addPositionBtn} onClick={onAddPosition}>
+                            <button 
+                                className={styles.addPositionBtn} 
+                                onClick={onAddPosition}
+                                disabled={sites.length === 0}
+                                style={sites.length === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                title={sites.length === 0 ? (language === 'es' ? 'Crea un sitio primero' : 'Create a site first') : ''}
+                            >
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                     <line x1="12" y1="5" x2="12" y2="19" />
                                     <line x1="5" y1="12" x2="19" y2="12" />
