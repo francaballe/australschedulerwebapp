@@ -25,7 +25,7 @@ export default function LoginPage() {
 
   const t = {
     title: "RosterLoop",
-    subtitle: isEs ? "Turnos semanales simplificados" : "Weekly shifts made easy",
+    subtitle: isEs ? "Turnos Semanales Simplificados" : "Weekly Shifts Made Easy",
     emailPlaceholder: isEs ? "Ingresá tu email" : "Enter your email",
     passwordPlaceholder: isEs ? "Ingresá tu contraseña" : "Enter your password",
     labelEmail: "Email",
@@ -196,11 +196,13 @@ export default function LoginPage() {
           {view === "login" && (
             <>
               <div className={styles.logoSection}>
-                <h1 className={styles.title}>
-                  <span className={styles.rosterText}>Roster</span>
-                  <span className={styles.loopText}>Loop</span>
-                </h1>
-                <p className={styles.subtitle}>{t.subtitle}</p>
+                <div className={styles.brandingWrapper}>
+                  <h1 className={styles.title}>
+                    <span className={styles.rosterText}>Roster</span>
+                    <span className={styles.loopText}>Loop</span>
+                  </h1>
+                  <p className={styles.slogan}>{t.subtitle}</p>
+                </div>
               </div>
 
               <form onSubmit={handleSubmit} className={styles.form}>
