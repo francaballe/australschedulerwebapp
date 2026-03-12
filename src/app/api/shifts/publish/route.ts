@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         position: true,
-        user: { select: { email: true, firstname: true } }
+        user: { select: { email: true, firstname: true, companyId: true } }
       },
       orderBy: [
         { date: 'asc' },
@@ -155,7 +155,8 @@ export async function POST(request: NextRequest) {
             title,
             body: richBody,
             read: false,
-            createdAt: new Date()
+            createdAt: new Date(),
+            companyId: userShifts[0]?.user?.companyId
           }
         });
 

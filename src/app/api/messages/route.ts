@@ -176,7 +176,7 @@ export async function PATCH(request: NextRequest) {
     const headers = getCorsHeaders(request.headers.get('origin'));
 
     try {
-        const { messageId } = await request.json();
+        const { messageId, companyId: updateCompanyId } = await request.json();
 
         if (!messageId) {
             return NextResponse.json(
@@ -185,9 +185,14 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
+        const whereClause: any = { id: messageId };
+        if (updateCompanyId) {
+            whereClause.companyId = parseInt(updateCompanyId);
+        }
+
         // Marcar como leído usando Prisma
         const updatedMessage = await prisma.message.update({
-            where: { id: messageId },
+            where: whereClause,
             data: { read: true },
             select: { id: true, read: true }
         });

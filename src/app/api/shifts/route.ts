@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
                 published: true,
                 positionId: true,
                 siteid: true,
+                companyId: true, // Added companyId to the select clause
                 position: {
                     select: {
                         name: true,
@@ -62,6 +63,13 @@ export async function GET(request: NextRequest) {
                 site: {
                     select: {
                         name: true
+                    }
+                },
+                user: { // Include user details
+                    select: {
+                        email: true,
+                        firstname: true,
+                        companyId: true
                     }
                 }
             } as any
@@ -382,7 +390,7 @@ export async function DELETE(request: NextRequest) {
                     },
                     include: {
                         position: true,
-                        user: { select: { email: true, firstname: true } }
+                        user: { select: { email: true, firstname: true, companyId: true } }
                     }
                 });
 
@@ -465,7 +473,8 @@ export async function DELETE(request: NextRequest) {
                                     title: title,
                                     body: richBody, // Use richBody for in-app view
                                     read: false,
-                                    createdAt: new Date()
+                                    createdAt: new Date(),
+                                    companyId: userShifts[0]?.user?.companyId
                                 }
                             });
 

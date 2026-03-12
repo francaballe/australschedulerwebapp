@@ -33,7 +33,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         // 1. Fetch the shift to check its status (include position for notification details)
         const shift = await prisma.shift.findUnique({
             where: { id: idNumber },
-            include: { position: true, user: { select: { email: true, firstname: true, isblocked: true } } }
+            include: { position: true, user: { select: { email: true, firstname: true, isblocked: true, companyId: true } } }
         });
 
         if (!shift) {
@@ -100,7 +100,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
                         title: title,
                         body: richBody,
                         read: false,
-                        createdAt: new Date()
+                        createdAt: new Date(),
+                        companyId: shift.user?.companyId
                     }
                 });
 
