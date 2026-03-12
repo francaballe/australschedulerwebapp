@@ -81,7 +81,7 @@ export default function LoginPage() {
       <main className={styles.main}>
         <div className={styles.loginCard}>
           <div className={styles.logoSection}>
-            <div className={styles.logoIcon}>
+            {/* <div className={styles.logoIcon}>
               <Image 
                 src="/RosterLoop.png" 
                 alt="RosterLoop Logo" 
@@ -89,7 +89,7 @@ export default function LoginPage() {
                 height={90}
                 priority
               />
-            </div>
+            </div> */}
             <h1 className={styles.title}>
               <span className={styles.rosterText}>Roster</span>
               <span className={styles.loopText}>Loop</span>
