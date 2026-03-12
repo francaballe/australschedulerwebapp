@@ -135,7 +135,8 @@
 }
 
 .logoIcon img {
-  border-radius: 12px; /* Opcional, por si la imagen es cuadrada */
+  border-radius: 12px;
+  /* Opcional, por si la imagen es cuadrada */
 }
 
 .logoIcon svg {
@@ -151,7 +152,7 @@
 }
 
 .rosterText {
-  color: #4F46E5;
+  color: #4F2EB5;
 }
 
 :global([data-theme="dark"]) .rosterText {
@@ -267,7 +268,7 @@
   font-size: 1rem;
   font-weight: 600;
   color: white;
-  background: linear-gradient(135deg, #4F46E5, #2DD48F);
+  background: linear-gradient(135deg, #4F2EB5, #2DD48F);
   border: none;
   border-radius: 12px;
   cursor: pointer;

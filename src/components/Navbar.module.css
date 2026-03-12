@@ -35,7 +35,7 @@
 }
 
 .rosterText {
-  color: #4F46E5;
+  color: #4F2EB5;
 }
 
 :global([data-theme="dark"]) .rosterText {
