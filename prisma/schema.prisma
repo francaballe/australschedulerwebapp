@@ -192,3 +192,15 @@ model UserSiteAccess {
   @@map("user_site_access")
   @@schema("app")
 }
+
+model PasswordResetCode {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  code      String
+  expiresAt DateTime @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("password_reset_codes")
+  @@schema("app")
+}
+

@@ -257,6 +257,24 @@
   flex-shrink: 0;
 }
 
+.success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 10px;
+  color: #10b981;
+  font-size: 0.9rem;
+}
+
+.success svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 .submitBtn {
   display: flex;
   align-items: center;
@@ -322,6 +340,12 @@
 .forgotPassword:hover {
   text-decoration: underline;
   opacity: 0.8;
+}
+
+.disabledLink {
+  opacity: 0.5 !important;
+  pointer-events: none !important;
+  cursor: not-allowed !important;
 }
 
 :global([data-theme="dark"]) .forgotPassword {

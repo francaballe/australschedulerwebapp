@@ -8,9 +8,14 @@ import { useTheme } from "@/context/ThemeContext";
 import styles from "./page.module.css";
 
 export default function LoginPage() {
+  const [view, setView] = useState<"login" | "forgot" | "reset">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, login, isLoading } = useAuth();
   const { language } = useTheme();
@@ -20,7 +25,7 @@ export default function LoginPage() {
 
   const t = {
     title: "RosterLoop",
-    subtitle: isEs ? "Iniciá sesión para continuar" : "Sign in to continue",
+    subtitle: isEs ? "Turnos semanales simplificados" : "Weekly shifts made easy",
     emailPlaceholder: isEs ? "Ingresá tu email" : "Enter your email",
     passwordPlaceholder: isEs ? "Ingresá tu contraseña" : "Enter your password",
     labelEmail: "Email",
@@ -30,6 +35,21 @@ export default function LoginPage() {
     forgotPassword: isEs ? "¿Olvidaste tu contraseña?" : "Forgot password?",
     emptyFields: isEs ? "Por favor, completá todos los campos" : "Please fill in all fields",
     invalidCreds: isEs ? "Credenciales inválidas" : "Invalid credentials",
+    forgotTitle: isEs ? "Recuperar Contraseña" : "Recover Password",
+    forgotSubtitle: isEs ? "Ingresá tu email para recibir un código" : "Enter your email to receive a code",
+    sendCode: isEs ? "Enviar Código" : "Send Code",
+    backToLogin: isEs ? "Volver al inicio" : "Back to login",
+    resetTitle: isEs ? "Nueva Contraseña" : "New Password",
+    resetSubtitle: isEs ? "Ingresá el código y tu nueva contraseña" : "Enter the code and your new password",
+    codeLabel: isEs ? "Código de 6 dígitos" : "6-digit code",
+    codePlaceholder: "123456",
+    newPasswordLabel: isEs ? "Nueva Contraseña" : "New Password",
+    confirmPasswordLabel: isEs ? "Confirmar Contraseña" : "Confirm Password",
+    resetButton: isEs ? "Restablecer Contraseña" : "Reset Password",
+    passwordsDontMatch: isEs ? "Las contraseñas no coinciden" : "Passwords don't match",
+    resetSuccess: isEs ? "Contraseña actualizada con éxito" : "Password updated successfully",
+    sendingCode: isEs ? "Enviando código..." : "Sending code...",
+    resetting: isEs ? "Restableciendo..." : "Resetting...",
   };
 
   useEffect(() => {
@@ -59,6 +79,98 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+
+    if (!email.trim()) {
+      setError(t.emptyFields);
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        setResetCode("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setView("reset");
+      } else {
+        const data = await res.json();
+        setError(data.error || "Error");
+      }
+    } catch (err) {
+      setError("Error de conexión");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+
+    if (!resetCode.trim() || !newPassword.trim() || !confirmPassword.trim()) {
+      setError(t.emptyFields);
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError(t.passwordsDontMatch);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Password complexity validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      setError(isEs 
+        ? "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial" 
+        : "Password must have at least 8 characters, one uppercase, one lowercase, one number, and one special character");
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: resetCode, newPassword }),
+      });
+
+      if (res.ok) {
+        setSuccess(t.resetSuccess);
+        // Keep isSubmitting true so inputs stay locked while showing success
+        setTimeout(() => {
+          setSuccess("");
+          setView("login");
+          setPassword("");
+          setEmail("");
+          setResetCode("");
+          setNewPassword("");
+          setConfirmPassword("");
+          setIsSubmitting(false); // Only unlock at the end
+        }, 3000);
+      } else {
+        const data = await res.json();
+        setError(data.error || "Error");
+        setIsSubmitting(false);
+      }
+    } catch (err) {
+      setError("Error de conexión");
+      setIsSubmitting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className={styles.loadingContainer}>
@@ -81,104 +193,285 @@ export default function LoginPage() {
 
       <main className={styles.main}>
         <div className={styles.loginCard}>
-          <div className={styles.logoSection}>
-            {/* <div className={styles.logoIcon}>
-              <Image 
-                src="/RosterLoop.png" 
-                alt="RosterLoop Logo" 
-                width={90} 
-                height={90}
-                priority
-              />
-            </div> */}
-            <h1 className={styles.title}>
-              <span className={styles.rosterText}>Roster</span>
-              <span className={styles.loopText}>Loop</span>
-            </h1>
-            <p className={styles.subtitle}>{t.subtitle}</p>
-          </div>
+          {view === "login" && (
+            <>
+              <div className={styles.logoSection}>
+                <h1 className={styles.title}>
+                  <span className={styles.rosterText}>Roster</span>
+                  <span className={styles.loopText}>Loop</span>
+                </h1>
+                <p className={styles.subtitle}>{t.subtitle}</p>
+              </div>
 
-          <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.inputGroup}>
-              <label htmlFor="email" className={styles.label}>{t.labelEmail}</label>
-              <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="4" width="20" height="16" rx="2" />
-                  <path d="M22 6l-10 7L2 6" />
-                </svg>
-                <input
-                  type="email"
-                  id="email"
-                  className={styles.input}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t.emailPlaceholder}
+              <form onSubmit={handleSubmit} className={styles.form}>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="email" className={styles.label}>{t.labelEmail}</label>
+                  <div className={styles.inputWrapper}>
+                    <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="M22 6l-10 7L2 6" />
+                    </svg>
+                    <input
+                      type="email"
+                      id="email"
+                      className={styles.input}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder={t.emailPlaceholder}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label htmlFor="password" className={styles.label}>{t.labelPassword}</label>
+                  <div className={styles.inputWrapper}>
+                    <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <input
+                      type="password"
+                      id="password"
+                      className={styles.input}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={t.passwordPlaceholder}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <div className={styles.error}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    {error}
+                  </div>
+                )}
+
+                {success && (
+                  <div className={styles.success}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    {success}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className={styles.submitBtn}
                   disabled={isSubmitting}
-                />
-              </div>
-            </div>
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className={styles.btnSpinner}></div>
+                      {t.submitting}
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                        <polyline points="10,17 15,12 10,7" />
+                        <line x1="15" y1="12" x2="3" y2="12" />
+                      </svg>
+                      {t.submit}
+                    </>
+                  )}
+                </button>
+                <div className={styles.forgotPasswordWrapper}>
+                  <a href="#" className={styles.forgotPassword} onClick={(e) => {
+                    e.preventDefault();
+                    setError("");
+                    setView("forgot");
+                  }}>
+                    {t.forgotPassword}
+                  </a>
+                </div>
+              </form>
+            </>
+          )}
 
-            <div className={styles.inputGroup}>
-              <label htmlFor="password" className={styles.label}>{t.labelPassword}</label>
-              <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                <input
-                  type="password"
-                  id="password"
-                  className={styles.input}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t.passwordPlaceholder}
+          {view === "forgot" && (
+            <>
+              <div className={styles.logoSection}>
+                <h1 className={styles.title}>{t.forgotTitle}</h1>
+                <p className={styles.subtitle}>{t.forgotSubtitle}</p>
+              </div>
+
+              <form onSubmit={handleForgotSubmit} className={styles.form}>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="forgot-email" className={styles.label}>{t.labelEmail}</label>
+                  <div className={styles.inputWrapper}>
+                    <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="M22 6l-10 7L2 6" />
+                    </svg>
+                    <input
+                      type="email"
+                      id="forgot-email"
+                      className={styles.input}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder={t.emailPlaceholder}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <div className={styles.error}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className={styles.submitBtn}
                   disabled={isSubmitting}
-                />
-              </div>
-            </div>
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className={styles.btnSpinner}></div>
+                      {t.sendingCode}
+                    </>
+                  ) : t.sendCode}
+                </button>
 
-            {error && (
-              <div className={styles.error}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                {error}
-              </div>
-            )}
+                <div className={styles.forgotPasswordWrapper}>
+                  <a 
+                    href="#" 
+                    className={`${styles.forgotPassword} ${isSubmitting ? styles.disabledLink : ""}`}
+                    onClick={(e) => {
+                      if (isSubmitting) return;
+                      e.preventDefault();
+                      setView("login");
+                      setError("");
+                      setResetCode("");
+                      setNewPassword("");
+                      setConfirmPassword("");
+                    }}
+                  >  {t.backToLogin}
+                  </a>
+                </div>
+              </form>
+            </>
+          )}
 
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <div className={styles.btnSpinner}></div>
-                  {t.submitting}
-                </>
-              ) : (
-                <>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                    <polyline points="10,17 15,12 10,7" />
-                    <line x1="15" y1="12" x2="3" y2="12" />
-                  </svg>
-                  {t.submit}
-                </>
-              )}
-            </button>
-            <div className={styles.forgotPasswordWrapper}>
-              <a href="#" className={styles.forgotPassword} onClick={(e) => {
-                e.preventDefault();
-                // We'll implement this later as requested
-                alert(isEs ? "Funcionalidad de recuperación de contraseña próximamente" : "Password recovery functionality coming soon");
-              }}>
-                {t.forgotPassword}
-              </a>
-            </div>
-          </form>
+          {view === "reset" && (
+            <>
+              <div className={styles.logoSection}>
+                <h1 className={styles.title}>{t.resetTitle}</h1>
+                <p className={styles.subtitle}>{t.resetSubtitle}</p>
+              </div>
+
+              <form onSubmit={handleResetSubmit} className={styles.form}>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="code" className={styles.label}>{t.codeLabel}</label>
+                  <div className={styles.inputWrapper}>
+                    <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2v20M2 12h20" />
+                    </svg>
+                    <input
+                      type="text"
+                      id="code"
+                      className={styles.input}
+                      value={resetCode}
+                      onChange={(e) => setResetCode(e.target.value)}
+                      placeholder={t.codePlaceholder}
+                      maxLength={6}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label htmlFor="new-password" className={styles.label}>{t.newPasswordLabel}</label>
+                  <div className={styles.inputWrapper}>
+                    <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <input
+                      type="password"
+                      id="new-password"
+                      className={styles.input}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder={t.passwordPlaceholder}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label htmlFor="confirm-password" className={styles.label}>{t.confirmPasswordLabel}</label>
+                  <div className={styles.inputWrapper}>
+                    <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <input
+                      type="password"
+                      id="confirm-password"
+                      className={styles.input}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder={t.passwordPlaceholder}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <div className={styles.error}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className={styles.submitBtn}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className={styles.btnSpinner}></div>
+                      {t.resetting}
+                    </>
+                  ) : t.resetButton}
+                </button>
+
+                <div className={styles.forgotPasswordWrapper}>
+                  <a 
+                    href="#" 
+                    className={`${styles.forgotPassword} ${isSubmitting ? styles.disabledLink : ""}`}
+                    onClick={(e) => {
+                      if (isSubmitting) return;
+                      e.preventDefault();
+                      setView("login");
+                      setError("");
+                      setResetCode("");
+                      setNewPassword("");
+                      setConfirmPassword("");
+                    }}
+                  >  {t.backToLogin}
+                  </a>
+                </div>
+              </form>
+            </>
+          )}
         </div>
       </main>
     </div>
