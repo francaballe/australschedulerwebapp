@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, login, isLoading } = useAuth();
-  const { language, setLanguage } = useTheme();
+  const { language } = useTheme();
   const router = useRouter();
 
   const isEs = language === 'es';
@@ -27,6 +27,7 @@ export default function LoginPage() {
     labelPassword: isEs ? "Contraseña" : "Password",
     submit: isEs ? "Iniciar Sesión" : "Sign In",
     submitting: isEs ? "Iniciando sesión..." : "Signing in...",
+    forgotPassword: isEs ? "¿Olvidaste tu contraseña?" : "Forgot password?",
     emptyFields: isEs ? "Por favor, completá todos los campos" : "Please fill in all fields",
     invalidCreds: isEs ? "Credenciales inválidas" : "Invalid credentials",
   };
@@ -168,6 +169,15 @@ export default function LoginPage() {
                 </>
               )}
             </button>
+            <div className={styles.forgotPasswordWrapper}>
+              <a href="#" className={styles.forgotPassword} onClick={(e) => {
+                e.preventDefault();
+                // We'll implement this later as requested
+                alert(isEs ? "Funcionalidad de recuperación de contraseña próximamente" : "Password recovery functionality coming soon");
+              }}>
+                {t.forgotPassword}
+              </a>
+            </div>
           </form>
         </div>
       </main>
