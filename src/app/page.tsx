@@ -40,7 +40,7 @@ export default function LoginPage() {
     sendCode: isEs ? "Enviar Código" : "Send Code",
     backToLogin: isEs ? "Volver al inicio" : "Back to login",
     resetTitle: isEs ? "Nueva Contraseña" : "New Password",
-    resetSubtitle: isEs ? "Ingresá el código y tu nueva contraseña" : "Enter the code and your new password",
+    resetSubtitle: "To complete the reset, please enter the code sent to you and create a new password below.",
     codeLabel: isEs ? "Código de 6 dígitos" : "6-digit code",
     codePlaceholder: "123456",
     newPasswordLabel: isEs ? "Nueva Contraseña" : "New Password",
@@ -74,7 +74,7 @@ export default function LoginPage() {
     if (result.success) {
       router.push("/calendar");
     } else {
-      setError(result.error || t.invalidCreds);
+      setError(t.invalidCreds);
       setIsSubmitting(false);
     }
   };
