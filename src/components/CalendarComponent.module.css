@@ -691,7 +691,6 @@
   display: none;
 }
 
-@media (hover: hover) {
   .shiftContent:hover {
     z-index: 1000 !important;
   }
@@ -736,7 +735,6 @@
     bottom: 100%;
     border-color: transparent transparent #1e1e1e transparent;
   }
-}
 
 .hudHeader {
   font-weight: 700;
@@ -779,7 +777,6 @@
   flex-shrink: 0;
 }
 
-@media (hover: hover) {
   .shiftContent:hover .topRowHUD {
     bottom: auto;
     top: calc(100% + 10px);
@@ -790,7 +787,6 @@
     bottom: 100%;
     border-color: transparent transparent #1e1e1e transparent;
   }
-}
 
 .simplifiedPosName {
   font-size: 11px;
