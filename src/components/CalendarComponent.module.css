@@ -216,10 +216,9 @@
   height: auto;
 }
 
-.blockedRow {
-  opacity: 0.6;
+
+.blockedRow .shiftBlock {
   pointer-events: none;
-  filter: grayscale(0.5);
 }
 
 .userRow:nth-child(even) {
@@ -872,6 +871,49 @@
 
 /* Triangle making it a speech bubble pointing left */
 .confirmationIndicatorContainer:hover .confirmationHUD::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent #1e1e1e transparent transparent;
+}
+
+/* Blocked User HUD Hover Rules */
+.blockedUserContainer {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.blockedUserHUD {
+  display: none;
+}
+
+.blockedUserContainer:hover .blockedUserHUD {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1e1e1e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 220px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  opacity: 1 !important;
+  z-index: 1010;
+  text-align: left;
+  white-space: normal;
+}
+
+/* Triangle making it a speech bubble pointing left */
+.blockedUserContainer:hover .blockedUserHUD::after {
   content: '';
   position: absolute;
   top: 50%;

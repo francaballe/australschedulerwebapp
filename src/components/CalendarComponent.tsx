@@ -1855,9 +1855,33 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 {/* Columna de usuario */}
                 <div className={`${styles.userCell} ${view === 'twoWeeks' ? styles.userCellNarrow : ''}`}>
                   <div className={styles.userName}>
-                    <span style={{ color: user.isBlocked ? 'var(--danger, #dc2626)' : 'inherit' }}>
-                      {user.firstName} {user.lastName}
-                    </span>
+                    {user.isBlocked ? (
+                      <div className={styles.blockedUserContainer}>
+                        <span style={{ color: 'var(--danger, #dc2626)', cursor: 'default' }}>
+                          {user.firstName} {user.lastName}
+                        </span>
+
+                        {/* Custom HUD Popup for Blocked User */}
+                        <div className={styles.blockedUserHUD}>
+                          <div className={styles.hudHeader}>{language === 'es' ? 'Usuario Bloqueado' : 'Blocked User'}</div>
+                          <div className={styles.hudConflict}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10" />
+                              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                            </svg>
+                            <span>
+                              {language === 'es' 
+                                ? 'Este usuario tiene acceso restringido o restricciones operativas. Por favor verifica su estado.' 
+                                : 'This user has restricted access or operational restrictions. Please verify their status.'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <span style={{ color: 'inherit' }}>
+                        {user.firstName} {user.lastName}
+                      </span>
+                    )}
                     {/* Confirmation Slot */}
                     <div
                       className={`${styles.confirmationIndicatorContainer}`}
