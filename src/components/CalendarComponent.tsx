@@ -1918,8 +1918,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
                         >
                           {/* Muted wrapper for everything EXCEPT the HUD card */}
-                          <div style={{ opacity: (isOtherSite || isFilteredOut) ? 0.7 : 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-
+                          <div style={{ opacity: (isOtherSite || isFilteredOut) ? 0.7 : 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
 
                             <div className={styles.shiftLabels}>
                               {/* Simplified view (centered base state) */}
