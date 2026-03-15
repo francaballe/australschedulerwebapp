@@ -223,10 +223,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({
             const filtered = shiftsData.filter((s: Shift) => userIds.has(s.userId));
             setShifts(filtered);
 
-            // Refresh confirmations for week view
-            if (view === 'week' && dates.length > 0) {
+            // Refresh confirmations for week and two-week views
+            if ((view === 'week' || view === 'twoWeeks') && dates.length > 0) {
               const weekStartDate = formatDateLocal(dates[0]);
-              await fetchUserConfirmations(weekStartDate, data);
+              let week2StartDate: string | undefined;
+              if (view === 'twoWeeks' && dates.length > 7) {
+                  week2StartDate = formatDateLocal(dates[7]);
+              }
+              await fetchUserConfirmations(weekStartDate, data, week2StartDate);
             }
           } catch (innerErr) {
             console.error('Error updating shifts after search:', innerErr);
@@ -409,24 +413,35 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     }
   };
 
-  // Fetch user confirmations for the current week
-  const fetchUserConfirmations = async (weekStartDate: string, usersData: User[]) => {
+  // Fetch user confirmations for the current week (or weeks)
+  const fetchUserConfirmations = async (weekStartDate: string, usersData: User[], week2StartDate?: string) => {
     try {
       const confirmationsMap = new Map<number, boolean>();
 
       // Fetch all confirmations at once for better performance
       const promises = usersData.map(async (userObj) => {
         try {
-          const url = `/api/confirm-weeks?userId=${userObj.id}&date=${weekStartDate}&companyId=${user?.companyId || ''}`;
-          const response = await fetch(url);
-          if (response.ok) {
-            const confirmations = await response.json();
-
-            // Just check if there's any record for this user/week, don't check .confirmed field
-            const isConfirmed = confirmations.length > 0;
-
-            return { userId: userObj.id, confirmed: isConfirmed };
+          const fetchWeek1 = fetch(`/api/confirm-weeks?userId=${userObj.id}&date=${weekStartDate}&companyId=${user?.companyId || ''}`);
+          
+          let fetchWeek2;
+          if (week2StartDate) {
+            fetchWeek2 = fetch(`/api/confirm-weeks?userId=${userObj.id}&date=${week2StartDate}&companyId=${user?.companyId || ''}`);
           }
+
+          const responses = await Promise.all([fetchWeek1, fetchWeek2].filter(Boolean) as Promise<Response>[]);
+          
+          let isConfirmed = false;
+          for (const response of responses) {
+             if (response.ok) {
+                 const confirmations = await response.json();
+                 if (confirmations.length > 0) {
+                     isConfirmed = true;
+                     break; // If at least 1 week is confirmed, we can stop checking
+                 }
+             }
+          }
+
+          return { userId: userObj.id, confirmed: isConfirmed };
         } catch (error) {
           console.error(`Error fetching confirmation for user ${userObj.id}:`, error);
         }
@@ -532,8 +547,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     const loadUsersAndShifts = async () => {
       setShiftsLoading(true);
 
-      // Clear confirmations immediately when changing weeks to prevent visual artifacts
-      if (view === 'week') {
+      // Clear confirmations immediately when changing views to prevent visual artifacts
+      if (view === 'week' || view === 'twoWeeks') {
         setUserConfirmations(new Map());
       }
 
@@ -559,10 +574,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({
           console.error('Error fetching availability:', availErr);
         }
 
-        // Only fetch confirmations for week view
-        if (view === 'week' && weekDates.length > 0) {
+        // Fetch confirmations for week and twoWeeks view
+        if ((view === 'week' || view === 'twoWeeks') && weekDates.length > 0) {
           const weekStartDate = formatDateLocal(weekDates[0]);
-          await fetchUserConfirmations(weekStartDate, usersData);
+          let week2StartDate: string | undefined;
+          if (view === 'twoWeeks' && weekDates.length > 7) {
+              week2StartDate = formatDateLocal(weekDates[7]);
+          }
+          await fetchUserConfirmations(weekStartDate, usersData, week2StartDate);
         }
       } catch (err) {
         console.error('Error loading users and shifts:', err);
@@ -609,10 +628,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         console.error('Error fetching availability:', availErr);
       }
 
-      // Only fetch confirmations for week view
-      if (view === 'week' && weekDates.length > 0) {
+      // Fetch confirmations for week and twoWeeks view
+      if ((view === 'week' || view === 'twoWeeks') && weekDates.length > 0) {
         const weekStartDate = formatDateLocal(weekDates[0]);
-        await fetchUserConfirmations(weekStartDate, users);
+        let week2StartDate: string | undefined;
+        if (view === 'twoWeeks' && weekDates.length > 7) {
+            week2StartDate = formatDateLocal(weekDates[7]);
+        }
+        await fetchUserConfirmations(weekStartDate, users, week2StartDate);
       }
     } catch (err) {
       console.error('Error refreshing calendar data:', err);
@@ -1835,29 +1858,64 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     <span style={{ color: user.isBlocked ? 'var(--danger, #dc2626)' : 'inherit' }}>
                       {user.firstName} {user.lastName}
                     </span>
-                    {/* Confirmation Slot - Always rendered to maintain spacing/alignment if needed, 
-                        but effectively only visible when confirmed */}
+                    {/* Confirmation Slot */}
                     <div
-                      className={styles.confirmationIndicator}
-                      title={view === 'week' && userConfirmations.get(user.id) ? "Programación confirmada" : undefined}
+                      className={`${styles.confirmationIndicatorContainer}`}
                       style={{
-                        visibility: (view === 'week' && userConfirmations.get(user.id)) ? 'visible' : 'hidden'
+                        visibility: ((view === 'week' || view === 'twoWeeks') && userConfirmations.get(user.id)) ? 'visible' : 'hidden'
                       }}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: '14px', height: '14px' }}>
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
+                      <div className={styles.confirmationIndicator}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: '14px', height: '14px' }}>
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
+
+                      {/* Custom HUD Popup for Confirmation */}
+                      <div className={styles.confirmationHUD}>
+                        <div className={styles.hudHeader}>{language === 'es' ? 'Programación Confirmada' : 'Schedule Confirmed'}</div>
+                        <div className={styles.hudSuccess}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          <span>
+                            {view === 'twoWeeks'
+                              ? (language === 'es' ? 'Al menos 1 de las 2 semanas ha sido confirmada.' : 'At least 1 of the 2 weeks has been confirmed.')
+                              : (language === 'es' ? 'El usuario ha visto y confirmado esta semana.' : 'The user has seen and confirmed this week.')
+                            }
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className={styles.userHours}>
                     <span>{getUserTotalHours(user.id).toFixed(1)}</span>
                     {/* Overtime Slot - Now aligned with hours */}
                     {isUserOvertime(user.id) && (
-                      <div className={styles.overtimeIndicator} title={language === 'es' ? "Horas excedidas (>40hs)" : "Overtime (>40hs)"}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="12 6 12 12 16 14" />
-                        </svg>
+                      <div className={styles.overtimeIndicatorContainer}>
+                        <div className={styles.overtimeIndicator}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                        </div>
+                        
+                        {/* Custom HUD Popup for Overtime */}
+                        <div className={styles.overtimeHUD}>
+                          <div className={styles.hudHeader}>{language === 'es' ? 'Horas Extra' : 'Overtime'}</div>
+                          <div className={styles.hudConflict}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10" />
+                              <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            <span>
+                              {view === 'twoWeeks' 
+                                ? (language === 'es' ? 'Al menos 1 de las 2 semanas excede el límite de 40hs' : 'At least 1 of the 2 weeks exceeds the 40hs limit')
+                                : (language === 'es' ? 'Excede las 40hs semanales' : 'Exceeds 40hs weekly limit')
+                              }
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1992,7 +2050,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
                               {shift.isUserUnavailable && (
                                 <div className={styles.hudConflict}>
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                                     <line x1="12" y1="9" x2="12" y2="13" />
                                     <line x1="12" y1="17" x2="12.01" y2="17" />

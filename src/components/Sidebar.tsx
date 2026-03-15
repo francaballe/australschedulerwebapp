@@ -418,7 +418,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     onClick={onPublishAll}
                                     disabled={unpublishedCount === 0}
                                     title={unpublishedCount === 0 ? (language === 'es' ? "Todo publicado" : "All published") : (language === 'es' ? "Publicar cronograma" : "Publish schedule")}
-                                    style={unpublishedCount === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                    style={{
+                                        ...(unpublishedCount === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}),
+                                        ...(language === 'es' ? { fontSize: '13px' } : {})
+                                    }}
                                 >
                                     {language === 'es' ? 'PUBLICAR CRONOGRAMA' : 'PUBLISH SCHEDULE'}
                                 </button>
