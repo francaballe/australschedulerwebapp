@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
         const q = request.nextUrl.searchParams.get('q');
         const includeBlocked = request.nextUrl.searchParams.get('includeBlocked') === 'true';
         const companyIdParam = request.nextUrl.searchParams.get('companyId');
+        const countOnly = request.nextUrl.searchParams.get('countOnly') === 'true';
 
         const whereClause: any = {};
 
@@ -55,6 +56,11 @@ export async function GET(request: NextRequest) {
                     { email: { contains: term, mode: 'insensitive' } }
                 ];
             }
+        }
+
+        if (countOnly) {
+            const count = await prisma.user.count({ where: whereClause });
+            return NextResponse.json({ count }, { headers: corsHeaders });
         }
 
         const users = await prisma.user.findMany({

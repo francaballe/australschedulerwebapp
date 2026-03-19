@@ -404,7 +404,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       } catch { }
 
       // Refresh shifts data
-      await refreshData();
+      await refreshData(false);
       return true;
     } catch (err: any) {
       console.error('❌ Failed to create/update shift:', err);
@@ -594,10 +594,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     loadUsersAndShifts();
   }, [currentDate, view, selectedSiteId, showOnlyActiveUsers]);
 
-  // Expose a manual refresh that other UI can call
-  const refreshData = async () => {
+  const refreshData = async (showLoadingIndicator = true) => {
     // Show full screen loading
-    setShiftsLoading(true);
+    if (showLoadingIndicator) setShiftsLoading(true);
 
     try {
       console.log('🔄 Refreshing calendar data...');
@@ -649,7 +648,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   useEffect(() => {
     const handlePublish = () => {
       console.log('🔄 Detected published shifts - refreshing calendar');
-      refreshData();
+      refreshData(false);
     };
     const handlePosUpdate = (e: any) => {
       console.log('🔄 Detected position changes - updating local state:', e.detail);
@@ -705,7 +704,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
     const handlePosDelete = () => {
       console.log('🔄 Detected position deleted - refreshing calendar');
-      refreshData();
+      refreshData(false);
     };
 
     window.addEventListener('publishedShifts', handlePublish);
@@ -1038,7 +1037,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         throw new Error('Error al mover turno');
       }
 
-      await refreshData();
+      await refreshData(false);
     } catch (err: any) {
       console.error('Failed to move shift:', err);
       // alert(`Error al mover turno: ${err.message}`); // Optional: could use warning modal for errors too, but maybe less critical for "ugly" alerts.
@@ -1221,7 +1220,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         throw new Error('Error al eliminar turno');
       }
 
-      await refreshData();
+      await refreshData(false);
       handleModalClose();
     } catch (err: any) {
       console.error('Failed to delete/revert shift:', err);

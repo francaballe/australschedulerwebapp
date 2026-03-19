@@ -13,6 +13,7 @@ export default function Navbar() {
     const pathname = usePathname();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [activeUsersCount, setActiveUsersCount] = useState<number | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const navigateToCalendar = () => {
@@ -39,6 +40,19 @@ export default function Navbar() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        if (user?.companyId) {
+            fetch(`/api/users?companyId=${user.companyId}&countOnly=true`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.count !== undefined) {
+                        setActiveUsersCount(data.count);
+                    }
+                })
+                .catch(err => console.error("Error fetching active users count:", err));
+        }
+    }, [user?.companyId]);
+
     return (
         <>
             <nav className={styles.navbar}>
@@ -54,6 +68,15 @@ export default function Navbar() {
                     </span>
                 </div>
 
+                {/* Plan and Active Users Section */}
+                <div className={styles.centerSection}>
+                    <div className={styles.planInfo}>
+                        <span className={styles.usersCount}>
+                            {activeUsersCount !== null ? activeUsersCount : '--'} / 80 {language === 'es' ? 'usuarios' : 'users'}
+                        </span>
+                        <span className={styles.planBadge}>Plan Growth</span>
+                    </div>
+                </div>
 
                 <div className={styles.userSection}>
                     <span className={styles.username}>

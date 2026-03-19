@@ -55,37 +55,43 @@
 
 .centerSection {
   position: absolute;
-  left: 285px;
-  /* moved to match sidebar width 260px + 25px spacing */
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
   pointer-events: none;
   /* let children decide events */
-  width: calc(100% - 285px);
-  /* Account for logo and userSection width */
-  max-width: 720px;
 }
 
-/* Adjust centerSection when sidebar is narrower at <=1440px */
-@media (max-width: 1536px) {
-  .centerSection {
-    left: 240px;
-    /* matched to new sidebar width */
-    width: calc(100% - 240px);
-  }
+.planInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--hover-bg);
+  padding: 4px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  pointer-events: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* Adjust centerSection when sidebar is narrower at <=1024px */
-@media (max-width: 1024px) {
-  .centerSection {
-    left: 235px;
-    /* 210px sidebar + 25px spacing - proportionally reduced */
-    width: calc(100% - 235px);
-  }
+.usersCount {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--foreground);
 }
 
-
+.planBadge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
+  padding: 3px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 
 .backArrow {
   width: 22px;
