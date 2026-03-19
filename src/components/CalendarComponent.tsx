@@ -45,6 +45,7 @@ interface Shift {
   siteId?: number | null;
   siteName?: string | null;
   positionDeleted?: boolean;
+  dropped?: boolean | null;
 }
 
 interface Position {
@@ -904,7 +905,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       }
       // Only count the first shift
       const shift = shiftsForDate[0];
-      totalHours += calculateHours(shift.startTime, shift.endTime);
+      if (!shift.dropped) {
+        totalHours += calculateHours(shift.startTime, shift.endTime);
+      }
     });
 
     return totalHours;
@@ -927,7 +930,9 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         });
         let total = 0;
         shiftsByDate.forEach((shiftsForDate) => {
-          total += calculateHours(shiftsForDate[0].startTime, shiftsForDate[0].endTime);
+          if (!shiftsForDate[0].dropped) {
+            total += calculateHours(shiftsForDate[0].startTime, shiftsForDate[0].endTime);
+          }
         });
         return total;
       };
@@ -1439,7 +1444,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
         const dailyHours = exportDates.map((date: Date) => {
           const dateStr = formatDateLocal(date);
           const shift = userPosShifts.find(s => s.date === dateStr);
-          if (!shift) return '';
+          if (!shift || shift.dropped) return '';
           const hours = Math.round(calculateHours(shift.startTime, shift.endTime) * 100) / 100;
           rowTotal += hours;
           return hours || '';
@@ -1474,6 +1479,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
         // Use a map to handle distinct users if multiple positions per day (unlikely but possible)
         const totalHours = dailyShifts.reduce((acc, shift) => {
+          if (shift.dropped) return acc;
           return acc + calculateHours(shift.startTime, shift.endTime);
         }, 0);
 
@@ -2005,7 +2011,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                               {/* Simplified view (centered base state) */}
                               <div className={styles.simplifiedLabel}>
                                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
-                                  <span className={styles.simplifiedPosName}>
+                                  <span className={styles.simplifiedPosName} style={{ textDecoration: shift.dropped ? 'line-through' : 'none', opacity: shift.dropped ? 0.6 : 1 }}>
                                     {t(shift.position).substring(0, 3).toUpperCase()}
                                   </span>
                                 </div>
@@ -2014,13 +2020,13 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                               {/* Standard Full view (for non-2-week views) */}
                               <div className={styles.fullLabel}>
                                 {shiftTimeText && (
-                                  <div className={styles.shiftTime} style={{ fontWeight: 'normal' }}>
+                                  <div className={styles.shiftTime} style={{ fontWeight: 'normal', textDecoration: shift.dropped ? 'line-through' : 'none', opacity: shift.dropped ? 0.6 : 1 }}>
                                     {shiftTimeText}
                                   </div>
                                 )}
                                 {shift.position && (
                                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
-                                    <div className={styles.shiftPosition}>
+                                    <div className={styles.shiftPosition} style={{ textDecoration: shift.dropped ? 'line-through' : 'none', opacity: shift.dropped ? 0.6 : 1 }}>
                                       <span>{t(shift.position)}</span>
                                     </div>
                                   </div>
@@ -2209,6 +2215,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
               if (selectedSiteId && shift.siteId && shift.siteId !== selectedSiteId) {
                 return acc;
               }
+              if (shift.dropped) return acc;
               return acc + calculateHours(shift.startTime, shift.endTime);
             }, 0);
 
@@ -2242,23 +2249,41 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                 style={{ cursor: 'grab', userSelect: 'none' }}
               >
 
-                <div>
-                  <h3>
-                    {showDeleteConfirmation
-                      ? (language === 'es' ? 'Eliminar Turno' : 'Delete Shift')
-                      : selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date))
-                        ? (language === 'es' ? 'Editar Turno' : 'Edit Shift')
-                        : (language === 'es' ? 'Asignar Turno' : 'Assign Shift')}
-                  </h3>
-                  {selectedCell && (
-                    <p>
-                      {language === 'es' ? 'Usuario' : 'User'}: {users.find(u => u.id === selectedCell.userId)?.firstName} {users.find(u => u.id === selectedCell.userId)?.lastName}
-                      <br />
-                      {language === 'es' ? 'Fecha' : 'Date'}: {selectedCell.date.toLocaleDateString(language === 'es' ? 'es-AR' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                    </p>
-                  )}
-                </div>
-                <div className={styles.modalHeaderActions}>
+                  <div style={{ flex: 1 }}>
+                    <h3>
+                      {showDeleteConfirmation
+                        ? (language === 'es' ? 'Eliminar Turno' : 'Delete Shift')
+                        : selectedCell && shifts.some(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date))
+                          ? (language === 'es' ? 'Editar Turno' : 'Edit Shift')
+                          : (language === 'es' ? 'Asignar Turno' : 'Assign Shift')}
+                    </h3>
+                    {selectedCell && (
+                      <p>
+                        {language === 'es' ? 'Usuario' : 'User'}: {users.find(u => u.id === selectedCell.userId)?.firstName} {users.find(u => u.id === selectedCell.userId)?.lastName}
+                        <br />
+                        {language === 'es' ? 'Fecha' : 'Date'}: {selectedCell.date.toLocaleDateString(language === 'es' ? 'es-AR' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    {selectedCell && (() => {
+                      const shift = shifts.find(s => s.userId === selectedCell.userId && s.date === formatDateLocal(selectedCell.date));
+                      if (shift?.dropped && !showDeleteConfirmation) {
+                        return (
+                          <div className={styles.droppedBadge} style={{ margin: 0 }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10" />
+                              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                            </svg>
+                            {language === 'es' ? 'Este turno ha sido marcado como soltado.' : 'This shift is marked as dropped.'}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+                <div className={styles.modalHeaderActions} style={{ flex: 1, justifyContent: 'flex-end' }}>
                   {selectedCell && (() => {
                     const allUserShifts = shifts.filter(s =>
                       s.userId === selectedCell.userId &&
@@ -2275,19 +2300,62 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           </div>
                         )}
                         {shift && shift.positionId !== 1 && !showDeleteConfirmation && (
-                          <button
-                            className={styles.modalDeleteButton}
-                            onClick={() => handleDeleteShift()}
-                            title={language === 'es' ? 'Borrar' : 'Delete'}
-                            disabled={modalLoading}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M3 6h18" />
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                              <line x1="10" y1="11" x2="10" y2="17" />
-                              <line x1="14" y1="11" x2="14" y2="17" />
-                            </svg>
-                          </button>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              className={styles.modalDropButton}
+                              onClick={async () => {
+                                try {
+                                  setModalLoading(true);
+                                  const newDroppedState = !shift.dropped;
+                                  const response = await fetch(`/api/shifts/${shift.id}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ dropped: newDroppedState })
+                                  });
+                                  if (!response.ok) throw new Error('Failed to toggle drop status');
+                                  
+                                  // Update local state
+                                  setShifts(prev => prev.map(s => s.id === shift.id ? { ...s, dropped: newDroppedState } : s));
+                                } catch (error) {
+                                  console.error(error);
+                                  alert('Error toggling drop status');
+                                } finally {
+                                  setModalLoading(false);
+                                }
+                              }}
+                              title={
+                                shift.dropped 
+                                  ? (language === 'es' ? 'Deshacer soltar turno' : 'Undo drop') 
+                                  : (language === 'es' ? 'Soltar turno' : 'Drop shift')
+                              }
+                              disabled={modalLoading}
+                            >
+                              {shift.dropped ? (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M3 7v6h6" />
+                                  <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+                                </svg>
+                              ) : (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                  <line x1="3" y1="3" x2="21" y2="21" />
+                                </svg>
+                              )}
+                            </button>
+                            <button
+                              className={styles.modalDeleteButton}
+                              onClick={() => handleDeleteShift()}
+                              title={language === 'es' ? 'Borrar' : 'Delete'}
+                              disabled={modalLoading}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 6h18" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                <line x1="10" y1="11" x2="10" y2="17" />
+                                <line x1="14" y1="11" x2="14" y2="17" />
+                              </svg>
+                            </button>
+                          </div>
                         )}
                       </div>
                     );

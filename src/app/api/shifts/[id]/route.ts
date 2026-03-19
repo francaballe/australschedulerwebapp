@@ -186,7 +186,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         }
 
         const body = await request.json();
-        const { positionId, published, startTime, endTime, date, userId } = body;
+        const { positionId, published, dropped, startTime, endTime, date, userId } = body;
 
         // Find existing shift
         const shift = await prisma.shift.findUnique({
@@ -201,6 +201,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
         if (typeof published === 'boolean') {
             dataToUpdate.published = published;
+        }
+
+        if (typeof dropped === 'boolean') {
+            dataToUpdate.dropped = dropped;
         }
 
         // Handle Move (Date/User change)

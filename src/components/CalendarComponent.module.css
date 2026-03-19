@@ -1257,6 +1257,58 @@
   height: 16px;
 }
 
+.modalDropButton {
+  background: var(--background-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.modalDropButton:hover:not(:disabled) {
+  background: #f59e0b;
+  color: white;
+  border-color: #f59e0b;
+}
+
+.modalDropButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modalDropButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.droppedBadge {
+  background-color: var(--background-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13.5px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 24px;
+  white-space: nowrap;
+}
+
+.droppedBadge svg {
+  width: 15px;
+  height: 15px;
+  color: #9ca3af;
+}
+
 /* restoreButton style removed */
 .modalCloseButton {
   background: var(--background-secondary);
