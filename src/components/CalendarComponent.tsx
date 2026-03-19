@@ -1990,9 +1990,12 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                               ? 'repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 10px, #e5e7eb 10px, #e5e7eb 20px)' // Striped gray for other sites
                               : isFilteredOut
                                 ? '#f3f4f6' // Light gray for filtered/ghost items
-                                : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ?
-                                  `${shift.positionColor}${!shift.published ? '30' : '85'}` :
-                                  (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)')),
+                                : shift.dropped
+                                  ? ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ?
+                                    `${shift.positionColor}20` : 'rgba(59, 130, 246, 0.2)')
+                                  : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ?
+                                    `${shift.positionColor}${!shift.published ? '30' : '85'}` :
+                                    (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)')),
                             borderLeftColor: isOtherSite ? '#9ca3af' : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ? shift.positionColor : '#3b82f6'),
                             color: isOtherSite ? '#6b7280' : (isFilteredOut ? '#94a3b8' : 'var(--foreground)'),
                             position: 'relative',
@@ -2007,11 +2010,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           {/* Muted wrapper for everything EXCEPT the HUD card */}
                           <div style={{ opacity: (isOtherSite || isFilteredOut) ? 0.7 : 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
 
-                            <div className={styles.shiftLabels}>
+                            <div className={styles.shiftLabels} style={{ opacity: shift.dropped ? 0.3 : 1 }}>
                               {/* Simplified view (centered base state) */}
                               <div className={styles.simplifiedLabel}>
                                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
-                                  <span className={styles.simplifiedPosName} style={{ textDecoration: shift.dropped ? 'line-through' : 'none', opacity: shift.dropped ? 0.6 : 1 }}>
+                                  <span className={styles.simplifiedPosName} style={{ textDecoration: shift.positionDeleted ? 'line-through' : 'none', opacity: shift.positionDeleted ? 0.6 : 1 }}>
                                     {t(shift.position).substring(0, 3).toUpperCase()}
                                   </span>
                                 </div>
@@ -2020,13 +2023,13 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                               {/* Standard Full view (for non-2-week views) */}
                               <div className={styles.fullLabel}>
                                 {shiftTimeText && (
-                                  <div className={styles.shiftTime} style={{ fontWeight: 'normal', textDecoration: shift.dropped ? 'line-through' : 'none', opacity: shift.dropped ? 0.6 : 1 }}>
+                                  <div className={styles.shiftTime} style={{ fontWeight: 'normal', textDecoration: shift.positionDeleted ? 'line-through' : 'none', opacity: shift.positionDeleted ? 0.6 : 1 }}>
                                     {shiftTimeText}
                                   </div>
                                 )}
                                 {shift.position && (
                                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
-                                    <div className={styles.shiftPosition} style={{ textDecoration: shift.dropped ? 'line-through' : 'none', opacity: shift.dropped ? 0.6 : 1 }}>
+                                    <div className={styles.shiftPosition} style={{ textDecoration: shift.positionDeleted ? 'line-through' : 'none', opacity: shift.positionDeleted ? 0.6 : 1 }}>
                                       <span>{t(shift.position)}</span>
                                     </div>
                                   </div>
@@ -2046,13 +2049,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                 </div>
                               )}
 
-                              {shift.positionDeleted && (
+                              {shift.dropped && (
                                 <div className={styles.shiftTrashIcon}>
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M3 6h18" />
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                    <line x1="10" y1="11" x2="10" y2="17" />
-                                    <line x1="14" y1="11" x2="14" y2="17" />
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                    <line x1="3" y1="3" x2="21" y2="21" />
                                   </svg>
                                 </div>
                               )}
@@ -2060,7 +2061,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           </div>
 
                           {/* Floating HUD view (on hover) - OUTSIDE the muted container */}
-                          {(view === 'twoWeeks' || isOtherSite || shift.isUserUnavailable || shift.positionDeleted) && (
+                          {(view === 'twoWeeks' || isOtherSite || shift.isUserUnavailable || shift.positionDeleted || shift.dropped) && (
                             <div className={`${styles.hoverHUD} ${userIndex < 2 ? styles.topRowHUD : ''}`}>
                               <div className={styles.hudHeader}>{t(shift.position)}</div>
 
@@ -2091,12 +2092,20 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                               {shift.positionDeleted && (
                                 <div className={styles.hudConflict}>
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M3 6h18" />
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                    <line x1="10" y1="11" x2="10" y2="17" />
-                                    <line x1="14" y1="11" x2="14" y2="17" />
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                                   </svg>
                                   <span>{language === 'es' ? 'Posición eliminada' : 'Deleted position'}</span>
+                                </div>
+                              )}
+
+                              {shift.dropped && (
+                                <div className={styles.hudConflict}>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                    <line x1="3" y1="3" x2="21" y2="21" />
+                                  </svg>
+                                  <span>{language === 'es' ? 'Turno soltado' : 'Dropped shift'}</span>
                                 </div>
                               )}
 
@@ -2273,8 +2282,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                         return (
                           <div className={styles.droppedBadge} style={{ margin: 0 }}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="12" cy="12" r="10" />
-                              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                              <line x1="3" y1="3" x2="21" y2="21" />
                             </svg>
                             {language === 'es' ? 'Este turno ha sido marcado como soltado.' : 'This shift is marked as dropped.'}
                           </div>

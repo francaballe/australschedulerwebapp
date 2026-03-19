@@ -60,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [error, setError] = useState<string | null>(null);
 
     // Delete confirmation modal state
-    const [deleteConfirmData, setDeleteConfirmData] = useState<{ id: number; name: string; futureShiftsCount: number } | null>(null);
+    const [deleteConfirmData, setDeleteConfirmData] = useState<{ id: number; name: string; futureShiftsCount: number; totalShiftsCount: number } | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
 
@@ -321,7 +321,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 const data = await res.json();
                 if (data.requireConfirmation) {
                     // Show custom modal instead of window.confirm
-                    setDeleteConfirmData({ id, name, futureShiftsCount: data.futureShiftsCount });
+                    setDeleteConfirmData({ id, name, futureShiftsCount: data.futureShiftsCount, totalShiftsCount: data.totalShiftsCount });
                     return;
                 }
             }
@@ -564,18 +564,46 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         <path d="M12 17h.01" />
                                     </svg>
                                 </div>
-                                <h4>{language === 'es' ? '¿Eliminar posición?' : 'Delete Position?'}</h4>
+                                <h4>
+                                    {language === 'es'
+                                        ? (deleteConfirmData.futureShiftsCount > 0 ? '¿Eliminar posición con turnos futuros?' : '¿Eliminar posición?')
+                                        : (deleteConfirmData.futureShiftsCount > 0 ? 'Delete position with future shifts?' : 'Delete Position?')}
+                                </h4>
                                 <p>
                                     {language === 'es' ?
-                                        <>La posición <strong>&ldquo;{deleteConfirmData.name}&rdquo;</strong> tiene{' '}<strong>{deleteConfirmData.futureShiftsCount}</strong> turno(s) asignado(s) desde hoy en adelante.</>
+                                        <>
+                                            {deleteConfirmData.futureShiftsCount > 0 ? (
+                                                <>La posición <strong>&ldquo;{deleteConfirmData.name}&rdquo;</strong> tiene{' '}<strong>{deleteConfirmData.futureShiftsCount}</strong> turno(s) asignado(s) desde hoy en adelante.</>
+                                            ) : (
+                                                <>¿Estás seguro que deseas eliminar la posición <strong>&ldquo;{deleteConfirmData.name}&rdquo;</strong>?</>
+                                            )}
+                                        </>
                                         :
-                                        <>The position <strong>&ldquo;{deleteConfirmData.name}&rdquo;</strong> has{' '}<strong>{deleteConfirmData.futureShiftsCount}</strong> shift(s) assigned from today onward.</>
+                                        <>
+                                            {deleteConfirmData.futureShiftsCount > 0 ? (
+                                                <>The position <strong>&ldquo;{deleteConfirmData.name}&rdquo;</strong> has{' '}<strong>{deleteConfirmData.futureShiftsCount}</strong> shift(s) assigned from today onward.</>
+                                            ) : (
+                                                <>Are you sure you want to delete the position <strong>&ldquo;{deleteConfirmData.name}&rdquo;</strong>?</>
+                                            )}
+                                        </>
                                     }
                                     <br /><br />
                                     {language === 'es' ?
-                                        <>Si procedes, la posición y todos esos turnos futuros serán <strong>eliminados</strong>.</>
+                                        <>
+                                            {deleteConfirmData.futureShiftsCount > 0 ? (
+                                                <>Si procedes, la posición y todos esos turnos futuros serán <strong>eliminados</strong>.</>
+                                            ) : (
+                                                <>Esta acción eliminará la posición de la lista{(deleteConfirmData.totalShiftsCount > 0 ? ', pero se mantendrá en tu historial pasado' : ' permanentemente')}.</>
+                                            )}
+                                        </>
                                         :
-                                        <>If you proceed, this position and all of those future shifts will be <strong>deleted</strong>.</>
+                                        <>
+                                            {deleteConfirmData.futureShiftsCount > 0 ? (
+                                                <>If you proceed, this position and all of those future shifts will be <strong>deleted</strong>.</>
+                                            ) : (
+                                                <>This action will remove the position from your list{(deleteConfirmData.totalShiftsCount > 0 ? ', but keep it in your past history' : ' permanently')}.</>
+                                            )}
+                                        </>
                                     }
                                 </p>
                                 <div className={styles.deleteConfirmationButtons}>

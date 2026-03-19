@@ -201,11 +201,35 @@ export async function DELETE(
         });
 
         // Check for any shifts associated with this position
-        const shiftsCount = await prisma.shift.count({
+        const totalShiftsCount = await prisma.shift.count({
             where: { positionId }
         });
 
-        if (shiftsCount === 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const futureShiftsCount = await prisma.shift.count({
+            where: {
+                positionId,
+                date: {
+                    gte: today
+                }
+            }
+        });
+
+        if (!confirm) {
+            // ALWAYS require user confirmation before doing anything
+            return NextResponse.json(
+                {
+                    requireConfirmation: true,
+                    futureShiftsCount,
+                    totalShiftsCount
+                },
+                { status: 409, headers: corsHeaders }
+            );
+        }
+
+        if (totalShiftsCount === 0) {
             // HARD DELETE: No shifts ever existed
             await prisma.position.delete({
                 where: { id: positionId }
@@ -223,30 +247,6 @@ export async function DELETE(
             }
 
             return NextResponse.json({ success: true, hardDeleted: true }, { headers: corsHeaders });
-        }
-
-        // Shifts exist. We need to check if there are any from today onwards.
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const futureShiftsCount = await prisma.shift.count({
-            where: {
-                positionId,
-                date: {
-                    gte: today
-                }
-            }
-        });
-
-        if (futureShiftsCount > 0 && !confirm) {
-            // Require user confirmation before soft deleting and wiping future shifts
-            return NextResponse.json(
-                {
-                    requireConfirmation: true,
-                    futureShiftsCount
-                },
-                { status: 409, headers: corsHeaders }
-            );
         }
 
         // SOFT DELETE: Proceed to mark as deleted and wipe future/today shifts
