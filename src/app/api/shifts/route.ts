@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
                 starttime: true,
                 endtime: true,
                 published: true,
+                dropped: true,
                 positionId: true,
                 siteid: true,
                 companyId: true, // Added companyId to the select clause
@@ -119,7 +120,8 @@ export async function GET(request: NextRequest) {
                 position: shift.position?.name ?? (shift.positionId === null ? 'No Position' : null),
                 positionColor: shift.position?.color ?? (shift.positionId === null ? '#FFFFFF00' : null),
                 positionDeleted: shift.position?.deleted ?? false,
-                companyId: shift.companyId
+                companyId: shift.companyId,
+                dropped: (shift as any).dropped ?? false
             };
         });
 
