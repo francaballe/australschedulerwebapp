@@ -105,11 +105,11 @@
 
 .loginCard {
   width: 100%;
-  max-width: 525px;
+  max-width: 420px;
   background: var(--background);
   border: 1px solid var(--border);
   border-radius: 24px;
-  padding: 60px 50px;
+  padding: 48px 40px;
   backdrop-filter: blur(20px);
   box-shadow: var(--card-shadow);
 }
@@ -156,7 +156,7 @@
 }
 
 .title {
-  font-size: 3.5rem;
+  font-size: 2.8rem;
   font-weight: 700;
   margin-bottom: 8px;
   color: var(--foreground);
@@ -180,7 +180,7 @@
 
 .subtitle {
   color: var(--foreground-secondary);
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 :global([data-theme="dark"]) .subtitle {
@@ -189,9 +189,9 @@
 
 .slogan {
   color: #4F2EB5;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  margin-top: -12px;
+  margin-top: -8px;
   padding-right: 4px;
   white-space: nowrap;
 }
@@ -214,7 +214,7 @@
 
 .label {
   color: var(--foreground);
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 
@@ -228,11 +228,11 @@
 
 .inputIcon {
   position: absolute;
-  left: 20px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  width: 25px;
-  height: 25px;
+  width: 20px;
+  height: 20px;
   color: var(--foreground-secondary);
   pointer-events: none;
 }
@@ -243,11 +243,11 @@
 
 .input {
   width: 100%;
-  padding: 18px 20px 18px 60px;
+  padding: 14px 16px 14px 48px;
   background: var(--background);
   border: 1px solid var(--border);
   border-radius: 12px;
-  font-size: 1.25rem;
+  font-size: 1rem;
   color: var(--foreground);
   transition: all 0.2s ease;
 }
@@ -324,11 +324,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 20px;
+  padding: 16px;
   margin-top: 8px;
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 600;
   color: white;
   background: linear-gradient(135deg, #4F2EB5, #2DD48F);
@@ -354,13 +354,13 @@
 }
 
 .submitBtn svg {
-  width: 25px;
-  height: 25px;
+  width: 20px;
+  height: 20px;
 }
 
 .btnSpinner {
-  width: 25px;
-  height: 25px;
+  width: 20px;
+  height: 20px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
@@ -375,7 +375,7 @@
 
 .forgotPassword {
   color: var(--foreground-secondary);
-  font-size: 1.2rem;
+  font-size: 0.95rem;
   font-weight: 500;
   text-decoration: none;
   transition: all 0.2s ease;
