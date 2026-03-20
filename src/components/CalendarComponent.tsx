@@ -955,6 +955,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     if (shift.positionId === 1) return false;
     // Prevent dragging if shift belongs to another site
     if (shift.siteId && selectedSiteId && shift.siteId !== selectedSiteId) return false;
+    // Prevent dragging of dropped shifts
+    if (shift.dropped) return false;
     return true;
   };
 
