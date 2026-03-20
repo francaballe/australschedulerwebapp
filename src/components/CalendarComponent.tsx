@@ -2369,7 +2369,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                       </div>
                     );
                   })()}
-                  <button className={styles.modalCloseButton} onClick={handleModalClose} title={language === 'es' ? 'Cerrar' : 'Close'}>
+                  <button className={styles.modalCloseButton} onClick={handleModalClose}>
                     ×
                   </button>
                 </div>

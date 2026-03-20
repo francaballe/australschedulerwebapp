@@ -475,7 +475,7 @@ export default function CalendarPage() {
                   : `Are you sure you want to publish all shifts for the ${view === 'day' ? 'DAY' : 'visible period'}?`}
               </p>
               {conflictCount > 0 && (
-                <p style={{ color: '#f59e0b', fontSize: '0.9em', marginTop: '12px' }}>
+                <p style={{ color: 'var(--error)', fontSize: '0.9em', marginTop: '12px' }}>
                   {language === 'es'
                     ? `⚠️ Hay ${conflictCount} turno${conflictCount > 1 ? 's' : ''} con conflicto (usuario no disponible con turno asignado).`
                     : `⚠️ There ${conflictCount > 1 ? 'are' : 'is'} ${conflictCount} shift${conflictCount > 1 ? 's' : ''} with a conflict (unavailable user with assigned shift).`}
