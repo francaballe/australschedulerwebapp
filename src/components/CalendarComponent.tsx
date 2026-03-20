@@ -326,6 +326,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
   // Create new shift assignment
   const createShiftAssignment = async (userId: number, date: Date, positionId: number, startTime?: string, endTime?: string) => {
     try {
+      setModalLoading(true);
       const dateStr = formatDateLocal(date);
 
       // Check for existing shift on this user/date
@@ -411,6 +412,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
       console.error('❌ Failed to create/update shift:', err);
       alert(`Error al asignar turno: ${err.message}`);
       return false;
+    } finally {
+      setModalLoading(false);
     }
   };
 
@@ -2309,47 +2312,49 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                         )}
                         {shift && shift.positionId !== 1 && !showDeleteConfirmation && (
                           <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              className={styles.modalDropButton}
-                              onClick={async () => {
-                                try {
-                                  setModalLoading(true);
-                                  const newDroppedState = !shift.dropped;
-                                  const response = await fetch(`/api/shifts/${shift.id}`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ dropped: newDroppedState })
-                                  });
-                                  if (!response.ok) throw new Error('Failed to toggle drop status');
-                                  
-                                  // Update local state
-                                  setShifts(prev => prev.map(s => s.id === shift.id ? { ...s, dropped: newDroppedState } : s));
-                                } catch (error) {
-                                  console.error(error);
-                                  alert('Error toggling drop status');
-                                } finally {
-                                  setModalLoading(false);
+                            {shift.published && (
+                              <button
+                                className={styles.modalDropButton}
+                                onClick={async () => {
+                                  try {
+                                    setModalLoading(true);
+                                    const newDroppedState = !shift.dropped;
+                                    const response = await fetch(`/api/shifts/${shift.id}`, {
+                                      method: 'PATCH',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ dropped: newDroppedState })
+                                    });
+                                    if (!response.ok) throw new Error('Failed to toggle drop status');
+                                    
+                                    // Update local state
+                                    setShifts(prev => prev.map(s => s.id === shift.id ? { ...s, dropped: newDroppedState } : s));
+                                  } catch (error) {
+                                    console.error(error);
+                                    alert('Error toggling drop status');
+                                  } finally {
+                                    setModalLoading(false);
+                                  }
+                                }}
+                                title={
+                                  shift.dropped 
+                                    ? (language === 'es' ? 'Deshacer soltar turno' : 'Undo drop') 
+                                    : (language === 'es' ? 'Soltar turno' : 'Drop shift')
                                 }
-                              }}
-                              title={
-                                shift.dropped 
-                                  ? (language === 'es' ? 'Deshacer soltar turno' : 'Undo drop') 
-                                  : (language === 'es' ? 'Soltar turno' : 'Drop shift')
-                              }
-                              disabled={modalLoading}
-                            >
-                              {shift.dropped ? (
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M3 7v6h6" />
-                                  <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
-                                </svg>
-                              ) : (
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <circle cx="12" cy="12" r="10" />
-                                  <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
-                                </svg>
-                              )}
-                            </button>
+                                disabled={modalLoading}
+                              >
+                                {shift.dropped ? (
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M3 7v6h6" />
+                                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+                                  </svg>
+                                ) : (
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
+                                  </svg>
+                                )}
+                              </button>
+                            )}
                             <button
                               className={styles.modalDeleteButton}
                               onClick={() => handleDeleteShift()}
@@ -2412,7 +2417,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     </div>
                   </div>
                 ) : modalLoading ? (
-                  <div className={styles.modalLoading}>{language === 'es' ? 'Cargando...' : 'Loading...'}</div>
+                  <div className={styles.modalLoading} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                    <div className={styles.loadingSpinner}></div>
+                    <div>{language === 'es' ? 'Procesando...' : 'Processing...'}</div>
+                  </div>
                 ) : positions.length > 0 ? (
                   <div>
                     {selectedCell && (() => {
