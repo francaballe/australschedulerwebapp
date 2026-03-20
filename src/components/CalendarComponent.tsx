@@ -2041,10 +2041,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                             <div className={styles.shiftIconContainer}>
                               {shift.isUserUnavailable && (
                                 <div>
-                                  <svg className={styles.shiftWarningIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 2L2 22H22L12 2Z" fill="#FBBF24" stroke="black" strokeWidth="2" strokeLinejoin="round" />
-                                    <path d="M12 9V14" stroke="black" strokeWidth="3" strokeLinecap="round" />
-                                    <circle cx="12" cy="19" r="1.5" fill="black" />
+                                  <svg className={styles.shiftWarningIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
                                   </svg>
                                 </div>
                               )}
@@ -2052,8 +2052,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                               {shift.dropped && (
                                 <div className={styles.shiftTrashIcon}>
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                    <line x1="3" y1="3" x2="21" y2="21" />
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
                                   </svg>
                                 </div>
                               )}
@@ -2102,8 +2102,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                               {shift.dropped && (
                                 <div className={styles.hudConflict}>
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                    <line x1="3" y1="3" x2="21" y2="21" />
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
                                   </svg>
                                   <span>{language === 'es' ? 'Turno soltado' : 'Dropped shift'}</span>
                                 </div>
@@ -2282,8 +2282,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                         return (
                           <div className={styles.droppedBadge} style={{ margin: 0 }}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                              <line x1="3" y1="3" x2="21" y2="21" />
+                              <circle cx="12" cy="12" r="10" />
+                              <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
                             </svg>
                             {language === 'es' ? 'Este turno ha sido marcado como soltado.' : 'This shift is marked as dropped.'}
                           </div>
@@ -2346,8 +2346,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                 </svg>
                               ) : (
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                  <line x1="3" y1="3" x2="21" y2="21" />
+                                  <circle cx="12" cy="12" r="10" />
+                                  <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
                                 </svg>
                               )}
                             </button>

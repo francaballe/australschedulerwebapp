@@ -436,7 +436,7 @@
 .shiftTime {
   font-weight: 400;
   color: inherit;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 
@@ -480,12 +480,13 @@
 /* Unified Icon Container */
 .shiftIconContainer {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 6px;
+  height: 38px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
   z-index: 2;
 }
 
@@ -503,6 +504,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: auto;
 }
 
 
