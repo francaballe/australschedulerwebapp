@@ -32,7 +32,7 @@ export default function Dashboard() {
             }}>
                 <div style={{
                     border: '3px solid #f3f4f6',
-                    borderTop: '3px solid #3b82f6',
+                    borderTop: '3px solid #4F2EB5',
                     borderRadius: '50%',
                     width: '40px',
                     height: '40px',

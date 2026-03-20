@@ -1992,11 +1992,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                 ? '#f3f4f6' // Light gray for filtered/ghost items
                                 : shift.dropped
                                   ? ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ?
-                                    `${shift.positionColor}20` : 'rgba(59, 130, 246, 0.2)')
+                                    `${shift.positionColor}20` : 'rgba(79, 46, 181, 0.2)')
                                   : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ?
                                     `${shift.positionColor}${!shift.published ? '30' : '85'}` :
-                                    (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.85)')),
-                            borderLeftColor: isOtherSite ? '#9ca3af' : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ? shift.positionColor : '#3b82f6'),
+                                    (!shift.published ? 'rgba(251, 191, 36, 0.3)' : 'rgba(79, 46, 181, 0.85)')),
+                            borderLeftColor: isOtherSite ? '#9ca3af' : ((shift.positionColor && shift.positionColor.toLowerCase() !== '#ffffff00') ? shift.positionColor : '#4F2EB5'),
                             color: isOtherSite ? '#6b7280' : (isFilteredOut ? '#94a3b8' : 'var(--foreground)'),
                             position: 'relative',
                             boxShadow: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime())
@@ -2354,7 +2354,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                             <button
                               className={styles.modalDeleteButton}
                               onClick={() => handleDeleteShift()}
-                              title={language === 'es' ? 'Borrar' : 'Delete'}
+                              title={language === 'es' ? 'Borrar turno' : 'Delete shift'}
                               disabled={modalLoading}
                             >
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -814,6 +814,7 @@ export default function SettingsPage() {
                                 📜 {language === 'es' ? 'Logs del Sistema' : 'System Logs'}
                             </button>
                         )}
+                        {/* Oculto temporalmente a petición del usuario
                         {user?.roleId === 0 && (
                             <button
                                 className={`${styles.tab} ${activeTab === 'messaging' ? styles.active : ''}`}
@@ -822,6 +823,7 @@ export default function SettingsPage() {
                                 🧪 {language === 'es' ? 'Tests de Mensajería' : 'Messaging Tests'}
                             </button>
                         )}
+                        */}
                         <button
                             className={`${styles.tab} ${activeTab === 'help' ? styles.active : ''}`}
                             onClick={() => setActiveTab('help')}
@@ -946,8 +948,8 @@ export default function SettingsPage() {
                                 </p>
 
                                 {isUploadingBulk && (
-                                    <div className={styles.feedbackMessage} style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                                        <div className={styles.spinner} style={{ width: '16px', height: '16px', borderTopColor: '#3b82f6', marginRight: '8px' }}></div>
+                                    <div className={styles.feedbackMessage} style={{ background: 'rgba(79, 46, 181, 0.1)', color: '#4F2EB5', border: '1px solid rgba(79, 46, 181, 0.2)' }}>
+                                        <div className={styles.spinner} style={{ width: '16px', height: '16px', borderTopColor: '#4F2EB5', marginRight: '8px' }}></div>
                                         {language === 'es' ? 'Procesando carga masiva... Por favor espera.' : 'Processing bulk upload... Please wait.'}
                                     </div>
                                 )}
@@ -1417,8 +1419,8 @@ export default function SettingsPage() {
                         </div>
                     )}
 
-                    {/* Tests de Mensajería Tab */}
-                    {activeTab === 'messaging' && user?.roleId === 0 && (
+                    {/* Tests de Mensajería Tab (Oculto temporalmente a petición del usuario) */}
+                    {false && activeTab === 'messaging' && user?.roleId === 0 && (
                         <div className={styles.section}>
                             <h2>🧪 {language === 'es' ? 'Tests de Mensajería' : 'Messaging Tests'}</h2>
                             <p className={styles.sectionDescription}>
@@ -1617,7 +1619,7 @@ export default function SettingsPage() {
                                     <div className={styles.settingInfo}>
                                         <span className={styles.settingLabel}>ℹ️ {language === 'es' ? 'Versión del Software' : 'Software Version'}</span>
                                         <span className={styles.settingDescription}>
-                                            v1.11.7
+                                            v1.11.8
                                         </span>
                                     </div>
                                 </div>

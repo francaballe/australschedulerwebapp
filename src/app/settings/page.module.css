@@ -82,7 +82,7 @@
 }
 
 .tab.active {
-  background: #3b82f6;
+  background: #4F2EB5;
   color: white;
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
@@ -193,8 +193,8 @@
 
 .input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #4F2EB5;
+  box-shadow: 0 0 0 3px rgba(79, 46, 181, 0.1);
 }
 
 .textarea {
@@ -211,8 +211,8 @@
 
 .textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #4F2EB5;
+  box-shadow: 0 0 0 3px rgba(79, 46, 181, 0.1);
 }
 
 .actionButtons {
@@ -223,7 +223,7 @@
 
 .sendButton {
   padding: 12px 24px;
-  background: #3b82f6;
+  background: #4F2EB5;
   color: white;
   border: none;
   border-radius: 6px;
@@ -336,7 +336,7 @@
 
 .spinner {
   border: 3px solid #f3f4f6;
-  border-top: 3px solid #3b82f6;
+  border-top: 3px solid #4F2EB5;
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -635,7 +635,7 @@
 .modalCloseButton:hover {
   background: #f9fafb;
   color: #111827;
-  border-color: #3b82f6;
+  border-color: #4F2EB5;
 }
 
 .actionsCell {

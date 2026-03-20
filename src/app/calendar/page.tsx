@@ -572,7 +572,7 @@ export default function CalendarPage() {
                     // Purples
                     '#3730A3', '#4F46E5', '#6366f1', '#7C3AED', '#a855f7',
                     // Blues
-                    '#2563EB', '#3b82f6',
+                    '#2563EB', '#4F2EB5',
                     // Cyans/Teals
                     '#0EA5E9', '#06b6d4', '#14B8A6',
                     // Greens

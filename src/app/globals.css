@@ -8,8 +8,8 @@
   --background-secondary: #ffffff;
   --foreground: #0f172a;
   --foreground-secondary: #475569;
-  --primary: #3b82f6;
-  --primary-hover: #1d4ed8;
+  --primary: #4F2EB5;
+  --primary-hover: #3b208b;
   --secondary: #7c3aed;
   --accent: #0891b2;
   --muted: #94a3b8;
@@ -35,8 +35,8 @@
   --background-secondary: #1e293b;
   --foreground: #f8fafc;
   --foreground-secondary: #94a3b8;
-  --primary: #3b82f6;
-  --primary-hover: #60a5fa;
+  --primary: #4F2EB5;
+  --primary-hover: #6a4ec7;
   --secondary: #8b5cf6;
   --accent: #06b6d4;
   --muted: #64748b;
@@ -96,7 +96,7 @@ input {
 }
 
 ::selection {
-  background: rgba(59, 130, 246, 0.3);
+  background: rgba(79, 46, 181, 0.3);
   color: var(--foreground);
 }
 

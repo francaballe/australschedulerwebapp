@@ -41,7 +41,7 @@
   justify-content: center;
   padding: 6px;
   background: transparent;
-  color: #3b82f6;
+  color: #4F2EB5;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -126,7 +126,7 @@
 }
 
 .toggleButton.active {
-  background: #3b82f6;
+  background: #4F2EB5;
   color: white;
 }
 
@@ -248,7 +248,7 @@
   width: 32px;
   height: 32px;
   border: 3px solid #e2e8f0;
-  border-top: 3px solid #3b82f6;
+  border-top: 3px solid #4F2EB5;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -397,11 +397,11 @@
 }
 
 .dayCell.todayCell {
-  background: rgba(59, 130, 246, 0.08);
+  background: rgba(79, 46, 181, 0.08);
 }
 
 .dayCell.todayCell:hover {
-  background: rgba(59, 130, 246, 0.15);
+  background: rgba(79, 46, 181, 0.15);
 }
 
 
@@ -415,7 +415,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(79, 46, 181, 0.1);
   border-left: 6px solid var(--primary);
   border-right: 1px solid var(--border);
   border-top: 1px solid var(--border);
@@ -541,7 +541,7 @@
 
 .emptyCell:hover {
   opacity: 1;
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(79, 46, 181, 0.1);
   border-radius: 4px;
 }
 
@@ -1650,7 +1650,7 @@
 .primaryBtn {
   padding: 8px 16px;
   border: none;
-  background: #3b82f6;
+  background: #4F2EB5;
   color: white;
   border-radius: 6px;
   cursor: pointer;
