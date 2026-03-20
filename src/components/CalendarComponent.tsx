@@ -2038,7 +2038,14 @@ const CalendarComponent: React.FC<CalendarProps> = ({
 
                             {/* Unified Icon Container for Warnings and Trash */}
                             <div className={styles.shiftIconContainer}>
-                              {shift.isUserUnavailable && (
+                              {shift.dropped ? (
+                                <div className={styles.shiftTrashIcon}>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
+                                  </svg>
+                                </div>
+                              ) : shift.isUserUnavailable ? (
                                 <div>
                                   <svg className={styles.shiftWarningIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -2046,16 +2053,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                     <line x1="12" y1="17" x2="12.01" y2="17" />
                                   </svg>
                                 </div>
-                              )}
-
-                              {shift.dropped && (
-                                <div className={styles.shiftTrashIcon}>
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
-                                  </svg>
-                                </div>
-                              )}
+                              ) : null}
                             </div>
                           </div>
 
@@ -2143,13 +2141,15 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                             zIndex: (isModalOpen && selectedCell?.userId === user.id && selectedCell?.date.getTime() === date.getTime()) ? 5 : 'auto'
                           }}
                         >
-                          <div className={view === 'twoWeeks' ? styles.simplifiedLabel : styles.fullLabel}>
-                            <span className={view === 'twoWeeks' ? styles.simplifiedPosName : styles.positionName} style={{ color: '#9E9E9E', fontStyle: view === 'twoWeeks' ? 'normal' : 'italic' }}>
-                              {view === 'twoWeeks'
-                                ? (language === 'es' ? 'N/D' : 'N/A')
-                                : t('Unavailable')
-                              }
-                            </span>
+                          <div className={styles.shiftLabels}>
+                            <div className={view === 'twoWeeks' ? styles.simplifiedLabel : styles.fullLabel} style={{ textAlign: 'center' }}>
+                              <span className={view === 'twoWeeks' ? styles.simplifiedPosName : styles.positionName} style={{ color: '#6B7280', fontStyle: 'normal', fontWeight: 600 }}>
+                                {view === 'twoWeeks'
+                                  ? (language === 'es' ? 'N/D' : 'N/A')
+                                  : t('Unavailable')
+                                }
+                              </span>
+                            </div>
                           </div>
 
                           {/* Floating HUD for pure unavailable cells */}

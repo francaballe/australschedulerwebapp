@@ -489,12 +489,9 @@
 /* Unified Icon Container */
 .shiftIconContainer {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 6px;
   right: 6px;
-  height: 38px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   z-index: 2;
 }
@@ -503,17 +500,17 @@
   width: 14px;
   height: 14px;
   flex-shrink: 0;
+  color: #ef4444;
 }
 
 .shiftTrashIcon {
   width: 14px;
   height: 14px;
-  color: inherit;
+  color: #ef4444;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: auto;
 }
 
 
@@ -708,6 +705,11 @@
   min-height: 70px;
 }
 
+.twoWeeks .userName {
+  min-height: 40px;
+  align-items: flex-start;
+}
+
 .twoWeeks .dayCell {
   padding: 4px;
 }
@@ -718,11 +720,22 @@
   font-size: 11px;
 }
 
+.twoWeeks .shiftIconContainer {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 /* Simplified 2-Week View Styles */
 .simplifiedLabel {
   display: none;
   width: 100%;
   text-align: center;
+}
+
+.simplifiedPosName {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 .hoverHUD {
