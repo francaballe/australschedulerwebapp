@@ -2067,7 +2067,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           </div>
 
                           {/* Floating HUD view (on hover) - OUTSIDE the muted container */}
-                          {(view === 'twoWeeks' || isOtherSite || shift.isUserUnavailable || shift.positionDeleted || shift.dropped) && (
+                          {!draggedShift && (view === 'twoWeeks' || isOtherSite || shift.isUserUnavailable || shift.positionDeleted || shift.dropped) && (
                             <div className={`${styles.hoverHUD} ${userIndex < 2 ? styles.topRowHUD : ''}`}>
                               <div className={styles.hudHeader}>{t(shift.position)}</div>
 
@@ -2091,7 +2091,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                     <line x1="12" y1="9" x2="12" y2="13" />
                                     <line x1="12" y1="17" x2="12.01" y2="17" />
                                   </svg>
-                                  <span>{language === 'es' ? 'Conflicto: usuario no disponible' : 'Conflict: user unavailable'}</span>
+                                  <span>{language === 'es' ? 'Usuario no disponible' : 'User unavailable'}</span>
                                 </div>
                               )}
 
