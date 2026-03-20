@@ -191,7 +191,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         // Find existing shift
         const shift = await prisma.shift.findUnique({
             where: { id: idNumber },
-            include: { user: true } // Include user for log messages
+            include: { user: true, position: true } // Include user and position for log messages and notifications
         });
 
         if (!shift) {
@@ -208,19 +208,115 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             dataToUpdate.dropped = dropped;
 
             // Log the drop/undrop action if changed and actorId provided
-            if (shift.dropped !== dropped && actorId) {
-                const dateStr = shift.date.toISOString().split('T')[0];
-                const actionDesc = dropped
-                    ? `dropped_shift: ${shift.user?.firstname} ${shift.user?.lastname} (id: ${shift.userId}), date: ${dateStr}`
-                    : `restored_shift: ${shift.user?.firstname} ${shift.user?.lastname} (id: ${shift.userId}), date: ${dateStr}`;
-                
-                await prisma.log.create({
-                    data: {
-                        userId: Number(actorId),
-                        action: actionDesc,
-                        companyId: shift.companyId
+            if (shift.dropped !== dropped) {
+                if (actorId) {
+                    const dateStrForLog = shift.date.toISOString().split('T')[0];
+                    const actionDesc = dropped
+                        ? `dropped_shift: ${shift.user?.firstname} ${shift.user?.lastname} (id: ${shift.userId}), date: ${dateStrForLog}`
+                        : `restored_shift: ${shift.user?.firstname} ${shift.user?.lastname} (id: ${shift.userId}), date: ${dateStrForLog}`;
+                    
+                    await prisma.log.create({
+                        data: {
+                            userId: Number(actorId),
+                            action: actionDesc,
+                            companyId: (shift as any).companyId || shift.user?.companyId
+                        }
+                    });
+                }
+
+                // Send notifications (Email, Message, Push)
+                if (shift.published && !shift.user?.isblocked) {
+                    try {
+                        const dateObj = new Date(shift.date);
+                        const utcDate = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate());
+                        const dateStr = utcDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+                        const formatTime = (date: Date | null) => {
+                            if (!date) return '??';
+                            const hours = date.getUTCHours();
+                            const minutes = date.getUTCMinutes();
+                            const period = hours >= 12 ? 'PM' : 'AM';
+                            const h = hours % 12 || 12;
+                            const m = minutes === 0 ? '' : `:${minutes.toString().padStart(2, '0')}`;
+                            return `${h}${m} ${period}`;
+                        };
+
+                        const startTimeStr = formatTime(shift.starttime);
+                        const endTimeStr = formatTime(shift.endtime);
+                        const timeStr = `${startTimeStr} - ${endTimeStr}`;
+                        const positionName = shift.position?.name || 'Default';
+                        const positionColor = shift.position?.color || '#ef5350';
+
+                        const title = dropped ? 'Shift Dropped' : 'Shift Restored';
+                        const introText = dropped 
+                            ? 'A shift has been dropped from your schedule:' 
+                            : 'A shift has been restored to your schedule:';
+
+                        const bodyMsg = `${introText} ${dateStr} ${timeStr} at ${positionName}.`;
+
+                        const richBody = JSON.stringify({
+                            isRich: true,
+                            type: dropped ? 'shift_dropped' : 'shift_restored',
+                            text: introText,
+                            shifts: [{
+                                dateStr: dateStr,
+                                timeStr: timeStr,
+                                positionName: positionName,
+                                color: positionColor
+                            }]
+                        });
+
+                        // 1. Save notification to database (Message)
+                        await prisma.message.create({
+                            data: {
+                                userId: shift.userId,
+                                title: title,
+                                body: richBody,
+                                read: false,
+                                createdAt: new Date(),
+                                companyId: shift.user?.companyId
+                            }
+                        });
+
+                        // 2. Send Push Notification
+                        const tokenRecord = await prisma.userPushToken.findFirst({
+                            where: { userId: shift.userId },
+                            orderBy: { createdAt: 'desc' }
+                        });
+
+                        if (tokenRecord && tokenRecord.token) {
+                            await import('@/lib/firebase-admin').then(mod =>
+                                mod.sendPushNotification(tokenRecord.token, title, bodyMsg)
+                            ).catch(err => console.error('Error sending push for drop/undrop:', err));
+                        }
+
+                        // 3. Send Email Notification
+                        if (shift.user?.email) {
+                            const userName = shift.user.firstname || 'User';
+                            const themeColor = dropped ? '#ef5350' : '#4caf50';
+                            const emailHtml = `
+                              <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                                <h2 style="color: ${themeColor};">${title}</h2>
+                                <p>Hi ${userName},</p>
+                                <p>${introText}</p>
+                                <div style="padding: 15px; background-color: #f9f9f9; border-left: 4px solid ${themeColor}; margin: 20px 0;">
+                                  <strong>Date:</strong> ${dateStr}<br/>
+                                  <strong>Time:</strong> ${timeStr}<br/>
+                                  <strong>Position:</strong> ${positionName}
+                                </div>
+                                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999;">
+                                  This is an automated message from RosterLoop. Please do not reply to this email.
+                                </div>
+                              </div>
+                            `;
+                            await import('@/lib/email').then(mod =>
+                                mod.sendEmail(shift.user.email!, title, bodyMsg, emailHtml)
+                            ).catch(err => console.error('Error sending email for drop/undrop:', err));
+                        }
+                    } catch (notifyError) {
+                        console.error('Error in drop/undrop notification process:', notifyError);
                     }
-                });
+                }
             }
         }
 
