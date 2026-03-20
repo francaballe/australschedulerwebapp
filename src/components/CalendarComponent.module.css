@@ -1660,7 +1660,7 @@
 }
 
 .primaryBtn:hover:not(:disabled) {
-  background: #2563eb;
+  background: #2DD48F;
 }
 
 .primaryBtn:disabled,

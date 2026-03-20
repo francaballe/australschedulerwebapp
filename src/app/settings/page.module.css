@@ -237,14 +237,14 @@
 }
 
 .sendButton:hover {
-  background: #2563eb;
+  background: #2DD48F;
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 6px rgba(45, 212, 143, 0.3);
 }
 
 .sendButton:active {
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 4px rgba(45, 212, 143, 0.3);
 }
 
 .placeholder {

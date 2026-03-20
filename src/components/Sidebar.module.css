@@ -567,6 +567,8 @@
         padding: 0;
     }
 
+
+
     .selectAllBtn:hover {
         text-decoration: underline;
     }
@@ -693,6 +695,10 @@
         align-items: center;
     }
 
+}
+
+:global([data-theme="dark"]) .selectAllBtn {
+    color: #2DD48F;
 }
 
 /* Delete Position Confirmation Modal */
