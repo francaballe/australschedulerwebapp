@@ -1810,7 +1810,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                     <line x1="8" y1="13" x2="16" y2="13" />
                     <line x1="8" y1="17" x2="16" y2="17" />
                   </svg>
-                  Excel
+                  XLSX
                 </button>
               </div>
             )}

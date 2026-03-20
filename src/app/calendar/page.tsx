@@ -542,6 +542,7 @@ export default function CalendarPage() {
                   value={newPositionName}
                   onChange={(e) => setNewPositionName(e.target.value)}
                   placeholder={language === 'es' ? "Ingrese el nombre de la posición" : "Enter position name"}
+                  maxLength={15}
                   style={{
                     width: '100%',
                     padding: '8px 12px',
