@@ -150,8 +150,8 @@
 }
 
 .userColumn {
-  width: 200px;
-  min-width: 200px;
+  width: 170px;
+  min-width: 170px;
   padding: 16px 12px;
   font-weight: 600;
   font-size: 16px;
@@ -163,8 +163,8 @@
 }
 
 .userColumnNarrow {
-  width: 150px;
-  min-width: 150px;
+  width: 170px;
+  min-width: 170px;
 }
 
 .dayColumn {
@@ -268,8 +268,8 @@
 }
 
 .userCell {
-  width: 200px;
-  min-width: 200px;
+  width: 170px;
+  min-width: 170px;
   padding: 12px;
   border-right: 1px solid var(--border);
   display: flex;
@@ -278,8 +278,8 @@
 }
 
 .userCellNarrow {
-  width: 150px;
-  min-width: 150px;
+  width: 170px;
+  min-width: 170px;
 }
 
 .userName {
@@ -489,8 +489,9 @@
 /* Unified Icon Container */
 .shiftIconContainer {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 12px;
   display: flex;
   align-items: center;
   z-index: 2;
@@ -511,6 +512,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Match overtime indicator size for daily and weekly views */
+.day .shiftWarningIcon,
+.week .shiftWarningIcon,
+.day .shiftTrashIcon svg,
+.week .shiftTrashIcon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
+}
+
+.day .shiftTrashIcon,
+.week .shiftTrashIcon {
+  width: 20px;
+  height: 20px;
 }
 
 
@@ -721,8 +738,7 @@
 }
 
 .twoWeeks .shiftIconContainer {
-  top: 50%;
-  transform: translateY(-50%);
+  right: 6px;
 }
 
 /* Simplified 2-Week View Styles */

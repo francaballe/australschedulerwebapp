@@ -679,6 +679,24 @@
   background: rgba(217, 119, 6, 0.06);
 }
 
+.deleteButton {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--foreground-secondary);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.deleteButton:hover {
+  border-color: var(--error);
+  color: var(--error);
+  background: rgba(220, 38, 38, 0.06);
+}
+
 .unblockButton {
   padding: 6px 12px;
   background: transparent;

@@ -104,6 +104,13 @@ export async function POST(request: NextRequest) {
                 );
             }
 
+            if (firstName.trim().length > 15 || lastName.trim().length > 15) {
+                return NextResponse.json(
+                    { error: `Fila ${rowNum}: El nombre y el apellido no pueden tener más de 15 caracteres cada uno.` },
+                    { status: 400, headers: corsHeaders }
+                );
+            }
+
             const cleanEmail = email.toLowerCase().trim();
 
             if (emailsInCsv.has(cleanEmail)) {

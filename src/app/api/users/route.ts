@@ -139,6 +139,13 @@ export async function GET(request: NextRequest) {
                 );
             }
     
+            if (firstName.trim().length > 15 || lastName.trim().length > 15) {
+                return NextResponse.json(
+                    { error: 'El nombre y el apellido no pueden tener más de 15 caracteres cada uno' },
+                    { status: 400, headers: corsHeaders }
+                );
+            }
+    
             // Validate password complexity
             const passwordValidation = validatePassword(password);
             if (!passwordValidation.isValid) {
@@ -252,6 +259,14 @@ export async function PUT(request: NextRequest) {
         if (!id) {
             return NextResponse.json(
                 { error: 'ID de usuario requerido' },
+                { status: 400, headers: corsHeaders }
+            );
+        }
+
+        if ((firstName !== undefined && firstName.trim().length > 15) || 
+            (lastName !== undefined && lastName.trim().length > 15)) {
+            return NextResponse.json(
+                { error: 'El nombre y el apellido no pueden tener más de 15 caracteres cada uno' },
                 { status: 400, headers: corsHeaders }
             );
         }

@@ -1577,7 +1577,7 @@ export default function SettingsPage() {
                                                                 ✏️ {language === 'es' ? 'Editar' : 'Edit'}
                                                             </button>
                                                             <button
-                                                                className={styles.blockButton}
+                                                                className={styles.deleteButton}
                                                                 onClick={() => setConfirmDeleteSite(s)}
                                                                 title={language === 'es' ? 'Eliminar sitio' : 'Delete site'}
                                                             >
@@ -1619,7 +1619,7 @@ export default function SettingsPage() {
                                     <div className={styles.settingInfo}>
                                         <span className={styles.settingLabel}>ℹ️ {language === 'es' ? 'Versión del Software' : 'Software Version'}</span>
                                         <span className={styles.settingDescription}>
-                                            v1.11.8
+                                            v1.11.9
                                         </span>
                                     </div>
                                 </div>
@@ -1695,6 +1695,7 @@ export default function SettingsPage() {
                                             value={formData.firstName}
                                             onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                                             placeholder={language === 'es' ? "Nombre" : "First Name"}
+                                            maxLength={15}
                                         />
                                     </div>
                                     <div className={styles.modalField}>
@@ -1704,6 +1705,7 @@ export default function SettingsPage() {
                                             value={formData.lastName}
                                             onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                                             placeholder={language === 'es' ? "Apellido" : "Last Name"}
+                                            maxLength={15}
                                         />
                                     </div>
                                 </div>
@@ -1948,6 +1950,7 @@ export default function SettingsPage() {
                                         value={siteName}
                                         onChange={(e) => setSiteName(e.target.value)}
                                         placeholder={language === 'es' ? "Ej: Sede Central" : "Ex: Main Office"}
+                                        maxLength={20}
                                     />
                                 </div>
 

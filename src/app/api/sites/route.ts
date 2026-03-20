@@ -89,6 +89,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        if (name.trim().length > 20) {
+            return NextResponse.json(
+                { error: 'El nombre del sitio no puede tener más de 20 caracteres' },
+                { status: 400, headers: corsHeaders }
+            );
+        }
+
         // Check for duplicates
         const existing = await prisma.site.findFirst({
             where: { name: { equals: name.trim(), mode: 'insensitive' }, companyId: parseInt(companyId) }
@@ -140,6 +147,13 @@ export async function PUT(request: NextRequest) {
         if (!id || !name?.trim() || !companyId) {
             return NextResponse.json(
                 { error: 'ID y nombre son requeridos' },
+                { status: 400, headers: corsHeaders }
+            );
+        }
+
+        if (name.trim().length > 20) {
+            return NextResponse.json(
+                { error: 'El nombre del sitio no puede tener más de 20 caracteres' },
                 { status: 400, headers: corsHeaders }
             );
         }
