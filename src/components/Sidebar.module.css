@@ -174,12 +174,11 @@
 
     .primaryBtn {
         padding: 20px;
-        background: #0f172a;
-        /* Darker blue/black from screenshot */
+        background: #475569;
+        /* Matches user search box background */
         color: white;
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 4px;
-        /* More squared off from screenshot */
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -189,7 +188,7 @@
     }
 
     .primaryBtn:hover {
-        background: #334155;
+        background: #2DD48F;
         border-color: rgba(255, 255, 255, 0.3);
         transform: translateY(-1px);
     }
