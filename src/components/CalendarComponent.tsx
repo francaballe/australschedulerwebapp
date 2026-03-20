@@ -2007,8 +2007,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                           }}
 
                         >
-                          {/* Muted wrapper for everything EXCEPT the HUD card */}
-                          <div style={{ opacity: (isOtherSite || isFilteredOut) ? 0.7 : 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
+                          <div style={{ opacity: (isOtherSite || isFilteredOut) ? 0.7 : 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', minWidth: 0 }}>
 
                             <div className={styles.shiftLabels} style={{ opacity: shift.dropped ? 0.3 : 1 }}>
                               {/* Simplified view (centered base state) */}
@@ -2028,7 +2027,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                   </div>
                                 )}
                                 {shift.position && (
-                                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+                                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', minWidth: 0 }}>
                                     <div className={styles.shiftPosition} style={{ textDecoration: shift.positionDeleted ? 'line-through' : 'none', opacity: shift.positionDeleted ? 0.6 : 1 }}>
                                       <span>{t(shift.position)}</span>
                                     </div>
