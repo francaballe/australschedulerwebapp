@@ -186,11 +186,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         }
 
         const body = await request.json();
-        const { positionId, published, dropped, startTime, endTime, date, userId } = body;
+        const { positionId, published, dropped, startTime, endTime, date, userId, actorId } = body;
 
         // Find existing shift
         const shift = await prisma.shift.findUnique({
-            where: { id: idNumber }
+            where: { id: idNumber },
+            include: { user: true } // Include user for log messages
         });
 
         if (!shift) {
@@ -205,6 +206,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
         if (typeof dropped === 'boolean') {
             dataToUpdate.dropped = dropped;
+
+            // Log the drop/undrop action if changed and actorId provided
+            if (shift.dropped !== dropped && actorId) {
+                const dateStr = shift.date.toISOString().split('T')[0];
+                const actionDesc = dropped
+                    ? `dropped_shift: ${shift.user?.firstname} ${shift.user?.lastname} (id: ${shift.userId}), date: ${dateStr}`
+                    : `restored_shift: ${shift.user?.firstname} ${shift.user?.lastname} (id: ${shift.userId}), date: ${dateStr}`;
+                
+                await prisma.log.create({
+                    data: {
+                        userId: Number(actorId),
+                        action: actionDesc,
+                        companyId: shift.companyId
+                    }
+                });
+            }
         }
 
         // Handle Move (Date/User change)

@@ -1026,7 +1026,11 @@ const CalendarComponent: React.FC<CalendarProps> = ({
     // Check if target cell already has a shift
     const existing = getShiftForUserAndDay(targetUserId, targetDate);
     if (existing) {
-      setWarningMessage('Ya existe un turno en esta celda. Por favor, elimínelo antes de mover otro turno aquí.');
+      setWarningMessage(
+        language === 'es'
+          ? 'Ya existe un turno en esta celda. Por favor, elimínelo antes de mover otro turno aquí.'
+          : 'A shift already exists in this cell. Please delete it before moving another shift here.'
+      );
       setDraggedShift(null);
       return;
     }
@@ -2107,7 +2111,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                     <circle cx="12" cy="12" r="10" />
                                     <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
                                   </svg>
-                                  <span>{language === 'es' ? 'Turno soltado' : 'Dropped shift'}</span>
+                                  <span>{language === 'es' ? 'Turno cancelado' : 'Dropped shift'}</span>
                                 </div>
                               )}
 
@@ -2289,7 +2293,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                               <circle cx="12" cy="12" r="10" />
                               <line x1="19.07" y1="4.93" x2="4.93" y2="19.07" />
                             </svg>
-                            {language === 'es' ? 'Este turno ha sido marcado como soltado.' : 'This shift is marked as dropped.'}
+                            {language === 'es' ? 'Este turno ha sido marcado como cancelado.' : 'This shift is marked as dropped.'}
                           </div>
                         );
                       }
@@ -2324,7 +2328,10 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                     const response = await fetch(`/api/shifts/${shift.id}`, {
                                       method: 'PATCH',
                                       headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ dropped: newDroppedState })
+                                      body: JSON.stringify({ 
+                                        dropped: newDroppedState,
+                                        actorId: user?.id 
+                                      })
                                     });
                                     if (!response.ok) throw new Error('Failed to toggle drop status');
                                     
@@ -2340,8 +2347,8 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                 }}
                                 title={
                                   shift.dropped 
-                                    ? (language === 'es' ? 'Deshacer soltar turno' : 'Undo drop') 
-                                    : (language === 'es' ? 'Soltar turno' : 'Drop shift')
+                                    ? (language === 'es' ? 'Deshacer cancelación' : 'Undo drop') 
+                                    : (language === 'es' ? 'Cancelar turno' : 'Drop shift')
                                 }
                                 disabled={modalLoading}
                               >
