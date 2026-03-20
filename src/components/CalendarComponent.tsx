@@ -2328,6 +2328,7 @@ const CalendarComponent: React.FC<CalendarProps> = ({
                                     
                                     // Update local state
                                     setShifts(prev => prev.map(s => s.id === shift.id ? { ...s, dropped: newDroppedState } : s));
+                                    handleModalClose();
                                   } catch (error) {
                                     console.error(error);
                                     alert('Error toggling drop status');

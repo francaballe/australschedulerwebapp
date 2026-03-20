@@ -1314,9 +1314,9 @@
 }
 
 .modalDropButton:hover:not(:disabled) {
-  background: #f59e0b;
+  background: #eab308;
   color: white;
-  border-color: #f59e0b;
+  border-color: #eab308;
 }
 
 .modalDropButton:disabled {
